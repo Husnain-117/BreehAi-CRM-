@@ -1,40 +1,44 @@
 
 import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { Mail, Search, Check, X, Sparkles, Zap } from 'lucide-react';
+import { Mail, Search, Check, X, Sparkles, Zap, RefreshCw, Award } from 'lucide-react';
 import SuccessAnimation from './SuccessAnimation';
-
-interface Candidate {
-  email: string;
-  selected: boolean;
-  department?: string;
-}
-
-// Mock database of candidates - in a real app this would come from an API
-const candidatesDB: Candidate[] = [
-  { email: 'john.doe@example.com', selected: true, department: 'Social Media' },
-  { email: 'jane.smith@example.com', selected: true, department: 'SEO' },
-  { email: 'alex.johnson@example.com', selected: true, department: 'Content Marketing' },
-  { email: 'sarah.williams@example.com', selected: false },
-  { email: 'test@test.com', selected: true, department: 'Social Media' },
-];
+import { fetchCandidateData, CandidateData, findCandidateByEmail } from '../utils/googleSheets';
 
 const ResultChecker: React.FC = () => {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [result, setResult] = useState<Candidate | null>(null);
+  const [result, setResult] = useState<CandidateData | null>(null);
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
   const [hasChecked, setHasChecked] = useState(false);
   const [fadeIn, setFadeIn] = useState(false);
+  const [candidates, setCandidates] = useState<CandidateData[]>([]);
+  const [dataLoading, setDataLoading] = useState(true);
 
   useEffect(() => {
     // Trigger fade-in animation on mount
     setTimeout(() => setFadeIn(true), 100);
+    
+    // Load candidate data from Google Sheets
+    const loadCandidateData = async () => {
+      setDataLoading(true);
+      try {
+        const data = await fetchCandidateData();
+        setCandidates(data);
+      } catch (error) {
+        console.error("Failed to load candidate data:", error);
+        toast.error("Unable to load our talent database. Please refresh or try again later.");
+      } finally {
+        setDataLoading(false);
+      }
+    };
+    
+    loadCandidateData();
   }, []);
 
   const handleCheck = () => {
     if (!email) {
-      toast.error('Please enter your email address');
+      toast.error('Please enter your email address to check your status');
       return;
     }
 
@@ -43,14 +47,19 @@ const ResultChecker: React.FC = () => {
       return;
     }
 
+    if (dataLoading) {
+      toast.error('Our talent database is still loading. Please wait a moment.');
+      return;
+    }
+
     setIsLoading(true);
     setHasChecked(false);
     setResult(null);
 
-    // Simulate API call
+    // Small delay for UX purposes
     setTimeout(() => {
-      const candidate = candidatesDB.find(c => c.email.toLowerCase() === email.toLowerCase());
-      setResult(candidate || { email, selected: false });
+      const candidate = findCandidateByEmail(candidates, email);
+      setResult(candidate);
       setIsLoading(false);
       setHasChecked(true);
       
@@ -58,7 +67,7 @@ const ResultChecker: React.FC = () => {
         setShowSuccessAnimation(true);
         setTimeout(() => setShowSuccessAnimation(false), 3000);
       }
-    }, 1500);
+    }, 1200);
   };
 
   const isValidEmail = (email: string) => {
@@ -76,19 +85,51 @@ const ResultChecker: React.FC = () => {
     }, 300);
   };
 
+  const refreshData = async () => {
+    setDataLoading(true);
+    try {
+      const data = await fetchCandidateData();
+      setCandidates(data);
+      toast.success("Talent database refreshed successfully");
+      
+      // If user already checked result, update it with fresh data
+      if (result && email) {
+        const updatedResult = findCandidateByEmail(data, email);
+        setResult(updatedResult);
+      }
+    } catch (error) {
+      toast.error("Unable to refresh data. Please try again.");
+    } finally {
+      setDataLoading(false);
+    }
+  };
+
   return (
     <div className="w-full max-w-md mx-auto">
       <SuccessAnimation show={showSuccessAnimation} />
       
       <div className={`glass-panel rounded-2xl px-6 py-8 md:p-8 transition-all duration-500 shadow-xl hover:shadow-2xl ${fadeIn ? 'opacity-100 transform translate-y-0' : 'opacity-0 transform translate-y-10'}`}>
+        {dataLoading && !hasChecked && (
+          <div className="absolute inset-0 bg-white/80 backdrop-blur-sm rounded-2xl flex items-center justify-center z-10">
+            <div className="flex flex-col items-center">
+              <div className="h-10 w-10 rounded-full border-4 border-trendtial-red border-t-transparent animate-spin mb-4"></div>
+              <p className="text-trendtial-black font-medium">Connecting to talent database...</p>
+            </div>
+          </div>
+        )}
+        
         {!hasChecked ? (
           <div className="animate-scale">
-            <h2 className="text-2xl md:text-3xl font-bold mb-6 text-center gradient-text relative">
-              Check Your Application Status
+            <h2 className="text-2xl md:text-3xl font-bold mb-2 text-center gradient-text relative">
+              Your Future Awaits
               <span className="absolute -top-1 -right-2">
                 <Sparkles className="h-5 w-5 text-trendtial-red animate-pulse" />
               </span>
             </h2>
+            
+            <p className="text-center text-trendtial-darkgray mb-6 text-sm md:text-base">
+              Discover if you're joining our elite team of digital trailblazers
+            </p>
             
             <div className="relative mb-6 group">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -98,7 +139,7 @@ const ResultChecker: React.FC = () => {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email address"
+                placeholder="Enter your professional email"
                 className="input-primary w-full pl-10 transition-all duration-300 border-trendtial-gray focus:border-trendtial-red focus:ring-2 focus:ring-trendtial-red/20"
                 onKeyPress={(e) => {
                   if (e.key === 'Enter') handleCheck();
@@ -110,7 +151,7 @@ const ResultChecker: React.FC = () => {
             <button
               onClick={handleCheck}
               disabled={isLoading}
-              className="btn-primary w-full flex items-center justify-center gap-2 overflow-hidden relative group"
+              className="btn-primary w-full flex items-center justify-center gap-2 overflow-hidden relative group mb-4"
             >
               {isLoading ? (
                 <div className="h-5 w-5 rounded-full border-2 border-white border-t-transparent animate-spin"></div>
@@ -118,13 +159,23 @@ const ResultChecker: React.FC = () => {
                 <>
                   <Search className="h-5 w-5 transition-transform duration-300 group-hover:scale-110" />
                   <span className="relative">
-                    Check Result
+                    Reveal Your Destiny
                     <span className="absolute inset-x-0 bottom-0 h-0.5 bg-white transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
                   </span>
                 </>
               )}
               <div className="absolute inset-0 bg-white/10 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-700"></div>
             </button>
+            
+            <div className="flex justify-center">
+              <button 
+                onClick={refreshData}
+                className="text-xs text-trendtial-darkgray hover:text-trendtial-red flex items-center gap-1 transition-colors"
+              >
+                <RefreshCw className="h-3 w-3" />
+                <span>Refresh talent database</span>
+              </button>
+            </div>
           </div>
         ) : (
           <div className="animate-fade-in">
@@ -134,24 +185,48 @@ const ResultChecker: React.FC = () => {
                   <Check className="h-8 w-8 text-green-600" />
                 </div>
                 <h2 className="text-2xl md:text-3xl font-bold mb-3 gradient-text relative inline-block">
-                  Congratulations!
+                  Brilliant News!
                   <span className="absolute top-0 right-0 transform translate-x-6 -translate-y-2">
                     <Zap className="h-5 w-5 text-yellow-400 animate-bounce" />
                   </span>
                 </h2>
-                <p className="text-lg mb-4 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-                  You have been selected for the <span className="font-semibold bg-gradient-to-r from-trendtial-red to-trendtial-red/80 text-transparent bg-clip-text">{result.department}</span> internship!
+                <p className="text-lg mb-2 animate-fade-in" style={{ animationDelay: '0.2s' }}>
+                  You've been selected to join our exceptional team as a
                 </p>
-                <p className="text-sm text-gray-600 mb-6 animate-fade-in" style={{ animationDelay: '0.4s' }}>
-                  We'll contact you shortly with next steps.
+                <div className="mb-2 animate-fade-in inline-block" style={{ animationDelay: '0.3s' }}>
+                  <span className="font-bold text-xl bg-gradient-to-r from-trendtial-red to-trendtial-red/80 text-transparent bg-clip-text">
+                    {result.designation}
+                  </span>
+                </div>
+                
+                {result.team && (
+                  <div className="flex items-center justify-center gap-2 mb-4 animate-fade-in" style={{ animationDelay: '0.4s' }}>
+                    <Award className="h-4 w-4 text-trendtial-red" />
+                    <span className="text-sm font-medium">
+                      Team: <span className="text-trendtial-red">{result.team}</span>
+                    </span>
+                  </div>
+                )}
+                
+                <p className="text-sm text-gray-600 mb-6 animate-fade-in" style={{ animationDelay: '0.5s' }}>
+                  Prepare to embark on a remarkable journey. We'll contact you within 48 hours with your next steps.
                 </p>
-                <button
-                  onClick={resetForm}
-                  className="btn-primary group relative overflow-hidden"
-                >
-                  <span className="relative z-10">Check Another Result</span>
-                  <div className="absolute inset-0 bg-white/10 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-700"></div>
-                </button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={resetForm}
+                    className="btn-primary flex-1 group relative overflow-hidden"
+                  >
+                    <span className="relative z-10">Check Another</span>
+                    <div className="absolute inset-0 bg-white/10 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-700"></div>
+                  </button>
+                  <button
+                    onClick={refreshData}
+                    className="p-3 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+                    title="Refresh data"
+                  >
+                    <RefreshCw className="h-5 w-5 text-trendtial-darkgray" />
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="text-center">
@@ -159,21 +234,35 @@ const ResultChecker: React.FC = () => {
                   <X className="h-8 w-8 text-red-600" />
                 </div>
                 <h2 className="text-xl md:text-2xl font-bold mb-3 text-trendtial-black">
-                  Not Selected
+                  Not Quite This Time
                 </h2>
                 <p className="text-base mb-4 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-                  Thank you for your application. Unfortunately, you haven't been selected for this internship cycle.
+                  While your application showcased your talents, we're unable to move forward at this moment.
                 </p>
+                <div className="p-4 bg-gray-50 rounded-lg mb-4 animate-fade-in" style={{ animationDelay: '0.3s' }}>
+                  <p className="text-sm text-trendtial-darkgray italic">
+                    "The most brilliant stars often emerge from moments of patience. Your journey with us is just beginning."
+                  </p>
+                </div>
                 <p className="text-sm text-gray-600 mb-6 animate-fade-in" style={{ animationDelay: '0.4s' }}>
-                  We encourage you to apply again in the future as we're always looking for talented individuals.
+                  We encourage you to refine your portfolio and consider our next recruitment cycle in 3 months.
                 </p>
-                <button
-                  onClick={resetForm}
-                  className="btn-primary group relative overflow-hidden"
-                >
-                  <span className="relative z-10">Check Another Result</span>
-                  <div className="absolute inset-0 bg-white/10 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-700"></div>
-                </button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={resetForm}
+                    className="btn-primary flex-1 group relative overflow-hidden"
+                  >
+                    <span className="relative z-10">Check Another</span>
+                    <div className="absolute inset-0 bg-white/10 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-700"></div>
+                  </button>
+                  <button
+                    onClick={refreshData}
+                    className="p-3 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+                    title="Refresh data"
+                  >
+                    <RefreshCw className="h-5 w-5 text-trendtial-darkgray" />
+                  </button>
+                </div>
               </div>
             )}
           </div>

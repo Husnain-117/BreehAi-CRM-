@@ -1,7 +1,7 @@
 
 import React from 'react';
 import Logo from '../components/Logo';
-import ResultChecker from '../components/ResultChecker';
+import ResultChecker from '../components/result-checker';
 import AnimatedBackground from '../components/AnimatedBackground';
 import TransitionLayout from '../components/TransitionLayout';
 

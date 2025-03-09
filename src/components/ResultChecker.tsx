@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { toast } from 'sonner';
+import { toast } from "sonner";
 import { Mail, Search, Check, X, Sparkles, Zap, RefreshCw, Award } from 'lucide-react';
 import SuccessAnimation from './SuccessAnimation';
 import { fetchCandidateData, CandidateData, findCandidateByEmail } from '../utils/googleSheets';
@@ -14,27 +14,45 @@ const ResultChecker: React.FC = () => {
   const [fadeIn, setFadeIn] = useState(false);
   const [candidates, setCandidates] = useState<CandidateData[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
+  const [connectionError, setConnectionError] = useState(false);
 
   useEffect(() => {
     // Trigger fade-in animation on mount
     setTimeout(() => setFadeIn(true), 100);
     
     // Load candidate data from Google Sheets
-    const loadCandidateData = async () => {
-      setDataLoading(true);
-      try {
-        const data = await fetchCandidateData();
-        setCandidates(data);
-      } catch (error) {
-        console.error("Failed to load candidate data:", error);
-        toast.error("Unable to load our talent database. Please refresh or try again later.");
-      } finally {
-        setDataLoading(false);
-      }
-    };
-    
     loadCandidateData();
   }, []);
+
+  const loadCandidateData = async () => {
+    setDataLoading(true);
+    setConnectionError(false);
+    try {
+      const data = await fetchCandidateData();
+      if (data.length === 0) {
+        setConnectionError(true);
+        toast.error("Connection issue with our talent database. Please try refreshing.", {
+          duration: 5000,
+          id: "connection-error"
+        });
+      } else {
+        setCandidates(data);
+        toast.success(`Connected to talent database with ${data.length} candidates`, {
+          duration: 3000,
+          id: "connection-success"
+        });
+      }
+    } catch (error) {
+      console.error("Failed to load candidate data:", error);
+      setConnectionError(true);
+      toast.error("Unable to load our talent database. Please refresh or try again later.", {
+        duration: 5000,
+        id: "connection-error"
+      });
+    } finally {
+      setDataLoading(false);
+    }
+  };
 
   const handleCheck = () => {
     if (!email) {
@@ -49,6 +67,11 @@ const ResultChecker: React.FC = () => {
 
     if (dataLoading) {
       toast.error('Our talent database is still loading. Please wait a moment.');
+      return;
+    }
+
+    if (connectionError || candidates.length === 0) {
+      toast.error('Unable to connect to our database. Please refresh and try again.');
       return;
     }
 
@@ -86,21 +109,15 @@ const ResultChecker: React.FC = () => {
   };
 
   const refreshData = async () => {
-    setDataLoading(true);
-    try {
-      const data = await fetchCandidateData();
-      setCandidates(data);
-      toast.success("Talent database refreshed successfully");
-      
-      // If user already checked result, update it with fresh data
-      if (result && email) {
-        const updatedResult = findCandidateByEmail(data, email);
-        setResult(updatedResult);
-      }
-    } catch (error) {
-      toast.error("Unable to refresh data. Please try again.");
-    } finally {
-      setDataLoading(false);
+    toast.info("Refreshing talent database...", {
+      id: "refreshing-data"
+    });
+    await loadCandidateData();
+    
+    // If user already checked result, update it with fresh data
+    if (result && email) {
+      const updatedResult = findCandidateByEmail(candidates, email);
+      setResult(updatedResult);
     }
   };
 
@@ -114,6 +131,23 @@ const ResultChecker: React.FC = () => {
             <div className="flex flex-col items-center">
               <div className="h-10 w-10 rounded-full border-4 border-trendtial-red border-t-transparent animate-spin mb-4"></div>
               <p className="text-trendtial-black font-medium">Connecting to talent database...</p>
+            </div>
+          </div>
+        )}
+        
+        {connectionError && !hasChecked && !dataLoading && (
+          <div className="absolute inset-0 bg-white/80 backdrop-blur-sm rounded-2xl flex items-center justify-center z-10 p-6">
+            <div className="flex flex-col items-center text-center">
+              <X className="h-12 w-12 text-red-500 mb-4" />
+              <p className="text-trendtial-black font-medium mb-2">Connection Error</p>
+              <p className="text-sm text-gray-600 mb-4">We're unable to reach our talent database at the moment.</p>
+              <button 
+                onClick={refreshData}
+                className="btn-primary flex items-center gap-2 px-4 py-2"
+              >
+                <RefreshCw className="h-4 w-4" />
+                <span>Try Again</span>
+              </button>
             </div>
           </div>
         )}
@@ -150,8 +184,8 @@ const ResultChecker: React.FC = () => {
             
             <button
               onClick={handleCheck}
-              disabled={isLoading}
-              className="btn-primary w-full flex items-center justify-center gap-2 overflow-hidden relative group mb-4"
+              disabled={isLoading || dataLoading || connectionError}
+              className={`btn-primary w-full flex items-center justify-center gap-2 overflow-hidden relative group mb-4 ${(dataLoading || connectionError) ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
               {isLoading ? (
                 <div className="h-5 w-5 rounded-full border-2 border-white border-t-transparent animate-spin"></div>
@@ -170,10 +204,11 @@ const ResultChecker: React.FC = () => {
             <div className="flex justify-center">
               <button 
                 onClick={refreshData}
-                className="text-xs text-trendtial-darkgray hover:text-trendtial-red flex items-center gap-1 transition-colors"
+                disabled={dataLoading}
+                className={`text-xs text-trendtial-darkgray hover:text-trendtial-red flex items-center gap-1 transition-colors ${dataLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
-                <RefreshCw className="h-3 w-3" />
-                <span>Refresh talent database</span>
+                <RefreshCw className={`h-3 w-3 ${dataLoading ? 'animate-spin' : ''}`} />
+                <span>{dataLoading ? 'Refreshing...' : 'Refresh talent database'}</span>
               </button>
             </div>
           </div>

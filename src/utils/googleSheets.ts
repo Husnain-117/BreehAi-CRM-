@@ -3,7 +3,7 @@ import { toast } from "sonner";
 
 // Google Sheets API configuration
 const SHEET_ID = "1JhgmQy_oobmZa1IDV_GaWDwpzA9xvsACD-nwe8jxrVI";
-const API_KEY = "AIzaSyBJ9-TWKH_0LRQmk3rBaOfpVMEpi8rkn0I"; // This is a frontend key, so it's okay to expose
+const API_KEY = "AIzaSyBUBm3Y1AZ6kpkxJJ6QkyvL2pjlY1uSBgQ"; // Updated API key
 const RANGE = "A2:E100"; // Adjust range as needed
 
 export interface CandidateData {
@@ -23,7 +23,9 @@ export const fetchCandidateData = async (): Promise<CandidateData[]> => {
     );
     
     if (!response.ok) {
-      throw new Error("Failed to fetch data from Google Sheets");
+      const errorData = await response.json();
+      console.error("Google Sheets API Error:", errorData);
+      throw new Error(`Failed to fetch data from Google Sheets: ${response.status} ${response.statusText}`);
     }
     
     const data = await response.json();
@@ -42,6 +44,7 @@ export const fetchCandidateData = async (): Promise<CandidateData[]> => {
       });
     }
     
+    console.log("Successfully fetched candidates:", candidates.length);
     return candidates;
   } catch (error) {
     console.error("Error fetching Google Sheet data:", error);

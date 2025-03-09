@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { toast } from '@/components/ui/sonner';
+import { toast } from 'sonner';
 import { Mail, Search, Check, X } from 'lucide-react';
 import SuccessAnimation from './SuccessAnimation';
 

@@ -3,20 +3,20 @@ import React, { useState, useEffect } from 'react';
 import { toast } from "sonner";
 import { RefreshCw } from 'lucide-react';
 import SuccessAnimation from '../SuccessAnimation';
-import { fetchCandidateData, CandidateData, findCandidateByEmail } from '../../utils/googleSheets';
+import { fetchPropertyData, PropertyData, findPropertyByUnitId } from '../../utils/googleSheets';
 import EmailForm from './EmailForm';
 import ResultDisplay from './ResultDisplay';
 import ConnectionError from './ConnectionError';
 import LoadingOverlay from './LoadingOverlay';
 
 const ResultChecker: React.FC = () => {
-  const [email, setEmail] = useState('');
+  const [unitId, setUnitId] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [result, setResult] = useState<CandidateData | null>(null);
+  const [result, setResult] = useState<PropertyData | null>(null);
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
   const [hasChecked, setHasChecked] = useState(false);
   const [fadeIn, setFadeIn] = useState(false);
-  const [candidates, setCandidates] = useState<CandidateData[]>([]);
+  const [properties, setProperties] = useState<PropertyData[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [connectionError, setConnectionError] = useState(false);
 
@@ -24,32 +24,32 @@ const ResultChecker: React.FC = () => {
     // Trigger fade-in animation on mount
     setTimeout(() => setFadeIn(true), 100);
     
-    // Load candidate data from Google Sheets
-    loadCandidateData();
+    // Load property data from Google Sheets
+    loadPropertyData();
   }, []);
 
-  const loadCandidateData = async () => {
+  const loadPropertyData = async () => {
     setDataLoading(true);
     setConnectionError(false);
     try {
-      const data = await fetchCandidateData();
+      const data = await fetchPropertyData();
       if (data.length === 0) {
         setConnectionError(true);
-        toast.error("Connection issue with our talent database. Please try refreshing.", {
+        toast.error("Connection issue with our property database. Please try refreshing.", {
           duration: 5000,
           id: "connection-error"
         });
       } else {
-        setCandidates(data);
-        toast.success(`Connected to talent database with ${data.length} candidates`, {
+        setProperties(data);
+        toast.success(`Connected to property database with ${data.length} units`, {
           duration: 3000,
           id: "connection-success"
         });
       }
     } catch (error) {
-      console.error("Failed to load candidate data:", error);
+      console.error("Failed to load property data:", error);
       setConnectionError(true);
-      toast.error("Unable to load our talent database. Please refresh or try again later.", {
+      toast.error("Unable to load our property database. Please refresh or try again later.", {
         duration: 5000,
         id: "connection-error"
       });
@@ -59,22 +59,22 @@ const ResultChecker: React.FC = () => {
   };
 
   const handleCheck = () => {
-    if (!email) {
-      toast.error('Please enter your email address to check your status');
+    if (!unitId) {
+      toast.error('Please enter a unit ID to verify');
       return;
     }
 
-    if (!isValidEmail(email)) {
-      toast.error('Please enter a valid email address');
+    if (unitId.length < 2) {
+      toast.error('Please enter a valid unit ID');
       return;
     }
 
     if (dataLoading) {
-      toast.error('Our talent database is still loading. Please wait a moment.');
+      toast.error('Our property database is still loading. Please wait a moment.');
       return;
     }
 
-    if (connectionError || candidates.length === 0) {
+    if (connectionError || properties.length === 0) {
       toast.error('Unable to connect to our database. Please refresh and try again.');
       return;
     }
@@ -85,27 +85,23 @@ const ResultChecker: React.FC = () => {
 
     // Small delay for UX purposes
     setTimeout(() => {
-      const candidate = findCandidateByEmail(candidates, email);
-      setResult(candidate);
+      const property = findPropertyByUnitId(properties, unitId);
+      setResult(property);
       setIsLoading(false);
       setHasChecked(true);
       
-      if (candidate?.selected) {
+      if (property?.verified) {
         setShowSuccessAnimation(true);
         setTimeout(() => setShowSuccessAnimation(false), 3000);
       }
     }, 1200);
   };
 
-  const isValidEmail = (email: string) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  };
-
   const resetForm = () => {
     // Animate out before resetting
     setFadeIn(false);
     setTimeout(() => {
-      setEmail('');
+      setUnitId('');
       setResult(null);
       setHasChecked(false);
       setFadeIn(true);
@@ -113,14 +109,14 @@ const ResultChecker: React.FC = () => {
   };
 
   const refreshData = async () => {
-    toast.info("Refreshing talent database...", {
+    toast.info("Refreshing property database...", {
       id: "refreshing-data"
     });
-    await loadCandidateData();
+    await loadPropertyData();
     
     // If user already checked result, update it with fresh data
-    if (result && email) {
-      const updatedResult = findCandidateByEmail(candidates, email);
+    if (result && unitId) {
+      const updatedResult = findPropertyByUnitId(properties, unitId);
       setResult(updatedResult);
     }
   };
@@ -138,8 +134,8 @@ const ResultChecker: React.FC = () => {
         
         {!hasChecked ? (
           <EmailForm 
-            email={email}
-            setEmail={setEmail}
+            unitId={unitId}
+            setUnitId={setUnitId}
             isLoading={isLoading}
             handleCheck={handleCheck}
             refreshData={refreshData}

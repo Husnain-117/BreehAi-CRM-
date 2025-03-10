@@ -6,11 +6,12 @@ const SHEET_ID = import.meta.env.VITE_SHEET_ID;
 const API_KEY = import.meta.env.VITE_GOOGLE_SHEETS_API_KEY;
 const RANGE = "A2:E1000"; // Increased range to handle more entries
 
-export interface CandidateData {
-  email: string;
-  selected: boolean;
-  designation: string;
-  team: string;
+export interface PropertyData {
+  unitId: string;
+  verified: boolean;
+  ownerName: string;
+  floorLevel: string;
+  unitType: string;
 }
 
 // Constants
@@ -20,8 +21,8 @@ const RETRY_DELAY = 1000; // 1 second
 // Utility functions
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-const processSheetData = (data: any): CandidateData[] => {
-  const candidates: CandidateData[] = [];
+const processSheetData = (data: any): PropertyData[] => {
+  const properties: PropertyData[] = [];
   
   if (!data.values) {
     console.warn('No data found in the spreadsheet');
@@ -30,23 +31,24 @@ const processSheetData = (data: any): CandidateData[] => {
   
   data.values.forEach((row: any[]) => {
     if (row[0] && typeof row[0] === 'string') {
-      candidates.push({
-        email: row[0].trim().toLowerCase(),
-        selected: row[1]?.toLowerCase() === 'selected',
-        designation: row[2]?.trim() || '',
-        team: row[3]?.trim() || ''
+      properties.push({
+        unitId: row[0].trim().toUpperCase(),
+        verified: row[1]?.toLowerCase() === 'verified',
+        ownerName: row[2]?.trim() || '',
+        floorLevel: row[3]?.trim() || '',
+        unitType: row[4]?.trim() || ''
       });
     }
   });
   
-  console.log('Successfully fetched candidates:', candidates.length);
-  return candidates;
+  console.log('Successfully fetched properties:', properties.length);
+  return properties;
 };
 
 /**
- * Fetches candidate data from Google Sheets
+ * Fetches property data from Google Sheets
  */
-export const fetchCandidateData = async (): Promise<CandidateData[]> => {
+export const fetchPropertyData = async (): Promise<PropertyData[]> => {
   if (!SHEET_ID || !API_KEY) {
     console.error('Missing required environment variables');
     toast.error('Database configuration error. Please contact support.');
@@ -114,14 +116,14 @@ export const fetchCandidateData = async (): Promise<CandidateData[]> => {
 }
 
 /**
- * Searches for a candidate by email in the dataset
+ * Searches for a property by unit ID in the dataset
  */
-export const findCandidateByEmail = (
-  candidates: CandidateData[],
-  email: string
-): CandidateData | null => {
-  const candidate = candidates.find(
-    (c) => c.email.toLowerCase() === email.toLowerCase()
+export const findPropertyByUnitId = (
+  properties: PropertyData[],
+  unitId: string
+): PropertyData | null => {
+  const property = properties.find(
+    (p) => p.unitId.toUpperCase() === unitId.toUpperCase()
   );
-  return candidate || null;
+  return property || null;
 };

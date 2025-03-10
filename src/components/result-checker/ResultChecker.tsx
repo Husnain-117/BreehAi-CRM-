@@ -49,7 +49,7 @@ const ResultChecker: React.FC = () => {
     } catch (error) {
       console.error("Failed to load property data:", error);
       setConnectionError(true);
-      toast.error("Unable to load our property database. Please refresh or try again later.", {
+      toast.error("Unable to connect to our database. Please refresh or try again later.", {
         duration: 5000,
         id: "connection-error"
       });

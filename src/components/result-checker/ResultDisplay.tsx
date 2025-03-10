@@ -34,14 +34,17 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ result, resetForm, refres
         <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4 animate-fade-in" style={{ animationDelay: '0.4s' }}>
           <h3 className="font-semibold text-green-800 mb-2">Unit Details</h3>
           <div className="grid grid-cols-2 gap-2 text-left">
-            <div className="text-sm text-gray-600">Owner:</div>
-            <div className="text-sm font-medium text-green-900">{result.ownerName}</div>
+            <div className="text-sm text-gray-600">Customer:</div>
+            <div className="text-sm font-medium text-green-900">{result.customerName}</div>
             
-            <div className="text-sm text-gray-600">Floor:</div>
+            <div className="text-sm text-gray-600">Floor Level:</div>
             <div className="text-sm font-medium text-green-900">{result.floorLevel}</div>
             
-            <div className="text-sm text-gray-600">Type:</div>
-            <div className="text-sm font-medium text-green-900">{result.unitType}</div>
+            <div className="text-sm text-gray-600">Price per sq.ft:</div>
+            <div className="text-sm font-medium text-green-900">{result.priceSqft}</div>
+            
+            <div className="text-sm text-gray-600">Unit Price:</div>
+            <div className="text-sm font-medium text-green-900">{result.unitPrice}</div>
           </div>
         </div>
         

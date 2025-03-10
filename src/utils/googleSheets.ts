@@ -4,14 +4,15 @@ import { toast } from "sonner";
 // Google Sheets API configuration
 const SHEET_ID = import.meta.env.VITE_SHEET_ID;
 const API_KEY = import.meta.env.VITE_GOOGLE_SHEETS_API_KEY;
-const RANGE = "A2:E1000"; // Increased range to handle more entries
+const RANGE = "A2:E100"; // Adjusted range to match the new sheet format
 
 export interface PropertyData {
   unitId: string;
   verified: boolean;
-  ownerName: string;
+  customerName: string;
   floorLevel: string;
-  unitType: string;
+  priceSqft: string;
+  unitPrice: string;
 }
 
 // Constants
@@ -31,12 +32,15 @@ const processSheetData = (data: any): PropertyData[] => {
   
   data.values.forEach((row: any[]) => {
     if (row[0] && typeof row[0] === 'string') {
+      // Based on the screenshot, the columns are:
+      // A: Unit ID, B: Customer, C: Floor, D: price sqft, E: unit price
       properties.push({
-        unitId: row[0].trim().toUpperCase(),
-        verified: row[1]?.toLowerCase() === 'verified',
-        ownerName: row[2]?.trim() || '',
-        floorLevel: row[3]?.trim() || '',
-        unitType: row[4]?.trim() || ''
+        unitId: row[0]?.trim() || '',
+        verified: true, // All entries in the sheet are considered verified
+        customerName: row[1]?.trim() || '',
+        floorLevel: row[2]?.toString() || '',
+        priceSqft: row[3]?.toString() || '',
+        unitPrice: row[4]?.toString() || ''
       });
     }
   });

@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -103,18 +102,48 @@ export default {
 					'0%': { backgroundPosition: '0% 50%' },
 					'50%': { backgroundPosition: '100% 50%' },
 					'100%': { backgroundPosition: '0% 50%' }
-				}
+				},
+				'fade-in': {
+					'0%': { opacity: '0' },
+					'100%': { opacity: '1' },
+				},
+				'slide-in': {
+					'0%': { transform: 'translateX(-100%)' },
+					'100%': { transform: 'translateX(0)' },
+				},
+				'spin-slow': {
+					'0%': { transform: 'rotate(0deg)' },
+					'100%': { transform: 'rotate(360deg)' },
+				},
+				'bounce-slow': {
+					'0%, 100%': { transform: 'translateY(0)' },
+					'50%': { transform: 'translateY(-10px)' },
+				},
+				'pulse-slow': {
+					'0%, 100%': { opacity: '1' },
+					'50%': { opacity: '0.5' },
+				},
+				'starburst': {
+					'0%': { transform: 'scale(1)' },
+					'50%': { transform: 'scale(1.2)' },
+					'100%': { transform: 'scale(1)' },
+				},
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'float': 'float 3s ease-in-out infinite',
 				'shimmer': 'shimmer 2s linear infinite',
-				'fade-in': 'fadeIn 0.5s ease-out forwards',
+				'fade-in': 'fade-in 0.5s ease-out',
 				'fade-out': 'fadeOut 0.5s ease-out forwards',
 				'scale': 'scale 0.3s ease-out forwards',
 				'confetti': 'confetti 1s ease-out forwards',
-				'gradient': 'gradient 15s ease infinite'
+				'gradient': 'gradient 15s ease infinite',
+				'slide-in': 'slide-in 0.5s ease-out',
+				'spin-slow': 'spin-slow 3s linear infinite',
+				'bounce-slow': 'bounce-slow 2s infinite',
+				'pulse-slow': 'pulse-slow 2s infinite',
+				'starburst': 'starburst 0.5s ease-out',
 			},
 			fontFamily: {
 				sans: ['Inter', 'sans-serif'],

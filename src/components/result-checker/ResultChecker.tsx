@@ -1,96 +1,75 @@
-
 import React, { useState, useEffect } from 'react';
 import { toast } from "sonner";
 import { RefreshCw } from 'lucide-react';
 import SuccessAnimation from '../SuccessAnimation';
-import { fetchPropertyData, PropertyData, findPropertyByUnitId } from '../../utils/googleSheets';
+import { fetchCandidateData, CandidateData, findCandidateByEmail } from '../../utils/googleSheets';
 import EmailForm from './EmailForm';
 import ResultDisplay from './ResultDisplay';
 import ConnectionError from './ConnectionError';
 import LoadingOverlay from './LoadingOverlay';
 
 const ResultChecker: React.FC = () => {
-  const [unitId, setUnitId] = useState('');
+  const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [result, setResult] = useState<PropertyData | null>(null);
+  const [result, setResult] = useState<CandidateData | null>(null);
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
   const [hasChecked, setHasChecked] = useState(false);
   const [fadeIn, setFadeIn] = useState(false);
-  const [properties, setProperties] = useState<PropertyData[]>([]);
+  const [candidates, setCandidates] = useState<CandidateData[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [connectionError, setConnectionError] = useState(false);
 
   useEffect(() => {
-    // Trigger fade-in animation on mount
     setTimeout(() => setFadeIn(true), 100);
-    
-    // Load property data from Google Sheets
-    loadPropertyData();
+    loadCandidateData();
   }, []);
 
-  const loadPropertyData = async () => {
+  const loadCandidateData = async () => {
     setDataLoading(true);
     setConnectionError(false);
     try {
-      const data = await fetchPropertyData();
+      const data = await fetchCandidateData();
       if (data.length === 0) {
         setConnectionError(true);
-        toast.error("Connection issue with our property database. Please try refreshing.", {
-          duration: 5000,
-          id: "connection-error"
-        });
+        toast.error("Connection issue with our result database. Please try refreshing.", { duration: 5000, id: "connection-error" });
       } else {
-        setProperties(data);
-        toast.success(`Connected to property database with ${data.length} units`, {
-          duration: 3000,
-          id: "connection-success"
-        });
+        setCandidates(data);
+        toast.success(`Connected to result database with ${data.length} candidates`, { duration: 3000, id: "connection-success" });
       }
     } catch (error) {
-      console.error("Failed to load property data:", error);
       setConnectionError(true);
-      toast.error("Unable to connect to our database. Please refresh or try again later.", {
-        duration: 5000,
-        id: "connection-error"
-      });
+      toast.error("Unable to connect to our database. Please refresh or try again later.", { duration: 5000, id: "connection-error" });
     } finally {
       setDataLoading(false);
     }
   };
 
   const handleCheck = () => {
-    if (!unitId) {
-      toast.error('Please enter a unit ID to verify');
+    if (!email) {
+      toast.error('Please enter your email address');
       return;
     }
-
-    if (unitId.length < 2) {
-      toast.error('Please enter a valid unit ID');
+    if (!email.includes('@')) {
+      toast.error('Please enter a valid email address');
       return;
     }
-
     if (dataLoading) {
-      toast.error('Our property database is still loading. Please wait a moment.');
+      toast.error('Our result database is still loading. Please wait a moment.');
       return;
     }
-
-    if (connectionError || properties.length === 0) {
+    if (connectionError || candidates.length === 0) {
       toast.error('Unable to connect to our database. Please refresh and try again.');
       return;
     }
-
     setIsLoading(true);
     setHasChecked(false);
     setResult(null);
-
-    // Small delay for UX purposes
     setTimeout(() => {
-      const property = findPropertyByUnitId(properties, unitId);
-      setResult(property);
+      const candidate = findCandidateByEmail(candidates, email);
+      setResult(candidate);
       setIsLoading(false);
       setHasChecked(true);
-      
-      if (property?.verified) {
+      if (candidate && candidate.status.toLowerCase() === 'selected') {
         setShowSuccessAnimation(true);
         setTimeout(() => setShowSuccessAnimation(false), 3000);
       }
@@ -98,10 +77,9 @@ const ResultChecker: React.FC = () => {
   };
 
   const resetForm = () => {
-    // Animate out before resetting
     setFadeIn(false);
     setTimeout(() => {
-      setUnitId('');
+      setEmail('');
       setResult(null);
       setHasChecked(false);
       setFadeIn(true);
@@ -109,14 +87,10 @@ const ResultChecker: React.FC = () => {
   };
 
   const refreshData = async () => {
-    toast.info("Refreshing property database...", {
-      id: "refreshing-data"
-    });
-    await loadPropertyData();
-    
-    // If user already checked result, update it with fresh data
-    if (result && unitId) {
-      const updatedResult = findPropertyByUnitId(properties, unitId);
+    toast.info("Refreshing result database...", { id: "refreshing-data" });
+    await loadCandidateData();
+    if (result && email) {
+      const updatedResult = findCandidateByEmail(candidates, email);
       setResult(updatedResult);
     }
   };
@@ -134,8 +108,8 @@ const ResultChecker: React.FC = () => {
         
         {!hasChecked ? (
           <EmailForm 
-            unitId={unitId}
-            setUnitId={setUnitId}
+            unitId={email}
+            setUnitId={setEmail}
             isLoading={isLoading}
             handleCheck={handleCheck}
             refreshData={refreshData}

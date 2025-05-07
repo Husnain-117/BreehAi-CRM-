@@ -1,117 +1,111 @@
-
 import React from 'react';
-import { Check, X, Building, MapPin, RefreshCw } from 'lucide-react';
-import { PropertyData } from '../../utils/googleSheets';
+import { Check, X, User, Briefcase, RefreshCw, Star } from 'lucide-react';
+import { CandidateData } from '../../utils/googleSheets';
 
 interface ResultDisplayProps {
-  result: PropertyData | null;
+  result: CandidateData | null;
   resetForm: () => void;
   refreshData: () => void;
 }
 
 const ResultDisplay: React.FC<ResultDisplayProps> = ({ result, resetForm, refreshData }) => {
-  if (result?.verified) {
+  if (!result) {
     return (
-      <div className="text-center animate-fade-in">
-        <div className="inline-flex items-center justify-center w-16 h-16 mb-4 rounded-full bg-gradient-to-br from-green-100 to-green-200 shadow-md animate-pulse">
-          <Check className="h-8 w-8 text-green-800" />
-        </div>
-        <h2 className="text-2xl md:text-3xl font-bold mb-3 text-transparent bg-clip-text bg-gradient-to-r from-green-800 to-yellow-500 relative inline-block">
-          Verified Property
-          <span className="absolute top-0 right-0 transform translate-x-6 -translate-y-2">
-            <Building className="h-5 w-5 text-yellow-500 animate-bounce" />
-          </span>
-        </h2>
-        <p className="text-lg mb-2 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-          This premium commercial unit is verified at
-        </p>
-        <div className="mb-2 animate-fade-in inline-block" style={{ animationDelay: '0.3s' }}>
-          <span className="font-bold text-xl text-transparent bg-clip-text bg-gradient-to-r from-green-800 to-yellow-500">
-            The Dunes Mall
-          </span>
-        </div>
-        
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4 animate-fade-in" style={{ animationDelay: '0.4s' }}>
-          <h3 className="font-semibold text-green-800 mb-2">Unit Details</h3>
-          <div className="grid grid-cols-2 gap-2 text-left">
-            <div className="text-sm text-gray-600">Customer:</div>
-            <div className="text-sm font-medium text-green-900">{result.customerName}</div>
-            
-            <div className="text-sm text-gray-600">Floor Level:</div>
-            <div className="text-sm font-medium text-green-900">{result.floorLevel}</div>
-            
-            <div className="text-sm text-gray-600">Price per sq.ft:</div>
-            <div className="text-sm font-medium text-green-900">{result.priceSqft}</div>
-            
-            <div className="text-sm text-gray-600">Unit Price:</div>
-            <div className="text-sm font-medium text-green-900">{result.unitPrice}</div>
-          </div>
-        </div>
-        
-        <div className="flex items-center justify-center gap-2 mb-4 animate-fade-in" style={{ animationDelay: '0.5s' }}>
-          <MapPin className="h-4 w-4 text-green-800" />
-          <span className="text-sm font-medium">
-            <span className="text-green-700">Avenue5 International Development</span>
-          </span>
-        </div>
-        
-        <div className="flex gap-3">
-          <button
-            onClick={resetForm}
-            className="flex-1 group relative overflow-hidden bg-green-800 text-white px-6 py-3 rounded-lg font-medium shadow-md transition-all duration-300 hover:shadow-lg hover:bg-green-700"
-          >
-            <span className="relative z-10">Check Another</span>
-            <div className="absolute inset-0 bg-white/10 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-700"></div>
-          </button>
-          <button
-            onClick={refreshData}
-            className="p-3 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
-            title="Refresh data"
-          >
-            <RefreshCw className="h-5 w-5 text-green-800" />
-          </button>
-        </div>
-      </div>
-    );
-  } else {
-    return (
-      <div className="text-center animate-fade-in">
-        <div className="inline-flex items-center justify-center w-16 h-16 mb-4 rounded-full bg-gradient-to-br from-red-100 to-red-200 shadow-md animate-pulse">
+      <div className="bg-white rounded-2xl shadow-xl p-8 text-center animate-fade-in">
+        <div className="inline-flex items-center justify-center w-16 h-16 mb-4 rounded-full bg-gradient-to-br from-yellow-400 to-red-400 shadow-md animate-pulse">
           <X className="h-8 w-8 text-red-600" />
         </div>
-        <h2 className="text-xl md:text-2xl font-bold mb-3 text-red-600">
-          Unverified Unit
+        <h2 className="text-xl md:text-2xl font-bold mb-3 text-red-500">
+          No Record Found
         </h2>
-        <p className="text-base mb-4 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-          We could not verify this unit ID in our records for The Dunes Mall.
+        <p className="text-base mb-4 animate-fade-in text-gray-500" style={{ animationDelay: '0.2s' }}>
+          We could not find any internship application with this email address.
         </p>
-        <div className="p-4 bg-gray-50 rounded-lg mb-4 animate-fade-in" style={{ animationDelay: '0.3s' }}>
+        <div className="p-4 bg-gray-100 border border-gray-200 rounded-lg mb-4 animate-fade-in" style={{ animationDelay: '0.3s' }}>
           <p className="text-sm text-gray-600 italic">
-            "If you believe this is an error, please contact Avenue5 International's property management office for assistance."
+            "Please check your email address and try again, or contact Trendtial support if you believe this is an error."
           </p>
         </div>
-        <p className="text-sm text-gray-600 mb-6 animate-fade-in" style={{ animationDelay: '0.4s' }}>
-          Please check your unit ID and try again, or contact our support team.
-        </p>
-        <div className="flex gap-3">
+        <div className="flex gap-3 mt-4">
           <button
             onClick={resetForm}
-            className="flex-1 group relative overflow-hidden bg-green-800 text-white px-6 py-3 rounded-lg font-medium shadow-md transition-all duration-300 hover:shadow-lg hover:bg-green-700"
+            className="flex-1 group relative overflow-hidden bg-red-600 text-white px-6 py-3 rounded-lg font-semibold shadow-md transition-all duration-300 hover:shadow-lg hover:bg-red-500"
           >
             <span className="relative z-10">Try Again</span>
             <div className="absolute inset-0 bg-white/10 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-700"></div>
           </button>
           <button
             onClick={refreshData}
-            className="p-3 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+            className="p-3 rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
             title="Refresh data"
           >
-            <RefreshCw className="h-5 w-5 text-green-800" />
+            <RefreshCw className="h-5 w-5 text-red-600" />
           </button>
         </div>
       </div>
     );
   }
+
+  const isSelected = result.status.trim().toLowerCase() === 'selected';
+
+  return (
+    <div className="bg-white rounded-2xl shadow-2xl p-10 text-center animate-fade-in max-w-md mx-auto">
+      <div className="inline-flex items-center justify-center w-20 h-20 mb-6 rounded-full bg-gradient-to-br from-yellow-300 to-orange-400 shadow-lg animate-pulse">
+        {isSelected ? <Check className="h-10 w-10 text-white" /> : <X className="h-10 w-10 text-red-600" />}
+      </div>
+      <h2 className="text-3xl md:text-4xl font-extrabold mb-1 bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 bg-clip-text text-transparent" style={{ letterSpacing: '-1px' }}>
+        {isSelected ? 'Congratulations!' : 'Not Selected'}
+      </h2>
+      {isSelected && <div className="text-4xl mb-2">🎉</div>}
+      <p className="text-base md:text-lg mb-8 animate-fade-in text-gray-600 font-medium" style={{ animationDelay: '0.2s' }}>
+        {isSelected
+          ? 'You have been selected for the Trendtial Internship!'
+          : 'Thank you for applying to the Trendtial Internship.'}
+      </p>
+      <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 mb-8 animate-fade-in text-left max-w-md mx-auto shadow-sm">
+        <h3 className="font-semibold text-red-500 mb-3 flex items-center gap-2 text-lg">
+          <User className="h-5 w-5 text-yellow-400" /> <span>Candidate Details</span>
+        </h3>
+        <div className="grid grid-cols-2 gap-y-3 gap-x-4">
+          <div className="text-sm text-gray-600">Name:</div>
+          <div className="text-sm font-bold text-gray-900">{result.name}</div>
+          <div className="text-sm text-gray-600">Status:</div>
+          <div className={`text-sm font-bold ${isSelected ? 'text-yellow-500' : 'text-red-500'}`}>{result.status}</div>
+          <div className="text-sm text-gray-600">Position:</div>
+          <div className="text-sm font-bold text-gray-900">{result.position}</div>
+          <div className="text-sm text-gray-600">Lead Name:</div>
+          <div className="text-sm font-bold text-gray-900">{result.leadName}</div>
+        </div>
+      </div>
+      {isSelected ? (
+        <div className="flex items-center justify-center gap-2 mb-6 animate-fade-in text-yellow-500 font-bold text-lg" style={{ animationDelay: '0.5s' }}>
+          <Star className="h-5 w-5 animate-bounce" />
+          <span>Welcome to the Trendtial team!</span>
+        </div>
+      ) : (
+        <div className="flex items-center justify-center gap-2 mb-6 animate-fade-in text-gray-500 font-medium" style={{ animationDelay: '0.5s' }}>
+          <Briefcase className="h-5 w-5" />
+          <span>We encourage you to apply again in the future.</span>
+        </div>
+      )}
+      <div className="flex gap-3 mt-2">
+        <button
+          onClick={resetForm}
+          className="flex-1 group relative overflow-hidden bg-red-600 text-white px-6 py-3 rounded-lg font-semibold shadow-md transition-all duration-300 hover:shadow-lg hover:bg-red-500"
+        >
+          <span className="relative z-10">Check Another</span>
+          <div className="absolute inset-0 bg-white/10 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-700"></div>
+        </button>
+        <button
+          onClick={refreshData}
+          className="p-3 rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
+          title="Refresh data"
+        >
+          <RefreshCw className="h-5 w-5 text-red-600" />
+        </button>
+      </div>
+    </div>
+  );
 };
 
 export default ResultDisplay;

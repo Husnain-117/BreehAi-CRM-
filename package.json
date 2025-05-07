@@ -1,5 +1,5 @@
 {
-  "name": "vite_react_shadcn_ts",
+  "name": "trendtial-internship-result-announcement",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -79,5 +79,7 @@
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1",
     "vite": "^5.4.1"
-  }
+  },
+  "description": "A modern, interactive web app for Trendtial internship candidates to check their selection status using their email address. Connects to a Google Sheet for real-time results.",
+  "keywords": ["trendtial", "internship", "result", "announcement", "react", "vite", "google sheets"]
 }

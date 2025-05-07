@@ -34,20 +34,28 @@ function LinkSubmissionForm({ email, onSuccess }: LinkSubmissionFormProps) {
     <form onSubmit={handleSubmit} className="space-y-4">
       <Input
         type="url"
-        placeholder="Instagram Post Link"
+        placeholder="https://www.instagram.com/yourpost"
         value={instagramLink}
         onChange={e => setInstagramLink(e.target.value)}
         required
         className="w-full"
       />
+      <p className="text-xs text-gray-500 mt-1">
+        Format: <span className="font-mono">https://www.instagram.com/yourpost</span><br />
+        Example: <span className="font-mono">https://www.instagram.com/p/abc123xyz/</span>
+      </p>
       <Input
         type="url"
-        placeholder="LinkedIn Post Link"
+        placeholder="https://www.linkedin.com/in/yourprofile"
         value={linkedinLink}
         onChange={e => setLinkedinLink(e.target.value)}
         required
         className="w-full"
       />
+      <p className="text-xs text-gray-500 mt-1">
+        Format: <span className="font-mono">https://www.linkedin.com/in/yourprofile</span><br />
+        Example: <span className="font-mono">https://www.linkedin.com/in/johndoe/</span>
+      </p>
       <Button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-yellow-400 to-red-500 hover:from-yellow-500 hover:to-red-600">
         {loading ? 'Saving...' : 'Save Links'}
       </Button>

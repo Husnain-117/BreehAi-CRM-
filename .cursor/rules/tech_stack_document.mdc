@@ -1,0 +1,28 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+
+
+
+# Technology Stack
+
+| Layer           | Choice            | Rationale                              |
+|-----------------|-------------------|----------------------------------------|
+| Front-End       | React 18          | Mature ecosystem, hooks, community     |
+| Bundler         | Vite              | Fast HMR, ESBuild underneath           |
+| Styling         | Tailwind CSS      | Utility-first; design consistency      |
+| State/Data      | TanStack Query    | Server-state cache, retries, suspense  |
+| Back-End        | Supabase          | Postgres + Auth + Realtime out-of-box  |
+| Serverless      | Supabase EdgeFns  | Deno-based; low-latency functions      |
+| Storage         | Supabase Storage  | Built-in object store                  |
+| External API    | Google Sheets v4  | Source of sales data for non-tech users|
+| Tests (unit)    | Vitest            | Fast, Jest-compatible API              |
+| Tests (e2e)     | Cypress           | Reliable browser automation            |
+| CI/CD           | GitHub Actions    | Native, extensible, free minutes       |
+| Monitoring      | Supabase Logs + Sentry | Application & error tracking     |
+| Analytics       | PostHog           | Product analytics, self-host option    |
+
+---
+

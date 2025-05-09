@@ -1,0 +1,78 @@
+---
+description: Guidelines for creating and maintaining Cursor rules to ensure consistency and effectiveness.
+globs: .cursor/rules/*.mdc
+alwaysApply: true
+---
+---
+description: Clear, one-line description of what the rule enforces
+globs: path/to/files/*.ext, other/path/**/*
+alwaysApply: boolean
+---
+
+- **Main Points in Bold**
+  - Sub-points with details
+  - Examples and explanations
+
+# Cursor Governance Rules (SalesHubPro)
+
+## 1. Rule Structure & Maintenance
+- All rules must follow the markdown structure outlined below for clarity and consistency.
+- Rules must be actionable, specific, and reference actual code or documentation where possible.
+- Update rules when new patterns, tools (e.g., MCP server), or workflows are introduced.
+- Cross-reference related rules and documentation (e.g., [self_improve.mdc](mdc:.cursor/rules/self_improve.mdc), [dev_workflow.mdc](mdc:.cursor/rules/dev_workflow.mdc)).
+
+## 2. MCP Server & Cursor Integration
+- MCP server must be enabled in Cursor for all AI-driven workflows and Supabase management.
+- All contributors must use Cursor with MCP server for project automation, migrations, and edge function deployment.
+- Taskmaster tools (task breakdown, complexity analysis) must be run via MCP server in Cursor when possible.
+- Refer to the [README.md](mdc:../README.md) and [cursor_project_rules.mdc](mdc:.cursor/rules/cursor_project_rules.mdc) for integration steps and requirements.
+
+## 3. Rule Content Guidelines
+- Start with a high-level overview, then provide specific, actionable requirements.
+- Use code examples from the actual codebase.
+- Include both DO and DON'T examples for clarity.
+- Reference files using `[filename](mdc:path/to/file)` syntax.
+- Keep rules DRY by referencing other rules where appropriate.
+
+## 4. Rule Improvement & Deprecation
+- Continuously monitor code reviews and implementation for new patterns.
+- Add new rules for repeated patterns, new tools, or best practices (see [self_improve.mdc](mdc:.cursor/rules/self_improve.mdc)).
+- Mark outdated rules as deprecated and document migration paths.
+
+## 5. Documentation & Cross-Referencing
+- All rules must be documented in `.cursor/rules/` and referenced in the README.md as needed.
+- Update README.md and rule files together when workflows, integrations, or project structure change.
+- For detailed workflow, see [dev_workflow.mdc](mdc:.cursor/rules/dev_workflow.mdc) and [taskmaster.mdc](mdc:.cursor/rules/taskmaster.mdc).
+
+## 6. Best Practices
+- Use bullet points for clarity and concise descriptions.
+- Reference actual code and documentation over theoretical examples.
+- Ensure all contributors are aware of and follow these rules for consistent, high-quality development.
+
+- **File References:**
+  - Use `[filename](mdc:path/to/file)` ([filename](mdc:filename)) to reference files
+  - Example: [prisma.mdc](mdc:.cursor/rules/prisma.mdc) for rule references
+  - Example: [schema.prisma](mdc:prisma/schema.prisma) for code references
+
+- **Code Examples:**
+  - Use language-specific code blocks
+  ```typescript
+  // ✅ DO: Show good examples
+  const goodExample = true;
+  
+  // ❌ DON'T: Show anti-patterns
+  const badExample = false;
+  ```
+
+- **Rule Maintenance:**
+  - Update rules when new patterns emerge
+  - Add examples from actual codebase
+  - Remove outdated patterns
+  - Cross-reference related rules
+
+- **Best Practices:**
+  - Use bullet points for clarity
+  - Keep descriptions concise
+  - Include both DO and DON'T examples
+  - Reference actual code over theoretical examples
+  - Use consistent formatting across rules 

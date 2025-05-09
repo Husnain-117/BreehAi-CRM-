@@ -1,0 +1,82 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+
+
+
+# Backend Structure – SalesHubPro
+
+## 1. Stack Summary
+* **Runtime**: Node 20 / Deno (Supabase edge functions)  
+* **Data**: Supabase Postgres + Storage  
+* **Realtime**: Supabase Realtime channels  
+* **External**: Google Sheets API v4
+
+## 2. Database Schema
+
+### Table: users
+| Column          | Type        | Notes                         |
+|-----------------|-------------|-------------------------------|
+| id (PK)         | uuid        | Auth user id                  |
+| full_name       | text        |                               |
+| email           | text        | unique                        |
+| role            | text        | `agent` \| `manager` \| `admin` |
+| manager_id      | uuid        | FK → users.id (nullable)      |
+| created_at      | timestamptz | default `now()`               |
+
+### Table: leads
+| Column          | Type        | Notes                         |
+|-----------------|-------------|-------------------------------|
+| id (PK)         | uuid        |                               |
+| sheet_row_id    | text        | Google Sheets row identifier  |
+| agent_id        | uuid        | FK → users.id                 |
+| status_bucket   | text        | `P1` \| `P2` \| `P3`          |
+| name            | text        |                               |
+| email           | text        |                               |
+| phone           | text        |                               |
+| company         | text        |                               |
+| created_at      | timestamptz |                               |
+| updated_at      | timestamptz |                               |
+
+### Table: follow_ups
+| Column       | Type        | Notes                    |
+|--------------|-------------|--------------------------|
+| id (PK)      | uuid        |                          |
+| lead_id      | uuid        | FK → leads.id            |
+| due_at       | timestamptz |                          |
+| note         | text        |                          |
+| created_by   | uuid        | FK → users.id            |
+
+### Table: meetings
+| Column       | Type        | Notes                    |
+|--------------|-------------|--------------------------|
+| id (PK)      | uuid        |                          |
+| lead_id      | uuid        | FK → leads.id            |
+| starts_at    | timestamptz |                          |
+| ends_at      | timestamptz | nullable                 |
+| location     | text        | url / address / video    |
+| agenda       | text        |                          |
+| created_by   | uuid        | FK → users.id            |
+
+## 3. API Surface
+
+| Method | Path                    | Auth | Description                  |
+|--------|-------------------------|------|------------------------------|
+| POST   | /auth/login             | ❌   | Supabase handles             |
+| GET    | /leads                  | ✅   | Filter & paginate            |
+| POST   | /leads                  | ✅   | Create                       |
+| PATCH  | /leads/:id              | ✅   | Update                       |
+| POST   | /follow-ups             | ✅   | Schedule follow-up           |
+| GET    | /meetings               | ✅   | List & filter                |
+
+## 4. Google Sheets Sync
+* **Interval**: every 5 min via Supabase scheduled function.  
+* **Conflict Strategy**: Sheets are source of truth for new rows; app overwrites take precedence once row has `sync_lock=true`.
+
+## 5. Realtime Events
+`INSERT`, `UPDATE`, `DELETE` triggers on `leads`, `follow_ups`, `meetings` broadcast to Auth-bound channel `realtime:{user.id}`.
+
+---
+

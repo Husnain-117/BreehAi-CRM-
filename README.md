@@ -1,60 +1,246 @@
-# Trendtial Internship Result Announcement
+# SalesHubPro
 
-A modern, interactive web app for Trendtial internship candidates to check their selection status using their email address. The app connects to a Google Sheet for real-time results and provides a beautiful, engaging user experience.
+SalesHubPro is a role-based, real-time sales enablement platform that synchronises Google Sheets data with a Postgres-backed Supabase stack and surfaces it through a blazing-fast React front-end.  
+It is optimised for sales teams that need **sub-second navigation**, clear workflows, and an admin experience that never requires direct database access.
 
-## Features
-- Search your internship result by email address
-- See your name, selection status, position, and lead name
-- Distinct, interactive UI for selected and not selected candidates
-- Real-time data from [Trendtial Internship Sheet](https://docs.google.com/spreadsheets/d/1HzEzCp6mSV6qxlGuRWtHT2whenx3xxTYpSl1b9JbXR4/edit?usp=sharing)
-- Modern, responsive design inspired by Trendtial branding
+---
 
-## Technologies Used
-- Vite
-- React + TypeScript
-- shadcn-ui
-- Tailwind CSS
-- Google Sheets API
+## Project Repository
 
-## Setup & Development
+- **GitHub:** [https://github.com/sheryarkayani/trendtialcrm](https://github.com/sheryarkayani/trendtialcrm)
 
-1. **Clone the repository:**
-   ```sh
-   git clone <YOUR_GIT_URL>
-   cd trendtial-internship-result-announcement
-   ```
-2. **Install dependencies:**
-   ```sh
-   npm install
-   ```
-3. **Configure environment variables:**
-   - Create a `.env` file in the root directory with the following:
-     ```env
-     VITE_SHEET_ID=1HzEzCp6mSV6qxlGuRWtHT2whenx3xxTYpSl1b9JbXR4
-     VITE_GOOGLE_SHEETS_API_KEY=YOUR_GOOGLE_SHEETS_API_KEY
-     ```
-   - [How to get a Google Sheets API key](https://developers.google.com/sheets/api/quickstart/js)
-4. **Run the development server:**
-   ```sh
-   npm run dev
-   ```
-5. **Open the app:**
-   - Visit [http://localhost:5173](http://localhost:5173) in your browser.
+---
 
-## Usage
-- Enter your email address in the search box.
-- Instantly see your result, including:
-  - Name
-  - Selection Status
-  - Position
-  - Lead Name
-- If selected, enjoy a celebratory animation and message!
-- If not selected, receive a supportive message and encouragement.
+## MCP Server Integration
 
-## Google Sheet Structure
-| Name | Email | Status | Position | Lead Name |
-|------|-------|--------|----------|-----------|
-| ...  | ...   | ...    | ...      | ...       |
+SalesHubPro is fully integrated with the MCP (Model Context Protocol) server, enabling advanced AI-driven development workflows directly within Cursor. The MCP server provides structured tools for Supabase management, task automation, and seamless collaboration between AI agents and developers.
 
-## License
-MIT
+- **MCP Server Status:** Enabled and connected in Cursor
+- **Supabase Tools:** Project management, migrations, edge functions, logs, and more
+- **Taskmaster Integration:** Automated task breakdown, complexity analysis, and workflow management
+
+Refer to the `.cursor/rules/` directory for detailed governance and workflow rules.
+
+---
+
+## Table of Contents
+1. [Key Features](#key-features)  
+2. [Technology Stack](#technology-stack)  
+3. [Architecture](#architecture)  
+4. [Folder Structure](#folder-structure)  
+5. [Setup & Installation](#setup--installation)  
+6. [Environment Variables](#environment-variables)  
+7. [Development Workflow](#development-workflow)  
+8. [Testing](#testing)  
+9. [CI / CD Pipeline](#ci--cd-pipeline)  
+10. [Performance & Optimisation](#performance--optimisation)  
+11. [Security](#security)  
+12. [Accessibility & UX](#accessibility--ux)  
+13. [Contributing](#contributing)  
+14. [License](#license)
+
+---
+
+## Key Features
+| Domain            | Capability                                                                                       |
+|-------------------|---------------------------------------------------------------------------------------------------|
+| Authentication    | Supabase Auth (email / password or magic-link) with JWT rotation and silent refresh               |
+| Role Management   | `agent`, `manager`, `super-admin`; RBAC enforced in database policies and client routes           |
+| Leads CRM         | High-volume, virtualised table; filters, global search, bulk actions                              |
+| Follow-Ups        | Kanban board grouped by due date; one-click reschedule                                            |
+| Meetings          | Calendar + list view; iCal export and email reminders                                             |
+| Dashboards        | Agent KPI cards, manager team analytics, admin org overview                                       |
+| Google Sheets Sync| 5-minute interval edge function keeps Sheets ↔ Postgres bi-directionally synced                  |
+| Real-time Events  | Supabase Realtime channels broadcast CRUD events to signed-in clients                             |
+| Admin Portal      | User provisioning, team hierarchy management, global settings                                     |
+| CI / CD           | GitHub Actions → staging → production; semantic versioning with autogenerated changelog           |
+
+---
+
+## Technology Stack
+| Layer            | Tool / Library            | Reasoning                                             |
+|------------------|---------------------------|-------------------------------------------------------|
+| Front-End        | **React 18**              | Mature ecosystem, hooks, concurrent rendering         |
+| Bundler          | **Vite**                  | Lightning-fast HMR, ESBuild core                      |
+| Styling          | **Tailwind CSS**          | Utility-first; design consistency, tiny bundle        |
+| Data-Fetching    | **TanStack Query**        | Declarative cache, automatic retries, suspense        |
+| Back-End         | **Supabase**              | Postgres, Auth, Realtime, Storage—all in one          |
+| Serverless Fns   | **Supabase Edge Functions**| Deno runtime, low latency                             |
+| External Source  | **Google Sheets API v4**  | Lets non-tech users manage raw data                   |
+| Unit Tests       | **Vitest + RTL**          | Jest-compatible, fast                                  |
+| E2E Tests        | **Cypress**               | Reliable browser automation                           |
+| CI / CD          | **GitHub Actions**        | Native, scalable, well-documented                     |
+| Monitoring       | **Sentry + Supabase Logs**| Error tracking & observability                        |
+
+---
+
+## Architecture
+┌────────────┐ Edge Fn ▸ Sync Worker ┌────────────┐
+│ Google │ Pull & Push (5 min) │ Supabase │
+│ Sheets │◂───────────────────────────────────▶│ Postgres │
+└────────────┘ │ + Realtime │
+▲ WebSocket (Row-level changes) └─────┬──────┘
+│ ▲
+│ HTTP / WS │
+┌───────┴────────┐ React App │
+│ Front-End (SPA)│◀────────────────────────────────────────────┘
+└────────────────┘
+
+
+* **Sheets are the system of record for *new* leads**.  
+* Once a row is edited inside SalesHubPro, the DB sets `sync_lock=true`; subsequent sheet changes to that row are ignored to avoid clobbering.  
+* Supabase Row Level Security restricts access by `role` and `user.id`.
+
+---
+
+## Folder Structure
+
+
+/
+├── .cursor/
+│ └── rules/ # governance .mdc files
+├── backend/
+│ ├── functions/ # Edge functions (sync, webhooks)
+│ └── migrations/
+├── frontend/
+│ ├── components/
+│ ├── pages/
+│ ├── hooks/
+│ └── tests/
+├── scripts/ # one-off tasks & generators
+├── docs/ # diagrams, post-mortems
+├── .env.example
+└── README.md
+
+
+---
+
+## Setup & Installation
+
+### 1. Prerequisites
+* Node ≥ 20  
+* pnpm ≥ 8  
+* Supabase CLI (`brew install supabase`)  
+* GitHub account for CI
+* Cursor IDE with MCP server enabled (see below)
+
+### 2. Clone & Install
+```bash
+git clone https://github.com/sheryarkayani/trendtialcrm.git
+cd saleshubpro
+pnpm install
+```
+
+### 3. Configure Environment
+Copy .env.example to .env.
+
+Fill in Supabase keys, Google API credentials, Sentry DSN, etc.
+
+Start local stack:
+
+```bash
+supabase start           # launches Postgres, Studio, edge runtime
+pnpm dev                 # runs Vite + Tailwind in watch mode
+```
+
+### 4. MCP Server Setup (for Cursor)
+- Ensure MCP server is enabled in Cursor (see Cursor Settings > MCP > supabase)
+- The MCP server provides direct access to Supabase tools and project automation
+- For more, see `.cursor/rules/` and the [Cursor MCP documentation](https://docs.cursor.so/mcp)
+
+### 5. First Run
+Open http://localhost:54321 for Supabase Studio.
+
+Run supabase db reset to apply schema & seed data.
+
+Navigate to http://localhost:5173 and log in via the seeded admin account.
+
+Environment Variables
+Variable	Description
+VITE_SUPABASE_URL	Supabase project URL
+VITE_SUPABASE_ANON_KEY	Public anon key
+GOOGLE_SERVICE_ACCOUNT	JSON creds for Sheets API
+SHEETS_DOC_ID_P1 etc.	Sheet IDs for P1, P2, P3 tabs
+SENTRY_DSN	Front-end error tracking
+SUPABASE_JWT_SECRET	Never commit real secret
+
+For full list see .env.example.
+
+Development Workflow
+Branch from feature/<ticket-id>-<slug>.
+
+Pre-commit hooks (Husky + lint-staged) enforce ESLint, Prettier, type-check.
+
+Conventional Commits style.
+
+PR requires 1 reviewer (2 for critical).
+
+Green CI is mandatory.
+
+Full details: dev_workflow.mdc
+
+Testing
+Layer	Tool	Command
+Unit	Vitest + RTL	pnpm test
+Integration	Supabase's in-memory suite	pnpm test:int
+E2E	Cypress	pnpm cypress:open
+
+Coverage target: ≥ 80 % lines & branches.
+
+CI / CD Pipeline
+GitHub Actions workflows:
+
+build.yml – install, lint, test, type-check.
+
+deploy-staging.yml – on merge to staging; pushes to Supabase staging project and Netlify (front-end).
+
+deploy-production.yml – tagged release (vX.Y.Z); blue-green swap.
+
+release.yml – runs changeset, updates CHANGELOG.md, bumps version.
+
+Secrets are stored in GitHub Encrypted Secrets (SUPABASE_SERVICE_KEY, NETLIFY_AUTH_TOKEN, etc.).
+
+Performance & Optimisation
+Table virtualisation (react-virtual) for 10 k+ rows.
+
+API pagination with keyset (created_at, id) over offset paging.
+
+Stale-while-revalidate caching via TanStack Query.
+
+Code-split by route & lazy loading of heavy charts.
+
+p95 page-load goal: < 200 ms on broadband / < 1 s on 3G.
+
+Security
+Row Level Security enabled by default; only database functions bypass.
+
+Supabase policies enforce agent_id = current_user on leads, etc.
+
+JWT expiry: 8 h; silent refresh at 7 h 45 m.
+
+Content Security Policy set via meta headers in index.html.
+
+OWASP dependency check in CI (pnpm audit --json).
+
+Sentry captures front- and back-end exceptions.
+
+Accessibility & UX
+WCAG 2.1 AA contrast ratio across theme.
+
+Full keyboard navigation; focus rings visible.
+
+aria- attributes on custom components.
+
+Error and empty states defined per screen (see App Flow doc).
+
+Contributing
+Read the Cursor Project Rules.
+
+Open an issue describing change.
+
+Fork → feature branch → PR to staging.
+
+Follow template & checklist in PR description.
+
+After merge, squash-and-merge strategy keeps linear history.
+

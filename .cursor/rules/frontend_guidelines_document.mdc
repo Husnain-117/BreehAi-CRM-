@@ -1,0 +1,46 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+
+
+
+# Front-End Guidelines
+
+## 1. Framework & Libraries
+* React 18 + Vite.
+* TanStack Query for data fetching cache.
+* React Router v6 for routing.
+* Tailwind CSS + daisyUI for UI kit.
+
+## 2. Component Structure
+frontend/
+components/
+Lead/
+LeadTable.tsx
+LeadRow.tsx
+pages/
+Dashboard/
+
+
+## 3. State Management
+* Global: TanStack Query + Context API where unavoidable.
+* Local: `useState` / `useReducer`.
+
+## 4. Performance
+* Code-split by route.
+* Use `Suspense` with lazy imports.
+* Virtualise long lists with `@tanstack/react-virtual`.
+
+## 5. Accessibility
+* Every interactive element reachable via keyboard.
+* `aria-` attributes on custom components.
+* Color contrast ≥ 4.5:1.
+
+## 6. Testing
+* Unit: Vitest + React Testing Library.  
+* E2E: Cypress (critical flows: login, CRUD lead, schedule meeting).
+
+---
+

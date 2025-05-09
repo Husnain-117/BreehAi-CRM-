@@ -1,0 +1,60 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+
+# App Flow – SalesHubPro
+
+## 1. Purpose
+Describe every user journey through SalesHubPro so that designers, developers, and testers share one mental model.
+
+## 2. Roles
+| Role          | Key Abilities                               |
+|---------------|---------------------------------------------|
+| Agent         | CRUD leads assigned to them; schedule follow-ups & meetings |
+| Manager       | View team dashboards; reassign leads; analytics |
+| Super Admin   | System-wide settings; user provisioning; billing |
+
+## 3. Primary Screens & Navigation
+
+1. **Login**  
+   → Role-based redirect.
+
+2. **Dashboard**  
+   - **Agent**: KPI cards (P1, P2, P3 counts), today’s follow-ups, upcoming meetings.  
+   - **Manager**: Team aggregate KPIs, heat map of agent performance, queue of approvals.  
+   - **Super Admin**: Org-wide KPIs, system health, user-management quick links.
+
+3. **Leads**  
+   - Table (virtualised) fed by Supabase `leads` view.  
+   - Column filters, global search, bulk actions.  
+   - Row context menu → *Add to follow-ups* | *Schedule meeting* | *Reassign lead*.
+
+4. **Follow-Ups**  
+   - Kanban by due date (Overdue, Today, Next 7 Days, Later).  
+   - Inline rescheduling.
+
+5. **Meetings**  
+   - Calendar (month/week/day) + list view.  
+   - iCal export and email reminders.
+
+6. **Profile / Admin**  
+   - Personal details, password reset, theme.  
+   - **Super Admin** sub-section: create/edit roles, team hierarchy, app settings.
+
+## 4. Error & Empty States
+Documented for every screen to keep UX consistent and helpful.
+
+## 5. Session Timing
+• JWT lifespan: 8 h  
+• Silent refresh after 7 h 45 m  
+• Auto-logout with toast warning at 8 h.
+
+## 6. Accessibility
+WCAG 2.1 AA minimum for flow-critical paths (login, CRUD, scheduling).
+
+---
+
+
+

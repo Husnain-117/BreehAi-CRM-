@@ -1,0 +1,47 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Cursor Project Rules
+
+## 1. Directory Layout
+rules/ ← all .mdc governance docs
+frontend/ ← React source
+backend/ ← Supabase functions & scripts
+scripts/ ← one-off automation
+docs/ ← exported user docs & diagrams
+.env* ← environment definitions
+.cursor/ ← Cursor IDE config, MCP server integration, and rules
+
+## 2. Naming
+* kebab-case for folders, camelCase for filenames except React components (PascalCase).
+* Tests mirror source path and suffix with `.test.tsx?`.
+
+## 3. Commits
+* Conventional Commits (`feat:`, `fix:`, `chore:`, etc.).
+* Limit first line to 72 chars.
+
+## 4. Branching
+main → staging → production
+feature/* → PR → staging
+hotfix/* → PR → production
+
+## 5. Code Style
+* Prettier + ESLint auto-fix on save.
+* No implicit `any`; enable `strictNullChecks`.
+
+## 6. MCP Server & Cursor Integration
+* MCP server must be enabled in Cursor for all AI-driven workflows.
+* All Supabase project management, migrations, and edge functions should be managed via MCP tools in Cursor.
+* Taskmaster integration is required for automated task breakdown, complexity analysis, and workflow management.
+* Refer to `.cursor/rules/` for detailed governance and workflow rules.
+* See [GitHub repo](mdc:https:/github.com/sheryarkayani/trendtialcrm) for source and CI/CD.
+
+## 7. Documentation
+* All new features and workflows must be documented in the appropriate `.mdc` file in `.cursor/rules/`.
+* README.md must always reflect the current state of the project, including MCP and Cursor integration.
+* Update this file whenever project structure, workflow, or integration changes.
+
+---
+

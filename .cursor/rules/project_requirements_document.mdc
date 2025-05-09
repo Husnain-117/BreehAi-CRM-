@@ -1,0 +1,34 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+
+
+
+# Project Requirements
+
+## 1. Functional
+1. Secure login via Supabase magic link or email/password.
+2. Role-based dashboards and permissions.
+3. Bi-directional sync with Google Sheets (≤ 5 min latency).
+4. Agents can create/update/delete their leads.
+5. Managers can reassign leads within their team.
+6. Follow-up scheduling with date picker & notes.
+7. Meeting scheduling with calendar view & iCal export.
+8. Super Admin can manage users & roles without DB access.
+
+## 2. Non-Functional
+* **Performance**: Any screen loads ≤ 200 ms (p95) on broadband, ≤ 1 s on 3G.  
+* **Scalability**: Support 10 k leads, 100 concurrent users without degradation.  
+* **Security**: OWASP Top 10 compliance, daily automated dependency scanning.  
+* **Availability**: 99.5 % uptime SLA.  
+* **Compliance**: GDPR (data deletion & export).  
+* **Accessibility**: WCAG 2.1 AA.
+
+## 3. Out of Scope (v1)
+* SMS integrations.  
+* Lead scoring ML model.  
+
+---
+

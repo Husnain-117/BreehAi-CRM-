@@ -1,0 +1,37 @@
+---
+description: Guidelines for continuously improving Cursor rules based on emerging code patterns and best practices.
+globs: **/*
+alwaysApply: true
+---
+# Continuous Rule Improvement (SalesHubPro)
+
+## 1. Triggers for Rule Updates
+- Introduction of new tools (e.g., MCP server, Cursor integration)
+- Repeated code patterns or errors in the codebase
+- New best practices or technology adoption (see [tech_stack_document.mdc](mdc:.cursor/rules/tech_stack_document.mdc))
+- Feedback from code reviews or implementation logs
+- Changes in project structure or workflow (see [README.md](mdc:../README.md))
+
+## 2. Improvement Process
+- Compare new code and workflows with existing rules
+- Identify gaps, outdated patterns, or missing documentation
+- Propose new rules or update existing ones in `.cursor/rules/`
+- Reference actual code, documentation, and integration steps (especially for MCP/Taskmaster)
+- Cross-link related rules for clarity and DRYness
+
+## 3. Rule Quality & Maintenance
+- Rules must be actionable, specific, and easy to follow
+- Use real code examples and reference files using `[filename](mdc:path/to/file)`
+- Mark deprecated rules and document migration paths
+- Update README.md and rule files together when workflows or integrations change
+
+## 4. Documentation & Communication
+- Announce major rule changes in project communication channels
+- Ensure all contributors are aware of updated rules and best practices
+- Regularly review and audit rules for relevance and accuracy
+
+## 5. References
+- [cursor_rules.mdc](mdc:.cursor/rules/cursor_rules.mdc)
+- [cursor_project_rules.mdc](mdc:.cursor/rules/cursor_project_rules.mdc)
+- [dev_workflow.mdc](mdc:.cursor/rules/dev_workflow.mdc)
+- [README.md](mdc:../README.md)

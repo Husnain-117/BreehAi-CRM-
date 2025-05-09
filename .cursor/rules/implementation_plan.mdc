@@ -1,0 +1,284 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# SalesHub Pro: Development Implementation Plan
+
+This document outlines the step-by-step plan to transition from "Result Announcement Pro" to "SalesHub Pro" and implement the new features.
+
+## Phase 0: Project Setup & Initial Configuration
+
+1.  **Branching Strategy**:
+    *   Create a main development branch (e.g., `develop` or `main`) if not already present.
+    *   Feature development will happen on branches like `feature/<ticket-id>-<slug>` as per `dev_workflow.mdc` (mentioned in `README.md`).
+2.  **Environment Setup**:
+    *   Ensure all prerequisites from `README.md` are met (Node ≥ 20, pnpm ≥ 8, Supabase CLI).
+    *   Clone the repository: `git clone https://github.com/sheryarkayani/trendtialcrm.git`
+    *   Navigate to project directory: `cd saleshubpro` (or the relevant project root).
+    *   Install dependencies: `pnpm install`.
+    *   Configure environment variables: Copy `.env.example` to `.env` and populate with Supabase keys, Google API credentials, Sentry DSN, etc.
+3.  **Supabase Local Setup**:
+    *   Start Supabase local stack: `supabase start`. This launches Postgres, Studio, and the edge runtime.
+    *   Apply initial schema or reset the database: `supabase db reset` to apply schema & seed data as per `README.md`.
+    *   Access Supabase Studio at `http://localhost:54321`.
+
+## Phase 1: Backend Development - Schema & Core Logic
+
+Location: `backend/` directory (migrations, functions).
+
+1.  **Database Schema Evolution (Supabase Migrations)**:
+    *   **Objective**: Implement the new database schema in Supabase using its migration system. Create new migration files in `backend/migrations/`.
+    *   **Tasks**:
+        *   **Retire Table**:
+            *   `results`: Plan for data archival if any historical data from "Result Announcement Pro" is relevant; otherwise, simply remove the table definition in a new migration.
+        *   **New Table: `users`** (if not already implicitly created/managed by Supabase Auth, this table will store app-specific user details and roles)
+            *   `id uuid PK` (ideally references `auth.users.id`)
+            *   `full_name text`
+            *   `email text unique`
+            *   `role text NOT NULL` (constraint: `CHECK (role IN ('agent', 'manager', 'super_admin'))`)
+            *   `manager_id uuid NULL FK` (references `public.users(id)`)
+        *   **New Table: `leads`**
+            *   `id uuid PK DEFAULT uuid_generate_v4()`
+            *   `sheet_row_id text NULL` (unique identifier from Google Sheet row, if applicable)
+            *   `agent_id uuid NULL FK` (references `public.users(id)`)
+            *   `status_bucket text NOT NULL` (constraint: `CHECK (status_bucket IN ('P1', 'P2', 'P3'))`)
+            *   `name text`
+            *   `email text`
+            *   `phone text`
+            *   `company text`
+            *   `created_at timestamptz DEFAULT now()`
+            *   `updated_at timestamptz DEFAULT now()` (consider a trigger to auto-update this)
+            *   `sync_lock boolean DEFAULT false`
+        *   **New Table: `follow_ups`**
+            *   `id uuid PK DEFAULT uuid_generate_v4()`
+            *   `lead_id uuid NOT NULL FK` (references `public.leads(id) ON DELETE CASCADE`)
+            *   `agent_id uuid NOT NULL FK` (references `public.users(id)`)
+            *   `due_date timestamptz NOT NULL`
+            *   `status text NOT NULL` (e.g., 'pending', 'completed', 'rescheduled')
+            *   `notes text`
+            *   `created_at timestamptz DEFAULT now()`
+            *   `updated_at timestamptz DEFAULT now()` (trigger for auto-update)
+        *   **New Table: `meetings`**
+            *   `id uuid PK DEFAULT uuid_generate_v4()`
+            *   `lead_id uuid NULL FK` (references `public.leads(id) ON DELETE SET NULL`)
+            *   `agent_id uuid NOT NULL FK` (references `public.users(id)`)
+            *   `title text NOT NULL`
+            *   `start_time timestamptz NOT NULL`
+            *   `end_time timestamptz NOT NULL`
+            *   `location text` (physical address or virtual meeting link)
+            *   `notes text`
+            *   `created_at timestamptz DEFAULT now()`
+            *   `updated_at timestamptz DEFAULT now()` (trigger for auto-update)
+        *   **New Table: `admin_audit`**
+            *   `id uuid PK DEFAULT uuid_generate_v4()`
+            *   `user_id uuid NULL FK` (references `public.users(id)`)
+            *   `action text NOT NULL` (e.g., 'USER_CREATED', 'LEAD_ASSIGNED', 'SETTINGS_UPDATED')
+            *   `target_entity text` (e.g., 'user', 'lead', 'meeting')
+            *   `target_id uuid`
+            *   `details jsonb` (store specifics of the action, old/new values)
+            *   `created_at timestamptz DEFAULT now()`
+        *   Apply migrations locally: `supabase db reset` (if starting fresh) or `supabase migration up` (if applying sequentially). For cloud environments, use `supabase db push` or CI/CD deployment steps.
+2.  **User Roles & Row Level Security (RLS)**:
+    *   **Objective**: Enforce data access based on user roles (`agent`, `manager`, `super_admin`) stored in the `users` table.
+    *   **Tasks**:
+        *   Define RLS policies for `SELECT`, `INSERT`, `UPDATE`, `DELETE` on `leads`, `follow_ups`, `meetings`.
+            *   Agents: Can manage their own assigned records.
+            *   Managers: Can manage records of agents they manage (requires querying `users` table for hierarchy).
+            *   Super Admins: Bypass RLS or have permissive policies.
+        *   Ensure `auth.uid()` is used in policies and correctly links to the `public.users.id`.
+        *   The `users.role` column will be central to these policies.
+3.  **Supabase Edge Functions (`backend/functions/`)**:
+    *   **Objective**: Implement serverless functions for Google Sheets sync and potentially notifications.
+    *   **Tasks**:
+        *   **Google Sheets Sync (`sync-worker` or similar name)**:
+            *   Develop an Edge Function in Deno/TypeScript.
+            *   Location: `backend/functions/sheet-sync-worker/index.ts`.
+            *   Handles bi-directional sync between Google Sheets (using Google Sheets API v4) and the Supabase `leads` table.
+            *   Logic to pull new leads from Sheets and insert/update in Postgres.
+            *   Respect `sync_lock=true` on leads in Postgres to prevent overrides from Sheet changes.
+            *   Logic to push updates from SalesHubPro (non-locked leads) back to Sheets (if required).
+            *   Securely manage Google API credentials (via Supabase Edge Function environment variables).
+            *   Schedule this function (e.g., using Supabase's built-in cron jobs: `supabase functions deploy --schedule "*/5 * * * *" sheet-sync-worker`).
+        *   **Notification Triggers (Optional: can also be DB triggers + external service)**:
+            *   Edge functions to process events (e.g., from a message queue or direct call) that trigger email notifications for meeting reminders and follow-up dues. This might involve integrating with a mail service provider.
+4.  **Database Functions (RPCs)**:
+    *   **Objective**: Create PostgreSQL functions for complex queries or business logic not easily handled by RLS or client-side.
+    *   **Tasks**:
+        *   Identify needs for RPCs, e.g., dashboard data aggregation, complex lead assignment logic.
+        *   Define these functions in SQL migration files.
+
+## Phase 2: Frontend Development - Core Features & UI
+
+Location: `frontend/` directory.
+
+1.  **Authentication (`AuthProvider`)**:
+    *   **Objective**: Adapt existing authentication to incorporate user roles.
+    *   **Files**: `frontend/hooks/useAuth.ts`, `frontend/contexts/AuthContext.tsx` (or similar existing auth files).
+    *   **Action**: _Keep & Extend_.
+    *   **Tasks**:
+        *   Modify Supabase Auth to ensure the user's role (from `public.users.role`) is available to the frontend. This can be achieved by:
+            *   Fetching the user's profile (including role) from the `public.users` table after login.
+            *   Storing the role in the Auth context alongside other user session data.
+        *   Update `AuthProvider` and any custom auth hooks (`useAuth`) to manage and provide the user's role.
+2.  **Layouts (`ManagerLayout`, `AdminLayout`)**:
+    *   **Objective**: Create role-specific application layouts.
+    *   **Files**: `frontend/components/layouts/`.
+    *   **Action**: _Refactor_ `AdminLayout` (if one exists from ResultPro) or _Build New_.
+    *   **Tasks**:
+        *   Create `AgentLayout.tsx`: Sidebar/navigation for Leads, Follow-Ups, Meetings, Dashboard.
+        *   Create `ManagerLayout.tsx`: Similar to AgentLayout, but with links to team views/dashboards.
+        *   Create `SuperAdminLayout.tsx`: Includes all manager views plus User Management, System Settings.
+        *   Layouts should dynamically render navigation links based on the authenticated user's role.
+3.  **Routing (`Routes.tsx` or `App.tsx`)**:
+    *   **Objective**: Define application routes and protect them based on roles.
+    *   **Files**: `frontend/App.tsx` or a dedicated `frontend/router.tsx`.
+    *   **Action**: _Modify_.
+    *   **Tasks**:
+        *   Implement protected route components that check user authentication and role from Auth context.
+        *   Define routes for:
+            *   `/leads` (accessible to `agent`, `manager`, `super_admin`)
+            *   `/follow-ups` (accessible to `agent`, `manager`, `super_admin`)
+            *   `/meetings` (accessible to `agent`, `manager`, `super_admin`)
+            *   `/dashboard` (content varies by role; accessible to `agent`, `manager`, `super_admin`)
+            *   `/admin/users` (accessible to `super_admin` only)
+            *   `/admin/settings` (accessible to `super_admin` only)
+        *   Handle redirection for unauthorized access.
+4.  **Data Fetching Hooks (TanStack Query)**:
+    *   **Objective**: Centralize and streamline data fetching, caching, and state management for API data.
+    *   **Files**: `frontend/hooks/queries/`.
+    *   **Action**: _Rename & Extend_ `useResultsQuery()` (if applicable) or _Build New_.
+    *   **Tasks**:
+        *   Create `useLeadsQuery.ts`:
+            *   Fetches leads using the Supabase client, incorporating pagination (keyset recommended), filtering, and sorting parameters.
+            *   Manages server state with TanStack Query (caching, stale-while-revalidate, optimistic updates).
+        *   Create similar hooks: `useFollowUpsQuery.ts`, `useMeetingsQuery.ts`, `useUsersQuery.ts` (for admin user management), `useDashboardDataQuery.ts`.
+5.  **Leads Management**:
+    *   **Objective**: Build the primary interface for interacting with leads.
+    *   **Files**: `frontend/pages/LeadsPage.tsx`, `frontend/components/leads/`.
+    *   **Tasks**:
+        *   **Retire `ResultTable` & `ResultDetailCard`** from Result Announcement Pro.
+        *   **Build `LeadTable.tsx`**:
+            *   Use `TanStack Table` (@tanstack/react-table) with virtualization (e.g., `@tanstack/react-virtual`) for performance with 10k+ rows.
+            *   Columns: Name, Company, Status (P1/P2/P3), Assigned Agent, Last Contacted, etc.
+            *   Features: Server-side sorting, filtering, pagination (controlled by `useLeadsQuery`).
+            *   Bulk actions: Assign to agent, change status, delete.
+            *   Row click/action to open `LeadDetailDrawer`.
+        *   **Build `LeadDetailDrawer.tsx`** (or a modal/page):
+            *   Displays when a lead is selected.
+            *   Uses tabs for:
+                *   **Details**: View/edit all lead fields (form powered by React Hook Form or similar).
+                *   **Activity**: Log interactions (calls, emails, notes). This could be a sub-table or list.
+                *   **History**: Audit trail of changes to the lead (fetched from a related table or logs).
+6.  **Follow-Ups Management**:
+    *   **Objective**: Provide a Kanban board for managing follow-ups.
+    *   **Files**: `frontend/pages/FollowUpsPage.tsx`, `frontend/components/followups/FollowUpBoard.tsx`.
+    *   **Action**: _Build New_.
+    *   **Tasks**:
+        *   Build `FollowUpBoard.tsx`:
+            *   Kanban columns (e.g., "Due Today", "Upcoming", "Overdue", "Completed") or grouped by due date.
+            *   Drag-and-drop functionality (e.g., using `dnd-kit` or `react-beautiful-dnd`) to change status/reschedule.
+            *   Cards representing individual follow-ups, showing key details and link to the associated lead.
+            *   One-click reschedule options.
+            *   Interface to create new follow-ups.
+7.  **Meetings Management**:
+    *   **Objective**: Implement a calendar and list view for meetings.
+    *   **Files**: `frontend/pages/MeetingsPage.tsx`, `frontend/components/meetings/MeetingCalendar.tsx`.
+    *   **Action**: _Build New_.
+    *   **Tasks**:
+        *   Build `MeetingCalendar.tsx`:
+            *   Integrate a calendar library (e.g., `FullCalendar`, `react-big-calendar`) to display meetings.
+            *   Allow creation, viewing, and editing of meetings directly on the calendar.
+            *   iCal export functionality for meetings.
+        *   Implement a separate list view for meetings with sorting and filtering.
+8.  **Dashboards**:
+    *   **Objective**: Display role-specific Key Performance Indicators (KPIs).
+    *   **Files**: `frontend/pages/DashboardPage.tsx`, `frontend/components/dashboard/`.
+    *   **Action**: _Build New_.
+    *   **Tasks**:
+        *   Develop reusable chart components (`DashboardKPI.tsx`, etc.) using a charting library (e.g., `Visx`, `Recharts`, `Chart.js`).
+        *   **Agent Dashboard**: My P1/P2/P3 counts, upcoming follow-ups, meetings scheduled.
+        *   **Manager Dashboard**: Team performance (lead conversion rates, activity metrics per agent), P1/P2/P3 distribution across team.
+        *   **Super Admin Dashboard**: Organization-wide overview, user activity summaries.
+        *   Data fetched via `useDashboardDataQuery.ts` specific to the role.
+9.  **Admin Portal (User Management)**:
+    *   **Objective**: Allow super-admins to manage users and team structures.
+    *   **Files**: `frontend/pages/admin/UsersPage.tsx`, `frontend/components/admin/AdminUserTable.tsx`.
+    *   **Action**: _Build New_.
+    *   **Tasks**:
+        *   Build `AdminUserTable.tsx`:
+            *   Display list of all users (fetched via `useUsersQuery`).
+            *   Columns: Name, Email, Role, Manager, Status.
+            *   CRUD operations: Invite new users, edit user details (role, manager), deactivate/activate users.
+        *   UI for managing team hierarchy (e.g., assigning agents to managers).
+10. **Google Sheets Sync UI**:
+    *   **Objective**: Provide visibility into the Google Sheets synchronization process.
+    *   **Files**: `frontend/components/admin/SheetSyncStatus.tsx` (or a globally accessible status indicator).
+    *   **Action**: _Retire_ `CSVUploadModal`, _Build New_ `SheetSyncStatus`.
+    *   **Tasks**:
+        *   Display status of the GSheets sync (e.g., "Last synced: [timestamp]", "Syncing...", "Error").
+        *   This could fetch status from a dedicated Supabase table updated by the Edge Function or rely on heartbeat/log data.
+        *   Optional: Manual trigger for the sync (if the Edge Function supports it).
+11. **Notification Service**:
+    *   **Objective**: Extend existing service or build mechanisms for in-app and email notifications.
+    *   **Files**: `frontend/services/NotificationService.ts` (or similar).
+    *   **Action**: _Extend_.
+    *   **Tasks**:
+        *   Frontend: Implement UI for in-app notifications (e.g., using a toast library).
+        *   Backend: Develop logic (potentially in Edge Functions or DB triggers calling Edge Functions) to send emails for:
+            *   Follow-Up due reminders.
+            *   Meeting reminders.
+        *   Define email templates.
+
+## Phase 3: Real-time & Advanced Features
+
+1.  **Supabase Realtime Integration**:
+    *   **Objective**: Provide live updates in the UI as data changes in the backend.
+    *   **Tasks**:
+        *   Enable Supabase Realtime on `leads`, `follow_ups`, `meetings` tables.
+        *   In the frontend, subscribe to Realtime events for these tables within relevant TanStack Query hooks or components.
+        *   When a Realtime event is received (e.g., a lead is updated, a new follow-up is created):
+            *   Intelligently update the TanStack Query cache (e.g., `queryClient.invalidateQueries` or `queryClient.setQueryData`).
+            *   Ensure UI reflects changes without full re-fetches where possible.
+
+## Phase 4: Testing & Quality Assurance
+
+1.  **Unit Tests (Vitest + React Testing Library)**:
+    *   **Location**: `frontend/tests/` or co-located with components.
+    *   **Tasks**: Write unit tests for critical components, hooks (especially data fetching and manipulation logic), and utility functions. Aim for ≥ 80% coverage as per `README.md`.
+2.  **Integration Tests (Vitest / Supabase Test Helpers)**:
+    *   **Tasks**: Test interactions between frontend components and mocked/live Supabase client services. Focus on user flows like creating a lead, assigning it, scheduling a follow-up.
+3.  **End-to-End Tests (Cypress)**:
+    *   **Location**: `cypress/` directory.
+    *   **Tasks**: Write E2E tests for key user journeys across different roles:
+        *   Login and role-based navigation/access.
+        *   Full lifecycle of a lead (creation, update, status change).
+        *   Scheduling and managing follow-ups and meetings.
+        *   Admin user creation and management.
+        *   Verify GSheet sync behavior if testable through UI indicators or resulting data.
+
+## Phase 5: CI/CD & Deployment
+
+1.  **Review and Update CI/CD Pipeline (GitHub Actions)**:
+    *   **Files**: `.github/workflows/`.
+    *   **Tasks**:
+        *   Ensure `build.yml` correctly installs dependencies, lints, runs all tests (unit, integration, E2E), and type-checks.
+        *   Verify `deploy-staging.yml` and `deploy-production.yml` correctly deploy the frontend (e.g., to Netlify/Vercel) and backend changes (Supabase migrations, edge functions) to respective environments.
+        *   Confirm `release.yml` (for changeset, changelog, version bump) is still appropriate.
+        *   Ensure all necessary secrets (Supabase service key, Netlify/Vercel auth token, Google API creds for functions) are securely configured in GitHub Actions secrets.
+
+## Phase 6: Documentation & Final Review
+
+1.  **Update `README.md`**:
+    *   Reflect all changes, new technologies, and updated setup/development instructions for SalesHub Pro.
+2.  **Internal Developer Documentation**:
+    *   Document any complex logic, architecture decisions, or non-obvious parts of the system in `docs/` or relevant code comments.
+    *   Update `dev_workflow.mdc` if any process changes occurred.
+3.  **Code Review and Refinement**:
+    *   Conduct thorough code reviews for all new and refactored parts of the application.
+    *   Address any performance bottlenecks or UX issues identified during development and testing.
+
+This plan should serve as a comprehensive guide. Remember to break down these tasks into smaller, manageable tickets or issues in your project management system. Good luck!
+
+---
+

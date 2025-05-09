@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import { supabase } from '../../api/supabaseClient';
+import { supabase } from '../../lib/supabaseClient';
 import { Lead } from '../../types'; // Import Lead type
 
 // Placeholder Lead type - REMOVED
@@ -113,13 +113,13 @@ export const useLeadsQuery = (options: LeadsQueryOptions = {}) => {
 
   useEffect(() => {
     const channel = supabase
-      .channel('public:leads')
+      .channel('realtime-leads')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'leads' },
         (payload) => {
           console.log('Change received on leads table!', payload);
-          queryClient.invalidateQueries({ queryKey: ['leads'] });
+          queryClient.invalidateQueries({ queryKey: ['leads', options] });
         }
       )
       .subscribe();
@@ -127,7 +127,7 @@ export const useLeadsQuery = (options: LeadsQueryOptions = {}) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [queryClient]);
+  }, [queryClient, options]);
 
   return useQuery<{ leads: Lead[], count: number }, Error>(
     ['leads', options], 

@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import AppLayout from './components/layouts/AppLayout'; // Import AppLayout
 import ProtectedRoute from './components/common/ProtectedRoute'; // Import ProtectedRoute
 import PublicLayout from './components/layouts/PublicLayout'; // Import PublicLayout
+import { Toaster } from 'react-hot-toast'; // Import Toaster
 
 // Import Page Components
 import LoginPage from './pages/LoginPage';
@@ -18,6 +19,35 @@ import NotFoundPage from './pages/NotFoundPage';
 function App() {
   return (
     <Router>
+      <Toaster 
+        position="top-right" 
+        reverseOrder={false}
+        toastOptions={{
+          // Default options for all toasts
+          className: '',
+          duration: 5000,
+          style: {
+            background: '#333', // Darker background for better contrast with default white text
+            color: '#fff',
+            fontSize: '15px',
+          },
+          // Default options for specific types
+          success: {
+            duration: 3000,
+            iconTheme: {
+              primary: '#4CAF50', // Green icon
+              secondary: '#fff',   // White checkmark
+            },
+          },
+          error: {
+            duration: 5000,
+            iconTheme: {
+              primary: '#F44336', // Red icon
+              secondary: '#fff',   // White X
+            },
+          },
+        }}
+      />
       <Routes>
         {/* Public Routes */}
         <Route path="/login" element={<PublicLayout><LoginPage /></PublicLayout>} />

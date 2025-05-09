@@ -21,32 +21,72 @@ const fetchUsersList = async () => {
 
 const addNewLead = async (formData: LeadFormData) => {
   try {
-    // Construct the object to insert into the 'leads' table.
-    // Keys must match actual column names in your Supabase 'leads' table.
+    let clientId: string | null = null;
+
+    // 1. Check for existing client or create a new one
+    const { data: existingClients, error: fetchClientError } = await supabase
+      .from('clients')
+      .select('id')
+      .eq('client_name', formData.clientName)
+      .eq('company', formData.companyName); // Assuming companyName maps to 'company' column
+
+    if (fetchClientError) {
+      console.error('[addNewLead] Error fetching client:', fetchClientError);
+      throw new Error('Failed to check for existing client.');
+    }
+
+    if (existingClients && existingClients.length > 0) {
+      clientId = existingClients[0].id;
+      console.log('[addNewLead] Found existing client with ID:', clientId);
+    } else {
+      console.log('[addNewLead] No existing client found. Creating new client...');
+      const { data: newClient, error: createClientError } = await supabase
+        .from('clients')
+        .insert({
+          client_name: formData.clientName,
+          company: formData.companyName, // Assuming companyName maps to 'company' column
+          company_size: formData.companySize === undefined ? null : formData.companySize,
+          // Add other necessary fields for the clients table if any
+        })
+        .select('id')
+        .single(); // .single() expects exactly one row or throws error
+
+      if (createClientError) {
+        console.error('[addNewLead] Error creating new client:', createClientError);
+        throw new Error('Failed to create new client.');
+      }
+      if (newClient) {
+        clientId = newClient.id;
+        console.log('[addNewLead] Created new client with ID:', clientId);
+      } else {
+        throw new Error('Failed to create client and retrieve ID.')
+      }
+    }
+
+    if (!clientId) {
+      throw new Error('Could not obtain a client ID for the lead.');
+    }
+
     const leadInsertData: { [key: string]: any } = {
-      // client_id will be set after client lookup/creation logic is implemented.
-      // If client_id is non-nullable in your DB, this insert will fail until that logic is added.
+      client_id: clientId, // Set the obtained client_id
       agent_id: formData.agent_id === '' ? null : formData.agent_id,
-      status_bucket: formData.status, // Assumes 'status' from form maps to 'status_bucket' in DB
+      status_bucket: formData.status,
       lead_source: formData.leadSource,
       contact_person: formData.contactPerson,
       email: formData.email,
       phone: formData.phone,
-      // dealValue is already a number or undefined due to z.coerce.number(). If undefined, send null.
-      deal_value: formData.dealValue === undefined ? null : formData.dealValue, 
-      tags: formData.tags,
-      notes: formData.notes, 
-      // Ensure all other necessary fields for 'leads' table are included here if they are in LeadFormData
+      deal_value: formData.dealValue === undefined ? null : formData.dealValue,
+      notes: formData.notes === '' ? null : formData.notes,
+      tags: formData.tags && formData.tags.trim() !== '' 
+            ? formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag !== '') 
+            : null,
     };
-
-    // TODO: Implement client lookup/creation logic using formData.clientName, formData.companyName, formData.companySize
-    // and then set leadInsertData.client_id = foundOrCreatedClientId;
 
     console.log('[addNewLead] Data being inserted into leads table:', leadInsertData);
 
     const { data, error } = await supabase
       .from('leads')
-      .insert(leadInsertData) // Insert the transformed data
+      .insert(leadInsertData)
       .select();
 
     if (error) {
@@ -56,7 +96,6 @@ const addNewLead = async (formData: LeadFormData) => {
     }
     
     console.log('[addNewLead] Lead added successfully to Supabase:', data);
-    // data from insert().select() is an array of inserted records
     return data && data.length > 0 ? data[0] : null;
   } catch (e) {
     const errorMessage = (e as Error)?.message || 'An unexpected error occurred while adding lead.';

@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../api/supabaseClient';
 import { Meeting } from '../../types'; // Assuming Meeting type exists or will be created
 import { PostgrestError } from '@supabase/supabase-js'; // Import PostgrestError
+import { toast } from 'react-hot-toast'; // Import toast for notifications
 
 // Interface for the data needed to create a new meeting
 export interface NewMeetingData {
@@ -47,28 +48,28 @@ export const useCreateMeetingMutation = () => {
     {
       onSuccess: (data, variables) => {
         console.log('Meeting created successfully:', data);
-        // Invalidate queries to refetch data
-        // 1. Invalidate a general meetings list if you have one
-        queryClient.invalidateQueries(['meetings']);
-        // 2. If lead_id is present, invalidate follow_ups for that lead (as meetings might be part of an activity log)
+        toast.success('Meeting scheduled successfully');
+        
+        // More aggressive cache invalidation strategy
+        queryClient.invalidateQueries({ queryKey: ['meetings'] });
+        queryClient.invalidateQueries({ queryKey: ['leads'] }); 
+        
+        // If there's a specific lead, invalidate that too
         if (variables.lead_id) {
-          queryClient.invalidateQueries(['follow_ups', variables.lead_id]); // Or a dedicated activity log query key
-          queryClient.invalidateQueries(['meetings', variables.lead_id]); // Specific meetings for a lead
-          queryClient.invalidateQueries(['leads']); // Invalidate leads if meeting updates activity log
+          queryClient.invalidateQueries({ queryKey: ['meetings', variables.lead_id] });
+          queryClient.invalidateQueries({ queryKey: ['follow_ups', variables.lead_id] }); // For activity log
         }
-        // 3. Potentially invalidate queries related to the agent's tasks/calendar
+        
+        // Invalidate agent queries if needed
         if (variables.agent_id) {
-            queryClient.invalidateQueries(['user_tasks', variables.agent_id]);
-            queryClient.invalidateQueries(['user_calendar', variables.agent_id]);
+          queryClient.invalidateQueries({ queryKey: ['user_tasks', variables.agent_id] });
+          queryClient.invalidateQueries({ queryKey: ['user_calendar', variables.agent_id] });
         }
-        // Unlike follow-ups, creating a meeting doesn't directly update a field on the lead itself (like follow_up_due_date)
-        // So, invalidating ['leads'] might not be strictly necessary unless meeting creation affects lead display indirectly.
       },
       onError: (error: Error | PostgrestError) => {
         console.error('Mutation error creating meeting:', error.message);
         if ('code' in error && error.code === '42501') {
-          alert('Permission Denied: You do not have the required permissions to create this meeting.');
-          // TODO: Replace alert with a toast notification
+          toast.error('Permission Denied: You do not have the required permissions to create this meeting.');
         } else {
           // The MeetingModal already displays mutationError.message
         }

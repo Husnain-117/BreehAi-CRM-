@@ -7,6 +7,7 @@ import { useCreateFollowUpMutation, NewFollowUpData } from '../../hooks/mutation
 import { useAuth } from '../../contexts/AuthContext'; // Import useAuth
 import { supabase } from '../../api/supabaseClient'; // Import supabase client
 import { useQueryClient } from '@tanstack/react-query'; // For manual invalidation after RPC
+import { toast } from 'react-hot-toast';
 
 // Zod schema for follow-up validation
 const followUpSchema = z.object({
@@ -74,7 +75,7 @@ export const FollowUpModal: React.FC<FollowUpModalProps> = ({ lead, bulkLeads, i
     if (!profile || !profile.id) {
       // This should ideally be handled more gracefully, perhaps disabling the form
       // if the profile isn't available, or showing a specific error message.
-      alert('User profile not found. Cannot create follow-up(s).');
+      toast.error('User profile not found. Cannot create follow-up(s).');
       return;
     }
 
@@ -104,6 +105,9 @@ export const FollowUpModal: React.FC<FollowUpModalProps> = ({ lead, bulkLeads, i
     } else if (followUpsToCreate.length === 1) {
       try {
         await createSingleFollowUp(followUpsToCreate[0]);
+        // Manually invalidate queries to ensure UI updates
+        queryClient.invalidateQueries({ queryKey: ['follow_ups'] });
+        queryClient.invalidateQueries({ queryKey: ['leads'] });
         onClose();
       } catch (err) {
         // Error is handled by singleMutationError state
@@ -177,7 +181,10 @@ export const FollowUpModal: React.FC<FollowUpModalProps> = ({ lead, bulkLeads, i
                         value={dueDate}
                         onChange={(e) => {
                           setDueDate(e.target.value);
-                          if (formErrors?.dueDate) setFormErrors(prev => ({ ...prev, dueDate: undefined }));
+                          if (formErrors?.dueDate) setFormErrors(prev => prev ? { 
+                            ...prev, 
+                            dueDate: undefined 
+                          } as FollowUpFormErrors : null);
                         }}
                         required // Keep for basic browser validation, Zod handles more robustly
                         disabled={isLoading}
@@ -204,7 +211,10 @@ export const FollowUpModal: React.FC<FollowUpModalProps> = ({ lead, bulkLeads, i
                         value={notes}
                         onChange={(e) => {
                           setNotes(e.target.value);
-                          if (formErrors?.notes) setFormErrors(prev => ({ ...prev, notes: undefined }));
+                          if (formErrors?.notes) setFormErrors(prev => prev ? { 
+                            ...prev, 
+                            notes: undefined 
+                          } as FollowUpFormErrors : null);
                         }}
                         disabled={isLoading}
                         className={`block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm disabled:bg-gray-50 ${formErrors?.notes ? 'border-red-500' : ''}`}

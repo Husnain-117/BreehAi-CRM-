@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../api/supabaseClient';
 import { FollowUp } from '../../types'; // Assuming FollowUp type might need creation or adjustment
 import { PostgrestError } from '@supabase/supabase-js'; // Import PostgrestError
+import { toast } from 'react-hot-toast'; // Assuming react-hot-toast
 
 // Interface for the data needed to create a new follow-up
 export interface NewFollowUpData {
@@ -50,25 +51,28 @@ export const useCreateFollowUpMutation = () => {
     {
       onSuccess: (data, variables) => {
         console.log('Follow-up created successfully:', data);
+        toast.success('Follow-up scheduled successfully');
+        
         // Invalidate queries to refetch data
-        // 1. Invalidate leads query to update potential follow_up_due_date on the lead
-        queryClient.invalidateQueries(['leads']); 
-        // 2. Invalidate a specific query for this lead's follow-ups if you have one
-        //    (e.g., for an activity log in LeadDrawer)
+        // More aggressive cache invalidation strategy
+        queryClient.invalidateQueries({ queryKey: ['leads'] }); 
+        queryClient.invalidateQueries({ queryKey: ['follow_ups'] }); 
+        
+        // If there's a specific lead, invalidate that too
         if (variables.lead_id) {
-          queryClient.invalidateQueries(['follow_ups', variables.lead_id]);
-          queryClient.invalidateQueries(['follow_ups']); // Invalidate general list too
+          queryClient.invalidateQueries({ queryKey: ['follow_ups', variables.lead_id] });
         }
-        // 3. Potentially invalidate queries related to the agent's tasks
+        
+        // Invalidate agent queries if needed
         if (variables.agent_id) {
-            queryClient.invalidateQueries(['user_tasks', variables.agent_id]);
+          queryClient.invalidateQueries({ queryKey: ['user_tasks', variables.agent_id] });
         }
       },
       onError: (error: Error | PostgrestError) => {
         console.error('Mutation error creating follow-up:', error.message);
         if ('code' in error && error.code === '42501') {
           // This is a PostgrestError with an RLS violation
-          alert('Permission Denied: You do not have the required permissions to create this follow-up.');
+          toast.error('Permission Denied: You do not have the required permissions to create this follow-up.');
           // TODO: Replace alert with a toast notification
         } else {
           // Handle other types of errors or show a generic message

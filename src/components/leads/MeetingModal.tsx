@@ -7,6 +7,7 @@ import { useCreateMeetingMutation, NewMeetingData } from '../../hooks/mutations/
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../api/supabaseClient';
 import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'react-hot-toast';
 
 // Zod schema for meeting validation
 const meetingSchema = z.object({
@@ -82,7 +83,7 @@ export const MeetingModal: React.FC<MeetingModalProps> = ({ lead, bulkLeads, isO
     }
 
     if (!profile || !profile.id) {
-      alert('User profile not found. Cannot create meeting(s).');
+      toast.error('User profile not found. Cannot create meeting(s).');
       return;
     }
 
@@ -118,6 +119,9 @@ export const MeetingModal: React.FC<MeetingModalProps> = ({ lead, bulkLeads, isO
     } else if (meetingsToCreate.length === 1) {
       try {
         await createSingleMeeting(meetingsToCreate[0]);
+        // Manually invalidate queries to ensure UI updates
+        queryClient.invalidateQueries({ queryKey: ['meetings'] });
+        queryClient.invalidateQueries({ queryKey: ['leads'] });
         onClose();
       } catch (err) {
         // Error is handled by singleMutationError state

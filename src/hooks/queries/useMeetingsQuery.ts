@@ -15,7 +15,7 @@ const fetchMeetings = async (args: UseMeetingsQueryArgs): Promise<Meeting[]> => 
     .select(`
       *,
       leads (id, client_id, status_bucket),
-      users (id, full_name)
+      users:agent_id (id, full_name)
     `);
 
   if (args.leadId) {

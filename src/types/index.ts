@@ -116,4 +116,23 @@ export interface ColdEmailDailyReport extends BaseDailyReport {
 }
 
 export type DailyReport = TelesalesDailyReport | LinkedInDailyReport | ColdEmailDailyReport;
-// --- End Daily Report Types --- 
+// --- End Daily Report Types ---
+
+// --- Attendance Types ---
+export type AttendanceStatus = 'CheckedOut' | 'CheckedIn' | 'OnLeave';
+
+export interface Attendance {
+  id: string; // UUID
+  user_id: string; // FK to users.id
+  check_in_time: string | null; // ISO Timestamp
+  check_out_time: string | null; // ISO Timestamp
+  date: string; // YYYY-MM-DD
+  status: AttendanceStatus;
+  notes: string | null;
+  created_at: string; // ISO Timestamp
+  updated_at: string; // ISO Timestamp
+
+  // Optional joined data for display
+  users?: Pick<UserProfile, 'full_name' | 'email'> | null; 
+}
+// --- End Attendance Types --- 

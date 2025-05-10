@@ -52,6 +52,7 @@ const SuperAdminLayout: React.FC = () => {
     { to: '/admin/settings', label: 'System Settings', icon: SettingsIcon },
     { to: '/admin/team-progress', label: 'Team Progress', icon: UsersIcon },
     { to: '/daily-report', label: 'Daily Reports', icon: null }, // Placeholder icon
+    { to: '/attendance', label: 'Attendance', icon: null }, // Added Attendance link
     // Add other general links like Follow-ups, Meetings if super admin needs them at top level
     { to: '/follow-ups', label: 'All Follow-Ups', icon: null },
     { to: '/meetings', label: 'All Meetings', icon: null },

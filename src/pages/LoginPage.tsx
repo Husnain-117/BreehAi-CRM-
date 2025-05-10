@@ -39,44 +39,44 @@ const LoginPage: React.FC = () => {
         </div>
       )}
 
-      <form onSubmit={handleLogin} className="space-y-6">
-        <div>
+        <form onSubmit={handleLogin} className="space-y-6">
+          <div>
           <label htmlFor="email" className="block text-sm font-medium text-muted-foreground mb-1">
-            Email address
-          </label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
+              Email address
+            </label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
             className="block w-full px-4 py-2.5 border border-input bg-background rounded-lg shadow-sm placeholder-muted-foreground/70 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-shadow duration-150"
-          />
-        </div>
+            />
+          </div>
 
-        <div>
+          <div>
           <label htmlFor="password" className="block text-sm font-medium text-muted-foreground mb-1">
-            Password
-          </label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
+              Password
+            </label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              autoComplete="current-password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
             className="block w-full px-4 py-2.5 border border-input bg-background rounded-lg shadow-sm placeholder-muted-foreground/70 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-shadow duration-150"
-          />
-        </div>
+            />
+          </div>
 
         <Button 
-          type="submit" 
-          disabled={loading} 
+              type="submit"
+              disabled={loading}
           className="w-full py-3 text-base font-semibold transition-transform duration-150 ease-in-out hover:scale-[1.02] active:scale-[0.98]"
         >
           {loading ? (
@@ -91,14 +91,14 @@ const LoginPage: React.FC = () => {
             'Login'
           )}
         </Button>
-      </form>
+        </form>
 
       <p className="text-center text-sm text-muted-foreground">
-        Don't have an account?{' '}
+          Don't have an account?{' '}
         <Link to="/signup" className="font-medium text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-ring rounded">
-          Sign up
-        </Link>
-      </p>
+            Sign up
+          </Link>
+        </p>
     </div>
   );
 };

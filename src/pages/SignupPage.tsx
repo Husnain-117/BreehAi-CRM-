@@ -134,11 +134,11 @@ const SignupPage: React.FC = () => {
       )}
 
       <p className="mt-8 text-center text-sm text-muted-foreground">
-        Already have an account?{' '}
+          Already have an account?{' '}
         <Link to="/login" className="font-medium text-primary hover:text-primary/80 underline underline-offset-2 transition-colors">
-          Login
-        </Link>
-      </p>
+            Login
+          </Link>
+        </p>
     </>
   );
 };

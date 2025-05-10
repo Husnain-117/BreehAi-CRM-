@@ -411,12 +411,12 @@ const DealValueRangeFilterPanel: React.FC<DealValueRangeFilterPanelProps> = ({ c
                 onClick={clearFilter}
                 variant="ghost"
                 size="sm"
-            >
-                Clear
+        >
+            Clear
             </Button>
         )}
         <Button 
-            onClick={handleApply}
+            onClick={handleApply} 
             size="sm"
         >
             Apply
@@ -719,7 +719,7 @@ const BulkActionsBar: React.FC<BulkActionsBarProps> = (
         <Button 
           variant="outline"
           size="sm"
-          onClick={onBulkScheduleFollowUps}
+          onClick={onBulkScheduleFollowUps} 
           aria-label="Schedule follow-ups for selected leads"
         >
           <BellAlertIcon className="h-4 w-4 mr-1.5" />
@@ -728,7 +728,7 @@ const BulkActionsBar: React.FC<BulkActionsBarProps> = (
         <Button 
           variant="outline"
           size="sm"
-          onClick={onBulkScheduleMeetings}
+          onClick={onBulkScheduleMeetings} 
           aria-label="Schedule meetings for selected leads"
         >
           <CalendarDaysIcon className="h-4 w-4 mr-1.5" />
@@ -847,9 +847,9 @@ export const LeadTable: React.FC<LeadTableProps> = ({
           className="px-4 py-2 border border-input bg-background text-foreground rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring sm:max-w-xs w-full"
         />
         {table.getSelectedRowModel().flatRows.length > 0 && onBulkScheduleFollowUps && onBulkScheduleMeetings && (
-          <BulkActionsBar
+        <BulkActionsBar
             selectedRowCount={table.getSelectedRowModel().flatRows.length}
-            onClearSelection={() => table.resetRowSelection()}
+          onClearSelection={() => table.resetRowSelection()}
             onBulkScheduleFollowUps={() => onBulkScheduleFollowUps(selectedLeads)}
             onBulkScheduleMeetings={() => onBulkScheduleMeetings(selectedLeads)}
           />
@@ -860,12 +860,12 @@ export const LeadTable: React.FC<LeadTableProps> = ({
       <div className="overflow-x-auto rounded-lg border border-border">
         <table className="min-w-full divide-y divide-border bg-card">
           <thead className="bg-muted/50">
-            {table.getHeaderGroups().map(headerGroup => (
-              <tr key={headerGroup.id}>
-                {headerGroup.headers.map(header => (
-                  <th 
-                    key={header.id}
-                    colSpan={header.colSpan}
+          {table.getHeaderGroups().map(headerGroup => (
+            <tr key={headerGroup.id}>
+              {headerGroup.headers.map(header => (
+                <th
+                  key={header.id}
+                  colSpan={header.colSpan}
                     scope="col"
                     className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider group" // Added group for popover relative positioning
                   >
@@ -903,34 +903,34 @@ export const LeadTable: React.FC<LeadTableProps> = ({
                                 return <TextColumnFilterPanel column={header.column} />;
                               }}
                            />
-                        )}
-                      </div>
+                  )}
+                  </div>
                     )}
-                  </th>
-                ))}
-              </tr>
-            ))}
-          </thead>
+                </th>
+              ))}
+            </tr>
+          ))}
+        </thead>
           <tbody className="divide-y divide-border bg-card">
-            {table.getRowModel().rows.map(row => (
-              <tr 
+          {table.getRowModel().rows.map(row => (
+            <tr 
                 key={row.id} 
                 className="hover:bg-muted/50 transition-colors duration-150"
                 // onClick={() => onRowClick(row.original)} // Keep this if you want row click for details
-              >
-                {row.getVisibleCells().map(cell => (
+            >
+              {row.getVisibleCells().map(cell => (
                   <td 
                     key={cell.id} 
                     className="px-4 py-3 whitespace-nowrap text-sm text-foreground"
                   >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+        </div>
 
       {/* Pagination */}
       {table.getPageCount() > 1 && (
@@ -976,21 +976,21 @@ export const LeadTable: React.FC<LeadTableProps> = ({
             >
               Last
             </Button>
-            <select
-              value={table.getState().pagination.pageSize}
-              onChange={e => {
+          <select
+            value={table.getState().pagination.pageSize}
+            onChange={e => {
                 table.setPageSize(Number(e.target.value))
-              }}
+            }}
               className="p-2 border border-input bg-background text-foreground rounded-md text-sm focus:ring-ring focus:border-ring"
-            >
-              {[10, 20, 30, 40, 50].map(pageSize => (
-                <option key={pageSize} value={pageSize}>
-                  Show {pageSize}
-                </option>
-              ))}
-            </select>
-          </div>
+          >
+            {[10, 20, 30, 40, 50].map(pageSize => (
+              <option key={pageSize} value={pageSize}>
+                Show {pageSize}
+              </option>
+            ))}
+          </select>
         </div>
+      </div>
       )}
     </div>
   );

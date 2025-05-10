@@ -134,7 +134,7 @@ const SuperAdminLayout: React.FC = () => {
                         </button>
                       </li>
                     </ul>
-                  </nav>
+          </nav>
                 </aside>
               </div>
             </Transition.Child>
@@ -170,13 +170,13 @@ const SuperAdminLayout: React.FC = () => {
                     Welcome, <span className="font-medium text-foreground">{profile.full_name}</span>
                   </div>
                 )}
-                <button
-                  onClick={logout}
+          <button 
+            onClick={logout} 
                   className={`${commonNavLinkClasses} w-full bg-destructive/10 text-destructive hover:bg-destructive/20 group`}
-                >
+          >
                   <LogoutIcon className="mr-2 h-5 w-5 transition-transform group-hover:scale-105" />
-                  Logout
-                </button>
+            Logout
+          </button>
               </li>
             </ul>
           </nav>

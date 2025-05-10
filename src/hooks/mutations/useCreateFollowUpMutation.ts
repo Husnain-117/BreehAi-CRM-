@@ -42,7 +42,7 @@ export const useCreateFollowUpMutation = () => {
       if (error) {
         console.error('Error creating follow-up:', error);
         toast.error(`Error creating follow-up: ${error.message}`);
-        throw error;
+        throw error; 
       }
       if (!data) {
         throw new Error('No data returned after creating follow-up.');
@@ -53,7 +53,7 @@ export const useCreateFollowUpMutation = () => {
       onSuccess: (data) => {
         toast.success('Follow-up created successfully!');
         // Invalidate queries to refetch follow-ups list
-        queryClient.invalidateQueries({ queryKey: ['follow_ups'] });
+        queryClient.invalidateQueries({ queryKey: ['follow_ups'] }); 
         // Potentially invalidate queries related to the specific lead or agent
         if (data.lead_id) {
           queryClient.invalidateQueries({ queryKey: ['leads', data.lead_id] });

@@ -14,6 +14,7 @@ import FollowUpsPage from './pages/FollowUpsPage';
 import MeetingsPage from './pages/MeetingsPage';
 import AdminUsersPage from './pages/admin/AdminUsersPage';
 import AdminSettingsPage from './pages/admin/AdminSettingsPage';
+import TeamProgressPage from './pages/admin/TeamProgressPage'; // Import the new page
 import NotFoundPage from './pages/NotFoundPage';
 
 function App() {
@@ -69,6 +70,7 @@ function App() {
             <Route path="admin" element={<ProtectedRoute allowedRoles={['super_admin']} />}>
               <Route path="users" element={<AdminUsersPage />} />
               <Route path="settings" element={<AdminSettingsPage />} />
+              <Route path="team-progress" element={<TeamProgressPage />} />
             </Route>
           </Route>
         </Route>

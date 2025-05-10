@@ -1,5 +1,5 @@
 // src/pages/DashboardPage.tsx
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useLeadsQuery } from '../hooks/queries/useLeadsQuery';
@@ -55,23 +55,60 @@ const DashboardPage: React.FC = () => {
   const followUpStatusChartRef = useRef<ChartJS<'pie', number[], string> | null>(null);
   const meetingStatusChartRef = useRef<ChartJS<'pie', number[], string> | null>(null);
 
+  const [startDate, setStartDate] = useState<string>(''); // YYYY-MM-DD
+  const [endDate, setEndDate] = useState<string>('');     // YYYY-MM-DD
+
   const isLoading = isLoadingLeads || isLoadingFollowUps || isLoadingMeetings || isLoadingUsers;
 
-  const leadsArray: Lead[] = leadsResponse?.leads || [];
-  const followUpsArray: FollowUp[] = followUpsData || [];
-  const meetingsArray: Meeting[] = meetingsData || [];
+  const rawLeadsArray: Lead[] = leadsResponse?.leads || [];
+  const rawFollowUpsArray: FollowUp[] = followUpsData || [];
+  const rawMeetingsArray: Meeting[] = meetingsData || [];
   const usersArray: UserProfile[] = usersData || [];
+  
+  // Filtered data based on date range
+  const [filteredLeadsArray, setFilteredLeadsArray] = useState<Lead[]>([]);
+  const [filteredFollowUpsArray, setFilteredFollowUpsArray] = useState<FollowUp[]>([]);
+  const [filteredMeetingsArray, setFilteredMeetingsArray] = useState<Meeting[]>([]);
 
-  // --- KPI Calculations ---
-  const totalLeads = leadsResponse?.count || 0;
-  const totalFollowUps = followUpsArray.length || 0;
-  const pendingFollowUps = followUpsArray.filter((f: FollowUp) => f.status === 'Pending').length || 0;
-  const totalMeetings = meetingsArray.length || 0;
-  const scheduledMeetings = meetingsArray.filter((m: Meeting) => m.status === 'Scheduled').length || 0;
-  const activeAgents = usersArray.filter((u: UserProfile) => u.role === 'agent').length || 0;
+  useEffect(() => {
+    const filterByDateRange = <T extends { created_at: string }>(items: T[]): T[] => {
+      if (!startDate && !endDate) return items;
+      return items.filter(item => {
+        const itemDate = new Date(item.created_at);
+        const start = startDate ? new Date(startDate) : null;
+        const end = endDate ? new Date(endDate) : null;
+        if (start && itemDate < start) return false;
+        if (end) {
+          // To include the end date, set it to the end of the day
+          const endOfDay = new Date(end);
+          endOfDay.setHours(23, 59, 59, 999);
+          if (itemDate > endOfDay) return false;
+        }
+        return true;
+      });
+    };
+
+    setFilteredLeadsArray(filterByDateRange(rawLeadsArray));
+    setFilteredFollowUpsArray(filterByDateRange(rawFollowUpsArray));
+    setFilteredMeetingsArray(filterByDateRange(rawMeetingsArray));
+  }, [rawLeadsArray, rawFollowUpsArray, rawMeetingsArray, startDate, endDate]);
+
+
+  // --- KPI Calculations (now use filtered arrays) ---
+  const totalLeads = filteredLeadsArray.length; // Corrected to use filtered length
+  const totalFollowUps = filteredFollowUpsArray.length;
+  const pendingFollowUps = filteredFollowUpsArray.filter((f: FollowUp) => f.status === 'Pending').length;
+  const completedFollowUps = filteredFollowUpsArray.filter((f: FollowUp) => f.status === 'Completed').length;
+  const totalMeetings = filteredMeetingsArray.length;
+  const scheduledMeetings = filteredMeetingsArray.filter((m: Meeting) => m.status === 'Scheduled').length;
+  const completedMeetings = filteredMeetingsArray.filter((m: Meeting) => m.status === 'Completed').length;
+  const activeAgents = usersArray.filter((u: UserProfile) => u.role === 'agent').length;
+
+  const totalExpectedRevenue = filteredLeadsArray.reduce((sum, lead) => sum + (lead.deal_value || 0), 0);
+  
   // --- End KPI Calculations ---
 
-  // --- Chart Data Preparation ---
+  // --- Chart Data Preparation (now use filtered arrays) ---
   const followUpStatusData = {
     labels: ['Pending', 'Completed', 'Rescheduled', 'Cancelled'] as FollowUp['status'][],
     datasets: [
@@ -79,9 +116,9 @@ const DashboardPage: React.FC = () => {
         label: 'Follow-up Statuses',
         data: [
           pendingFollowUps,
-          followUpsArray.filter((f: FollowUp) => f.status === 'Completed').length || 0,
-          followUpsArray.filter((f: FollowUp) => f.status === 'Rescheduled').length || 0,
-          followUpsArray.filter((f: FollowUp) => f.status === 'Cancelled').length || 0,
+          completedFollowUps,
+          filteredFollowUpsArray.filter((f: FollowUp) => f.status === 'Rescheduled').length,
+          filteredFollowUpsArray.filter((f: FollowUp) => f.status === 'Cancelled').length,
         ],
         backgroundColor: [
           'rgba(255, 206, 86, 0.7)', // Yellow
@@ -100,7 +137,7 @@ const DashboardPage: React.FC = () => {
     ],
   };
 
-  const monthlyLeadCounts = leadsArray.reduce((acc, lead) => {
+  const monthlyLeadCounts = filteredLeadsArray.reduce((acc, lead) => {
     const month = new Date(lead.created_at).toLocaleString('default', { month: 'short' });
     acc[month] = (acc[month] || 0) + 1;
     return acc;
@@ -126,7 +163,7 @@ const DashboardPage: React.FC = () => {
   };
 
   // Meeting Status Data Preparation
-  const meetingStatusCounts = meetingsArray.reduce((acc, meeting) => {
+  const meetingStatusCounts = filteredMeetingsArray.reduce((acc, meeting) => {
     const status = meeting.status || 'Unknown';
     acc[status] = (acc[status] || 0) + 1;
     return acc;
@@ -160,7 +197,7 @@ const DashboardPage: React.FC = () => {
   };
 
   // Lead Source Data Preparation
-  const leadSourceCounts = leadsArray.reduce((acc, lead) => {
+  const leadSourceCounts = filteredLeadsArray.reduce((acc, lead) => {
     const source = lead.lead_source || 'Unknown';
     acc[source] = (acc[source] || 0) + 1;
     return acc;
@@ -184,6 +221,35 @@ const DashboardPage: React.FC = () => {
           'rgba(83, 102, 255, 0.7)',
         ],
         borderColor: Object.values(leadSourceCounts).map((_, index, arr) => arr[index] ? arr[index].toString().replace('0.7', '1') : 'rgba(0,0,0,1)'), // Derive from backgroundColor
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  const leadPriorityCounts = filteredLeadsArray.reduce((acc, lead) => {
+    const priority = lead.status_bucket || 'Unknown'; // status_bucket is P1, P2, P3
+    acc[priority] = (acc[priority] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const leadPriorityChartData = {
+    labels: Object.keys(leadPriorityCounts).sort(), // Sort to ensure P1, P2, P3 order if possible
+    datasets: [
+      {
+        label: 'Leads by Priority',
+        data: Object.keys(leadPriorityCounts).sort().map(key => leadPriorityCounts[key]),
+        backgroundColor: [
+          'rgba(255, 99, 132, 0.7)',  // P1 - Red
+          'rgba(255, 206, 86, 0.7)', // P2 - Yellow
+          'rgba(75, 192, 192, 0.7)',  // P3 - Green
+          'rgba(153, 102, 255, 0.7)', // Unknown - Purple
+        ],
+        borderColor: [
+          'rgba(255, 99, 132, 1)',
+          'rgba(255, 206, 86, 1)',
+          'rgba(75, 192, 192, 1)',
+          'rgba(153, 102, 255, 1)',
+        ],
         borderWidth: 1,
       },
     ],
@@ -282,47 +348,127 @@ const DashboardPage: React.FC = () => {
   }
 
   const renderAgentDashboard = () => {
-    // const p1Count = leadsData?.leads.filter(l => l.status_bucket === 'P1').length || 0;
-    // const p2Count = leadsData?.leads.filter(l => l.status_bucket === 'P2').length || 0;
-    // const p3Count = leadsData?.leads.filter(l => l.status_bucket === 'P3').length || 0;
+    const agentLeads = filteredLeadsArray.filter(lead => lead.agent_id === profile?.id);
+    const agentExpectedRevenue = agentLeads.reduce((sum, lead) => sum + (lead.deal_value || 0), 0);
+
     return (
-      <div className="mt-8 p-6 bg-card shadow-xl rounded-xl border border-border">
-        <h2 className="text-2xl font-semibold text-foreground mb-4">Agent Dashboard</h2>
-        <p className="text-muted-foreground">Welcome, {profile.full_name}!</p>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-          <StatCard title="My P1 Leads" value={0 /* Replace with actual data */} icon={<LeadsIcon />} description="High priority" />
-          <StatCard title="My Upcoming Follow-ups" value={0} icon={<FollowUpIcon />} />
-          <StatCard title="My Meetings Today" value={0} icon={<MeetingsIcon />} />
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <StatCard title="MY TOTAL LEADS" value={agentLeads.length.toString()} icon={<LeadsIcon />} />
+          {/* Add more agent-specific StatCards here using agentLeads, agentFollowUps, agentMeetings */}
+          <StatCard title="MY EXPECTED REVENUE" value={`$${agentExpectedRevenue.toLocaleString()}`} icon={<LeadsIcon />} />
         </div>
-        {/* Further agent-specific charts or lists can go here */}
+        {/* Agent-specific charts can be added here */}
+        <p className="text-muted-foreground">Your personal dashboard with leads and activities assigned to you.</p>
       </div>
     );
   };
 
   const renderManagerDashboard = () => {
+    if (!profile || !usersArray) return <p>Loading manager data...</p>;
+    const managedAgentIds = usersArray.filter(user => user.manager_id === profile.id).map(agent => agent.id);
+    const teamLeads = filteredLeadsArray.filter(lead => lead.agent_id && managedAgentIds.includes(lead.agent_id));
+    const teamExpectedRevenue = teamLeads.reduce((sum, lead) => sum + (lead.deal_value || 0), 0);
+
     return (
-      <div className="mt-8 p-6 bg-card shadow-xl rounded-xl border border-border">
-        <h2 className="text-2xl font-semibold text-foreground mb-4">Manager Dashboard</h2>
-        <p className="text-muted-foreground">Welcome, {profile.full_name}!</p>
-        <p className="text-muted-foreground mt-4">Team performance overview, lead distribution, etc. will be displayed here.</p>
-        {/* Placeholder for team P1/P2/P3 counts, conversion rates, agent performance charts */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-          <StatCard title="Team Open Leads" value={0} icon={<LeadsIcon />} />
-          <StatCard title="Team Conversion Rate" value={"0%"} icon={<UsersIcon />} /> 
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <StatCard title="TEAM TOTAL LEADS" value={teamLeads.length.toString()} icon={<LeadsIcon />} />
+          {/* Add more team-specific StatCards here */}
+          <StatCard title="TEAM EXPECTED REVENUE" value={`$${teamExpectedRevenue.toLocaleString()}`} icon={<LeadsIcon />} />
         </div>
+        {/* Team-specific charts can be added here */}
+        <p className="text-muted-foreground">Dashboard for your team's performance and activities.</p>
       </div>
     );
   };
 
   const renderSuperAdminDashboard = () => {
+    // totalExpectedRevenue is already calculated globally for Super Admin
     return (
-      <div className="mt-8 p-6 bg-card shadow-xl rounded-xl border border-border">
-        <h2 className="text-2xl font-semibold text-foreground mb-4">Super Admin Dashboard</h2>
-        <p className="text-muted-foreground">Welcome, {profile.full_name}!</p>
-        <p className="text-muted-foreground mt-4">Organization-wide overview, user activity, and system settings will be accessible here.</p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-          <StatCard title="Total Users" value={usersArray.length} icon={<UsersIcon />} />
-          <StatCard title="System Health" value={"Nominal"} icon={<UsersIcon />} /> {/* Placeholder icon */} 
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <StatCard title="TOTAL LEADS" value={totalLeads.toString()} icon={<LeadsIcon />} />
+          <StatCard title="TOTAL FOLLOW-UPS" value={totalFollowUps.toString()} icon={<FollowUpIcon />} />
+          <StatCard title="COMPLETED FOLLOW-UPS" value={completedFollowUps.toString()} icon={<FollowUpIcon />} />
+          <StatCard title="PENDING FOLLOW-UPS" value={pendingFollowUps.toString()} icon={<FollowUpIcon />} />
+          <StatCard title="TOTAL MEETINGS" value={totalMeetings.toString()} icon={<MeetingsIcon />} />
+          <StatCard title="COMPLETED MEETINGS" value={completedMeetings.toString()} icon={<MeetingsIcon />} />
+          <StatCard title="SCHEDULED MEETINGS" value={scheduledMeetings.toString()} icon={<MeetingsIcon />} />
+          <StatCard title="ACTIVE AGENTS" value={activeAgents.toString()} icon={<UsersIcon />} />
+          <StatCard title="TOTAL EXPECTED REVENUE" value={`$${totalExpectedRevenue.toLocaleString()}`} icon={<LeadsIcon />} />
+        </div>
+        
+        {/* Date Filter Inputs */}
+        <div className="bg-white p-4 shadow rounded-lg flex gap-4 items-center">
+          <div>
+            <label htmlFor="startDate" className="block text-sm font-medium text-gray-700">Start Date:</label>
+            <input 
+              type="date" 
+              id="startDate" 
+              value={startDate} 
+              onChange={(e) => setStartDate(e.target.value)} 
+              className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            />
+          </div>
+          <div>
+            <label htmlFor="endDate" className="block text-sm font-medium text-gray-700">End Date:</label>
+            <input 
+              type="date" 
+              id="endDate" 
+              value={endDate} 
+              onChange={(e) => setEndDate(e.target.value)} 
+              className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-white p-4 shadow rounded-lg h-96">
+            <h2 className="text-xl font-semibold text-center text-foreground mb-4">Follow-Up Status</h2>
+            <div style={{ height: '350px' }}> 
+              <Pie 
+                data={followUpStatusData} 
+                options={followUpChartOptions} 
+              />
+            </div>
+          </div>
+          <div className="bg-white p-4 shadow rounded-lg h-96">
+            <h2 className="text-xl font-semibold text-center text-foreground mb-4">Leads by Priority</h2>
+            <div style={{ height: '350px' }}> 
+              <Pie 
+                data={leadPriorityChartData} 
+                options={{...chartOptions, plugins: {...chartOptions.plugins, title: {...chartOptions.plugins?.title, text: 'Leads by Priority'}}}} 
+              />
+            </div>
+          </div>
+          <div className="bg-white p-4 shadow rounded-lg h-96">
+            <h2 className="text-xl font-semibold text-center text-foreground mb-4">New Leads (Last 6 Months)</h2>
+            <div style={{ height: '350px' }}> 
+              <Line 
+                data={leadsOverTimeData} 
+                options={lineChartOptions}
+              />
+            </div>
+          </div>
+          <div className="bg-white p-4 shadow rounded-lg h-96">
+            <h2 className="text-xl font-semibold text-center text-foreground mb-4">Meeting Status</h2>
+            <div style={{ height: '350px' }}> 
+              <Pie 
+                data={meetingStatusChartData} 
+                options={meetingStatusChartOptions} 
+              />
+            </div>
+          </div>
+          <div className="bg-white p-4 shadow rounded-lg h-96">
+            <h2 className="text-xl font-semibold text-center text-foreground mb-4">Lead Sources</h2>
+            <div style={{ height: '350px' }}> 
+              <Pie 
+                data={leadSourceChartData} 
+                options={leadSourceChartOptions} 
+              />
+            </div>
+          </div>
         </div>
       </div>
     );

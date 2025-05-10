@@ -50,6 +50,7 @@ const SuperAdminLayout: React.FC = () => {
     { to: '/leads', label: 'Leads Overview', icon: null }, // Add generic leads icon
     { to: '/admin/users', label: 'User Management', icon: UsersIcon },
     { to: '/admin/settings', label: 'System Settings', icon: SettingsIcon },
+    { to: '/admin/team-progress', label: 'Team Progress', icon: UsersIcon },
     // Add other general links like Follow-ups, Meetings if super admin needs them at top level
     { to: '/follow-ups', label: 'All Follow-Ups', icon: null },
     { to: '/meetings', label: 'All Meetings', icon: null },

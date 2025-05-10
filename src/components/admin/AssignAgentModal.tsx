@@ -82,7 +82,7 @@ export const AssignAgentModal: React.FC<AssignAgentModalProps> = ({ open, onClos
                     label="Manager"
                     name="manager_id"
                     value={managerId}
-                    onChange={e => setManagerId(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setManagerId(e.target.value)}
                     options={managerOptions}
                     disabled={managersLoading}
                   />

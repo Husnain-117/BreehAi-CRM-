@@ -50,6 +50,7 @@ export interface Lead {
   deal_value?: number | null;
   tags?: string[] | null;
   follow_up_due_date?: string | null;
+  notes?: string | null;
 }
 
 // You can add more types here as needed for FollowUps, Meetings etc.

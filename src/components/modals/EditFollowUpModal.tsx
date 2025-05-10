@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { FollowUp } from '../../types';
+import { FollowUp, Lead, UserProfile } from '../../types';
+import { SelectField } from '../ui/SelectField';
 
 // Type for the data needed to update a follow-up (subset of FollowUp fields)
 export interface UpdateFollowUpData {
@@ -16,6 +17,10 @@ interface EditFollowUpModalProps {
   onClose: () => void;
   onSubmit: (followUpData: UpdateFollowUpData) => void;
   followUpToEdit: FollowUp | null;
+  leads: Lead[];
+  agents: UserProfile[];
+  isLoadingLeads?: boolean;
+  isLoadingAgents?: boolean;
 }
 
 const EditFollowUpModal: React.FC<EditFollowUpModalProps> = ({
@@ -23,6 +28,10 @@ const EditFollowUpModal: React.FC<EditFollowUpModalProps> = ({
   onClose,
   onSubmit,
   followUpToEdit,
+  leads,
+  agents,
+  isLoadingLeads,
+  isLoadingAgents,
 }) => {
   const [leadId, setLeadId] = useState('');
   const [agentId, setAgentId] = useState('');
@@ -39,6 +48,9 @@ const EditFollowUpModal: React.FC<EditFollowUpModalProps> = ({
       setNotes(followUpToEdit.notes || '');
     } else if (!isOpen) {
       // Optionally reset fields when modal is closed if not re-initializing through followUpToEdit
+      // Consider resetting to initial followUpToEdit values if it exists, or empty if not.
+      // For simplicity, we only reset if the modal is closing *without* a followUpToEdit (e.g. initial mount)
+      // However, the current logic is fine as it re-populates based on followUpToEdit when isOpen changes.
     }
   }, [isOpen, followUpToEdit]);
 
@@ -65,6 +77,23 @@ const EditFollowUpModal: React.FC<EditFollowUpModalProps> = ({
 
   if (!isOpen || !followUpToEdit) return null;
 
+  const leadOptions = [
+    { value: '', label: 'Select Lead' },
+    ...(leads?.map(lead => ({
+      value: lead.id,
+      label: `${lead.clients?.client_name || lead.contact_person || 'Unnamed Lead'} (ID: ${lead.id.substring(0, 8)}...)`
+    })) || [])
+  ];
+
+  const agentOptions = [
+    { value: '', label: 'Select Agent' },
+    ...(agents?.map(agent => ({
+      value: agent.id,
+      label: agent.full_name || agent.email || 'Unnamed Agent'
+    })) || [])
+  ];
+
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 transition-opacity duration-300 ease-in-out">
       <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
@@ -73,38 +102,31 @@ const EditFollowUpModal: React.FC<EditFollowUpModalProps> = ({
           <button onClick={onClose} className="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="edit-followup-leadId" className="block text-sm font-medium text-gray-700">Lead <span className="text-red-500">*</span> (ID)</label>
-            <input
-              type="text"
-              id="edit-followup-leadId"
-              placeholder="Lead ID"
-              value={leadId}
-              onChange={(e) => setLeadId(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              required
-              // Potentially make read-only or use a selector
-            />
-          </div>
-          <div>
-            <label htmlFor="edit-followup-agentId" className="block text-sm font-medium text-gray-700">Agent <span className="text-red-500">*</span> (ID)</label>
-            <input
-              type="text"
-              id="edit-followup-agentId"
-              placeholder="Agent ID"
-              value={agentId}
-              onChange={(e) => setAgentId(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              required
-            />
-          </div>
+          <SelectField
+            id="edit-followup-leadId"
+            label="Lead"
+            value={leadId}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setLeadId(e.target.value)}
+            options={leadOptions}
+            isLoading={isLoadingLeads}
+            required
+          />
+          <SelectField
+            id="edit-followup-agentId"
+            label="Agent"
+            value={agentId}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setAgentId(e.target.value)}
+            options={agentOptions}
+            isLoading={isLoadingAgents}
+            required
+          />
           <div>
             <label htmlFor="edit-followup-dueDate" className="block text-sm font-medium text-gray-700">Due Date <span className="text-red-500">*</span></label>
             <input
               type="date"
               id="edit-followup-dueDate"
               value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDueDate(e.target.value)}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
               required
             />
@@ -114,7 +136,7 @@ const EditFollowUpModal: React.FC<EditFollowUpModalProps> = ({
             <select
               id="edit-followup-status"
               value={status}
-              onChange={(e) => setStatus(e.target.value as FollowUp['status'])}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setStatus(e.target.value as FollowUp['status'])}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
             >
               <option value="Pending">Pending</option>
@@ -128,7 +150,7 @@ const EditFollowUpModal: React.FC<EditFollowUpModalProps> = ({
             <textarea
               id="edit-followup-notes"
               value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNotes(e.target.value)}
               rows={3}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
             />

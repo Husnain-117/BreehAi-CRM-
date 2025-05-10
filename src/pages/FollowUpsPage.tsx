@@ -417,9 +417,11 @@ const FollowUpsPage: React.FC = () => {
               <div key={followUp.id} className="bg-white shadow-lg rounded-xl p-5 border border-gray-200 hover:shadow-xl transition-shadow duration-300 ease-in-out flex flex-col justify-between">
                 <div>
                   <div className="flex justify-between items-start mb-3">
-                    <h2 className="text-lg font-semibold text-indigo-700 flex-grow truncate pr-2">
-                      Follow-up for {followUp.leads?.clients?.client_name || followUp.leads?.client_id || 'N/A'}
-            </h2>
+                    <h2 className="text-lg font-semibold text-indigo-700 flex items-center flex-grow truncate pr-2">
+                      <LeadIcon /> 
+                      <span className="ml-1.5">Follow-up for {followUp.leads?.clients?.client_name || followUp.leads?.contact_person || (followUp.lead_id ? `Lead ID ${followUp.lead_id.substring(0,8)}...` : 'N/A')}
+                    </span>
+                    </h2>
                     {followUp.status && (
                       <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${getStatusColor(followUp.status)}`}>
                         {followUp.status}
@@ -538,6 +540,10 @@ const FollowUpsPage: React.FC = () => {
           isOpen={isCreateModalOpen}
           onClose={() => setCreateModalOpen(false)}
           onSubmit={handleCreateFollowUpSubmit}
+          leads={leadsList}
+          agents={agents}
+          isLoadingLeads={isLoadingLeads}
+          isLoadingAgents={isLoadingUsers}
         />
       )}
 
@@ -550,6 +556,10 @@ const FollowUpsPage: React.FC = () => {
           }}
           onSubmit={handleUpdateFollowUpSubmit}
           followUpToEdit={currentEditingFollowUp}
+          leads={leadsList}
+          agents={agents}
+          isLoadingLeads={isLoadingLeads}
+          isLoadingAgents={isLoadingUsers}
         />
       )}
 

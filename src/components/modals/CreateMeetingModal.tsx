@@ -1,44 +1,45 @@
 import React, { useState, useEffect } from 'react';
 import { Meeting, Lead, UserProfile } from '../../types'; // Assuming these types are available
+import { SelectField } from '../ui/SelectField'; // Import SelectField
 
 interface CreateMeetingModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (meetingData: Omit<Meeting, 'id' | 'created_at' | 'updated_at' | 'leads' | 'users'> & { lead_id: string; agent_id: string }) => void;
-  // You might want to pass leads and agents lists as props if fetched in parent
-  // leadsList: Lead[]; 
-  // agentsList: UserProfile[];
+  leads: Lead[]; 
+  agents: UserProfile[];
+  isLoadingLeads?: boolean;
+  isLoadingAgents?: boolean;
 }
 
 const CreateMeetingModal: React.FC<CreateMeetingModalProps> = ({
   isOpen,
   onClose,
   onSubmit,
-  // leadsList = [], 
-  // agentsList = [],
+  leads,
+  agents,
+  isLoadingLeads,
+  isLoadingAgents,
 }) => {
   const [title, setTitle] = useState('');
-  const [leadId, setLeadId] = useState(''); // Should be an ID from a Lead object
-  const [agentId, setAgentId] = useState(''); // Should be an ID from a UserProfile object
+  const [leadId, setLeadId] = useState(''); 
+  const [agentId, setAgentId] = useState(''); 
   const [date, setDate] = useState('');
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
   const [location, setLocation] = useState('');
   const [notes, setNotes] = useState('');
-  const [status, setStatus] = useState<'Scheduled' | 'Pending'>('Scheduled'); // Default status
+  const [status, setStatus] = useState<'Scheduled' | 'Pending'>('Scheduled');
 
   useEffect(() => {
-    // Reset form when modal opens or closes, except when it's just opening
     if (isOpen) {
-        // You could pre-fill date/time here if needed, e.g., to current date/next hour
         const today = new Date().toISOString().split('T')[0];
         setDate(today);
-        // Reset other fields if needed
-        setTitle('New Meeting'); // Default title
+        setTitle('New Meeting'); 
         setLeadId('');
         setAgentId('');
-        setStartTime('09:00'); // Default start time
-        setEndTime('10:00');   // Default end time
+        setStartTime('09:00'); 
+        setEndTime('10:00');   
         setLocation('');
         setNotes('');
         setStatus('Scheduled');
@@ -51,7 +52,6 @@ const CreateMeetingModal: React.FC<CreateMeetingModalProps> = ({
       alert('Please fill in all required fields: Title, Lead, Agent, Date, Start Time, and End Time.');
       return;
     }
-    // Combine date and time for start_time and end_time
     const start_time = new Date(`${date}T${startTime}`).toISOString();
     const end_time = new Date(`${date}T${endTime}`).toISOString();
 
@@ -65,10 +65,25 @@ const CreateMeetingModal: React.FC<CreateMeetingModalProps> = ({
       location: location || undefined,
       notes: notes || undefined,
     });
-    // onClose(); // Typically, the parent component closes the modal on successful submission
   };
 
   if (!isOpen) return null;
+
+  const leadOptions = [
+    { value: '', label: 'Select Lead' },
+    ...(leads?.map(lead => ({
+      value: lead.id,
+      label: `${lead.clients?.client_name || lead.contact_person || 'Unnamed Lead'} (ID: ${lead.id.substring(0, 8)}...)`
+    })) || [])
+  ];
+
+  const agentOptions = [
+    { value: '', label: 'Select Agent' },
+    ...(agents?.map(agent => ({
+      value: agent.id,
+      label: agent.full_name || agent.email || 'Unnamed Agent'
+    })) || [])
+  ];
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 transition-opacity duration-300 ease-in-out">
@@ -84,48 +99,34 @@ const CreateMeetingModal: React.FC<CreateMeetingModalProps> = ({
               type="text"
               id="title"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTitle(e.target.value)}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
               required
             />
           </div>
-          {/* Replace with searchable dropdowns later */}
-          <div>
-            <label htmlFor="leadId" className="block text-sm font-medium text-gray-700">Lead <span className="text-red-500">*</span></label>
-            <input 
-              type="text" 
-              id="leadId" 
-              placeholder="Enter Lead ID (e.g., from CRM)"
-              value={leadId} 
-              onChange={(e) => setLeadId(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              required
-            />
-            {/* Example for dropdown later:
-            <select id="leadId" value={leadId} onChange={(e) => setLeadId(e.target.value)} required className="...">
-              <option value="">Select Lead</option>
-              {leadsList.map(lead => <option key={lead.id} value={lead.id}>{lead.clients?.client_name || lead.id}</option>)}
-            </select>
-            */}
-          </div>
-          <div>
-            <label htmlFor="agentId" className="block text-sm font-medium text-gray-700">Agent <span className="text-red-500">*</span></label>
-            <input 
-              type="text" 
-              id="agentId" 
-              placeholder="Enter Agent ID"
-              value={agentId} 
-              onChange={(e) => setAgentId(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              required
-            />
-             {/* Example for dropdown later:
-            <select id="agentId" value={agentId} onChange={(e) => setAgentId(e.target.value)} required className="...">
-              <option value="">Select Agent</option>
-              {agentsList.map(agent => <option key={agent.id} value={agent.id}>{agent.full_name || agent.id}</option>)}
-            </select>
-            */}
-          </div>
+          
+          <SelectField
+            id="leadId"
+            label="Lead"
+            value={leadId}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setLeadId(e.target.value)}
+            options={leadOptions}
+            isLoading={isLoadingLeads}
+            required
+            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          />
+
+          <SelectField
+            id="agentId"
+            label="Agent"
+            value={agentId}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setAgentId(e.target.value)}
+            options={agentOptions}
+            isLoading={isLoadingAgents}
+            required
+            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          />
+          
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label htmlFor="date" className="block text-sm font-medium text-gray-700">Date <span className="text-red-500">*</span></label>
@@ -133,7 +134,7 @@ const CreateMeetingModal: React.FC<CreateMeetingModalProps> = ({
                 type="date"
                 id="date"
                 value={date}
-                onChange={(e) => setDate(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDate(e.target.value)}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 required
               />
@@ -144,7 +145,7 @@ const CreateMeetingModal: React.FC<CreateMeetingModalProps> = ({
                 type="time"
                 id="startTime"
                 value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setStartTime(e.target.value)}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 required
               />
@@ -155,7 +156,7 @@ const CreateMeetingModal: React.FC<CreateMeetingModalProps> = ({
                 type="time"
                 id="endTime"
                 value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEndTime(e.target.value)}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 required
               />
@@ -166,7 +167,7 @@ const CreateMeetingModal: React.FC<CreateMeetingModalProps> = ({
             <select
               id="status"
               value={status}
-              onChange={(e) => setStatus(e.target.value as 'Scheduled' | 'Pending')}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setStatus(e.target.value as 'Scheduled' | 'Pending')}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
             >
               <option value="Scheduled">Scheduled</option>
@@ -179,7 +180,7 @@ const CreateMeetingModal: React.FC<CreateMeetingModalProps> = ({
               type="text"
               id="location"
               value={location}
-              onChange={(e) => setLocation(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLocation(e.target.value)}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
             />
           </div>
@@ -188,7 +189,7 @@ const CreateMeetingModal: React.FC<CreateMeetingModalProps> = ({
             <textarea
               id="notes"
               value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNotes(e.target.value)}
               rows={3}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
             />

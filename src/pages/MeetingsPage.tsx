@@ -397,7 +397,7 @@ const MeetingsPage: React.FC = () => {
                       <div className="space-y-2 text-sm text-gray-700">
                         <p className="flex items-center">
                           <LeadIcon />
-                          <span className="font-medium text-gray-800 mr-1">Lead:</span> {meeting.leads?.clients?.client_name || meeting.leads?.client_id || 'N/A'}
+                          <span className="font-medium text-gray-800 mr-1">Lead:</span> {meeting.leads?.clients?.client_name || meeting.leads?.contact_person || (meeting.lead_id ? `Lead ID ${meeting.lead_id.substring(0,8)}...` : 'N/A')}
                         </p>
                         <p className="flex items-center">
                           <UserIcon />
@@ -524,7 +524,10 @@ const MeetingsPage: React.FC = () => {
         isOpen={isCreateModalOpen}
         onClose={() => setCreateModalOpen(false)}
         onSubmit={handleCreateMeetingSubmit}
-        // Pass leadsList and agentsList here if you fetch them for dropdowns
+        leads={leadsList}
+        agents={agents}
+        isLoadingLeads={isLoadingLeads}
+        isLoadingAgents={isLoadingUsers}
       />
 
       {currentEditingMeeting && (
@@ -536,6 +539,10 @@ const MeetingsPage: React.FC = () => {
           }}
           onSubmit={handleUpdateMeetingSubmit}
           meetingToEdit={currentEditingMeeting}
+          leads={leadsList}
+          agents={agents}
+          isLoadingLeads={isLoadingLeads}
+          isLoadingAgents={isLoadingUsers}
         />
       )}
 

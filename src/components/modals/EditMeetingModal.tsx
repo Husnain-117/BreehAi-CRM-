@@ -1,12 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Meeting } from '../../types'; // Assuming Meeting type is available
+import { Meeting, Lead, UserProfile } from '../../types'; // Assuming Meeting type is available
 import { UpdateMeetingData } from '../../hooks/mutations/useUpdateMeetingMutation'; // For the onSubmit prop
+import { SelectField } from '../ui/SelectField'; // Import SelectField
 
 interface EditMeetingModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (meetingData: UpdateMeetingData) => void;
   meetingToEdit: Meeting | null;
+  leads: Lead[];
+  agents: UserProfile[];
+  isLoadingLeads?: boolean;
+  isLoadingAgents?: boolean;
 }
 
 const EditMeetingModal: React.FC<EditMeetingModalProps> = ({
@@ -14,9 +19,13 @@ const EditMeetingModal: React.FC<EditMeetingModalProps> = ({
   onClose,
   onSubmit,
   meetingToEdit,
+  leads,
+  agents,
+  isLoadingLeads,
+  isLoadingAgents,
 }) => {
   const [title, setTitle] = useState('');
-  const [leadId, setLeadId] = useState<string | null>('');
+  const [leadId, setLeadId] = useState<string>(''); // Changed from string | null
   const [agentId, setAgentId] = useState('');
   const [date, setDate] = useState('');
   const [startTime, setStartTime] = useState('');
@@ -28,7 +37,7 @@ const EditMeetingModal: React.FC<EditMeetingModalProps> = ({
   useEffect(() => {
     if (isOpen && meetingToEdit) {
       setTitle(meetingToEdit.title);
-      setLeadId(meetingToEdit.lead_id);
+      setLeadId(meetingToEdit.lead_id || ''); // Handle possible null from meetingToEdit.lead_id
       setAgentId(meetingToEdit.agent_id);
       
       const startDate = new Date(meetingToEdit.start_time);
@@ -42,8 +51,8 @@ const EditMeetingModal: React.FC<EditMeetingModalProps> = ({
       setLocation(meetingToEdit.location || '');
       setNotes(meetingToEdit.notes || '');
     } else if (!isOpen) {
-      // Optionally reset fields when modal is closed and not just opening for a new edit
-      // This might be redundant if parent always passes a fresh meetingToEdit or null
+      // Reset fields if needed when modal closes and no meeting is being edited
+      // For now, useEffect handles re-population if a new meetingToEdit is passed
     }
   }, [isOpen, meetingToEdit]);
 
@@ -64,7 +73,7 @@ const EditMeetingModal: React.FC<EditMeetingModalProps> = ({
     onSubmit({
       id: meetingToEdit.id,
       title,
-      lead_id: leadId,
+      lead_id: leadId, // This will be string, or empty string if unselected (which is fine if lead_id can be null in DB)
       agent_id: agentId,
       start_time,
       end_time,
@@ -75,6 +84,22 @@ const EditMeetingModal: React.FC<EditMeetingModalProps> = ({
   };
 
   if (!isOpen || !meetingToEdit) return null;
+
+  const leadOptions = [
+    { value: '', label: 'Select Lead' },
+    ...(leads?.map(lead => ({
+      value: lead.id,
+      label: `${lead.clients?.client_name || lead.contact_person || 'Unnamed Lead'} (ID: ${lead.id.substring(0, 8)}...)`
+    })) || [])
+  ];
+
+  const agentOptions = [
+    { value: '', label: 'Select Agent' },
+    ...(agents?.map(agent => ({
+      value: agent.id,
+      label: agent.full_name || agent.email || 'Unnamed Agent'
+    })) || [])
+  ];
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 transition-opacity duration-300 ease-in-out">
@@ -90,48 +115,43 @@ const EditMeetingModal: React.FC<EditMeetingModalProps> = ({
               type="text"
               id="edit-title"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTitle(e.target.value)}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
               required
             />
           </div>
-          <div>
-            <label htmlFor="edit-leadId" className="block text-sm font-medium text-gray-700">Lead <span className="text-red-500">*</span> (ID)</label>
-            <input 
-              type="text" 
-              id="edit-leadId" 
-              placeholder="Lead ID"
-              value={leadId || ''} 
-              onChange={(e) => setLeadId(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              required
-              // Consider making this read-only or using a proper selector if leads shouldn't be changed easily post-creation or require specific selection logic
-            />
-          </div>
-          <div>
-            <label htmlFor="edit-agentId" className="block text-sm font-medium text-gray-700">Agent <span className="text-red-500">*</span> (ID)</label>
-            <input 
-              type="text" 
-              id="edit-agentId" 
-              placeholder="Agent ID"
-              value={agentId}
-              onChange={(e) => setAgentId(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              required
-            />
-          </div>
+          <SelectField
+            id="edit-leadId"
+            label="Lead"
+            value={leadId} // leadId is now always string
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setLeadId(e.target.value)}
+            options={leadOptions}
+            isLoading={isLoadingLeads}
+            required
+            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          />
+          <SelectField
+            id="edit-agentId"
+            label="Agent"
+            value={agentId}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setAgentId(e.target.value)}
+            options={agentOptions}
+            isLoading={isLoadingAgents}
+            required
+            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          />
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label htmlFor="edit-date" className="block text-sm font-medium text-gray-700">Date <span className="text-red-500">*</span></label>
-              <input type="date" id="edit-date" value={date} onChange={(e) => setDate(e.target.value)} required className="mt-1 block w-full date-input" />
+              <input type="date" id="edit-date" value={date} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDate(e.target.value)} required className="mt-1 block w-full date-input" />
             </div>
             <div>
               <label htmlFor="edit-startTime" className="block text-sm font-medium text-gray-700">Start Time <span className="text-red-500">*</span></label>
-              <input type="time" id="edit-startTime" value={startTime} onChange={(e) => setStartTime(e.target.value)} required className="mt-1 block w-full time-input" />
+              <input type="time" id="edit-startTime" value={startTime} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setStartTime(e.target.value)} required className="mt-1 block w-full time-input" />
             </div>
             <div>
               <label htmlFor="edit-endTime" className="block text-sm font-medium text-gray-700">End Time <span className="text-red-500">*</span></label>
-              <input type="time" id="edit-endTime" value={endTime} onChange={(e) => setEndTime(e.target.value)} required className="mt-1 block w-full time-input" />
+              <input type="time" id="edit-endTime" value={endTime} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEndTime(e.target.value)} required className="mt-1 block w-full time-input" />
             </div>
           </div>
           <div>
@@ -139,7 +159,7 @@ const EditMeetingModal: React.FC<EditMeetingModalProps> = ({
             <select
               id="edit-status"
               value={status}
-              onChange={(e) => setStatus(e.target.value as Meeting['status'])}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setStatus(e.target.value as Meeting['status'])}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
             >
               <option value="Scheduled">Scheduled</option>
@@ -154,7 +174,7 @@ const EditMeetingModal: React.FC<EditMeetingModalProps> = ({
               type="text"
               id="edit-location"
               value={location}
-              onChange={(e) => setLocation(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLocation(e.target.value)}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
             />
           </div>
@@ -163,7 +183,7 @@ const EditMeetingModal: React.FC<EditMeetingModalProps> = ({
             <textarea
               id="edit-notes"
               value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNotes(e.target.value)}
               rows={3}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
             />

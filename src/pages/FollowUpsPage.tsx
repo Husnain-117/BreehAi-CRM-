@@ -1,10 +1,12 @@
 // src/pages/FollowUpsPage.tsx
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom'; // Import useSearchParams
 import { useFollowUpsQuery } from '../hooks/queries/useFollowUpsQuery';
 import { FollowUp, Lead, UserProfile } from '../types'; // Assuming FollowUp type is exported
 import { useLeadsQuery } from '../hooks/queries/useLeadsQuery'; // Import useLeadsQuery
 import { useUsersQuery } from '../hooks/queries/useUsersQuery'; // Import useUsersQuery
 import { toast } from 'react-hot-toast'; // Import toast
+import { playNotificationSound } from '../utils/soundUtils'; // Import the sound utility
 
 import CreateFollowUpModal, { NewFollowUpData } from '../components/modals/CreateFollowUpModal'; // Import the modal and type
 import EditFollowUpModal, { UpdateFollowUpData } from '../components/modals/EditFollowUpModal'; // Import Edit modal and type
@@ -71,11 +73,14 @@ const FollowUpsPage: React.FC = () => {
   const { data: followUpsData, isLoading: isLoadingFollowUps, error: errorFollowUps, refetch: refetchFollowUps } = useFollowUpsQuery({});
   const { data: leadsResponse, isLoading: isLoadingLeads } = useLeadsQuery({});
   const { data: usersArray, isLoading: isLoadingUsers } = useUsersQuery({});
+  const [searchParams, setSearchParams] = useSearchParams(); // Initialize useSearchParams
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedAgent, setSelectedAgent] = useState<string>('');
   const [selectedLead, setSelectedLead] = useState<string>('');
-  const [selectedStatus, setSelectedStatus] = useState<FollowUp['status'] | ''>('');
+  const [selectedStatus, setSelectedStatus] = useState<FollowUp['status'] | ''>(
+    () => (searchParams.get('status') as FollowUp['status']) || '' // Initialize from URL
+  );
   const [dateFrom, setDateFrom] = useState<string>('');
   const [dateTo, setDateTo] = useState<string>('');
   const [sortBy, setSortBy] = useState<string>('due_date_asc'); // Default sort
@@ -200,11 +205,13 @@ const FollowUpsPage: React.FC = () => {
   const handleCompleteFollowUp = async (id: string, leadInfo: string) => {
     const followUpToComplete = processedFollowUps.find(f => f.id === id);
     if (!followUpToComplete) {
-      toast("Could not find the follow-up to complete.");
+      toast.error("Could not find the follow-up to complete.");
+      playNotificationSound('error');
       return;
     }
     if (followUpToComplete.status === 'Completed' || followUpToComplete.status === 'Cancelled') {
-      toast(`Follow-up for "${leadInfo}" is already ${followUpToComplete.status.toLowerCase()}.`);
+      toast(`Follow-up for "${leadInfo}" is already ${followUpToComplete.status.toLowerCase()}.`, { icon: 'ℹ️' });
+      playNotificationSound('info');
       return;
     }
 
@@ -212,11 +219,13 @@ const FollowUpsPage: React.FC = () => {
       try {
         await updateFollowUpMutation.mutateAsync({ id, status: 'Completed' });
         refetchFollowUps();
-        // toast.success('Follow-up marked as completed!'); // Already handled by mutation hook
+        // toast.success('Follow-up marked as completed!'); // Toast is handled by mutation hook, but we can play sound here
+        playNotificationSound('success');
       } catch (err) {
         console.error("Error completing follow-up from page:", err);
         const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
         toast.error(`Failed to mark follow-up as completed: ${errorMessage}`);
+        playNotificationSound('error');
       }
     }
   };
@@ -274,6 +283,35 @@ const FollowUpsPage: React.FC = () => {
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, selectedAgent, selectedLead, selectedStatus, dateFrom, dateTo, sortBy]);
+
+  useEffect(() => {
+    const statusFromQuery = searchParams.get('status') as FollowUp['status'] | null;
+    if (statusFromQuery && ['Pending', 'Completed', 'Rescheduled', 'Cancelled'].includes(statusFromQuery)) {
+      if (selectedStatus !== statusFromQuery) {
+        setSelectedStatus(statusFromQuery);
+      }
+    } else if (!statusFromQuery && selectedStatus !== '') {
+      // Optional: If the query param is removed or invalid, clear the filter
+      // setSelectedStatus(''); 
+    }
+  }, [searchParams, selectedStatus]);
+
+  // When a filter changes, update the URL (optional, but good for shareable links)
+  useEffect(() => {
+    const newParams = new URLSearchParams();
+    if (selectedStatus) newParams.set('status', selectedStatus);
+    // Add other filters to params if desired (selectedAgent, selectedLead, etc.)
+    // if (selectedAgent) newParams.set('agent', selectedAgent);
+    // if (selectedLead) newParams.set('lead', selectedLead);
+    // if (dateFrom) newParams.set('dateFrom', dateFrom);
+    // if (dateTo) newParams.set('dateTo', dateTo);
+    // if (searchTerm) newParams.set('search', searchTerm);
+
+    // Update URL only if params actually change to avoid unnecessary re-renders/history entries
+    if (newParams.toString() !== searchParams.toString()) {
+        setSearchParams(newParams, { replace: true }); // Use replace to avoid too many history entries
+    }
+  }, [selectedStatus, setSearchParams]); // Add other state dependencies if they should update URL
 
   const isLoading = isLoadingFollowUps || isLoadingLeads || isLoadingUsers;
 
@@ -381,7 +419,7 @@ const FollowUpsPage: React.FC = () => {
                   <div className="flex justify-between items-start mb-3">
                     <h2 className="text-lg font-semibold text-indigo-700 flex-grow truncate pr-2">
                       Follow-up for {followUp.leads?.clients?.client_name || followUp.leads?.client_id || 'N/A'}
-                    </h2>
+            </h2>
                     {followUp.status && (
                       <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${getStatusColor(followUp.status)}`}>
                         {followUp.status}

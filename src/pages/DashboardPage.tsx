@@ -1,5 +1,6 @@
 // src/pages/DashboardPage.tsx
-import React from 'react';
+import React, { useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useLeadsQuery } from '../hooks/queries/useLeadsQuery';
 import { useFollowUpsQuery } from '../hooks/queries/useFollowUpsQuery';
@@ -7,8 +8,8 @@ import { useMeetingsQuery } from '../hooks/queries/useMeetingsQuery';
 import { useUsersQuery } from '../hooks/queries/useUsersQuery';
 import { FollowUp, Meeting, UserProfile, Lead } from '../types'; // Ensure Lead, Meeting, UserProfile are imported if not already
 import StatCard from '../components/dashboard/StatCard';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, Title } from 'chart.js';
-import { Pie, Line } from 'react-chartjs-2';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, Title, ChartEvent, ActiveElement } from 'chart.js';
+import { Pie, Line, getElementAtEvent } from 'react-chartjs-2';
 
 // Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, Title);
@@ -47,6 +48,10 @@ const DashboardPage: React.FC = () => {
   const { data: meetingsData, isLoading: isLoadingMeetings } = useMeetingsQuery({});
   const { data: usersData, isLoading: isLoadingUsers } = useUsersQuery({});
 
+  const navigate = useNavigate();
+  const followUpStatusChartRef = useRef<ChartJS<'pie', number[], string> | null>(null);
+  const meetingStatusChartRef = useRef<ChartJS<'pie', number[], string> | null>(null);
+
   const isLoading = isLoadingLeads || isLoadingFollowUps || isLoadingMeetings || isLoadingUsers;
 
   const leadsArray: Lead[] = leadsResponse?.leads || [];
@@ -65,7 +70,7 @@ const DashboardPage: React.FC = () => {
 
   // --- Chart Data Preparation ---
   const followUpStatusData = {
-    labels: ['Pending', 'Completed', 'Rescheduled', 'Cancelled'],
+    labels: ['Pending', 'Completed', 'Rescheduled', 'Cancelled'] as FollowUp['status'][],
     datasets: [
       {
         label: 'Follow-up Statuses',
@@ -181,6 +186,18 @@ const DashboardPage: React.FC = () => {
     ],
   };
 
+  const onFollowUpStatusClick = (event: ChartEvent) => {
+    if (!followUpStatusChartRef.current) return;
+    const elements = getElementAtEvent(followUpStatusChartRef.current, event as unknown as React.MouseEvent<HTMLCanvasElement, MouseEvent>);
+    if (elements.length > 0) {
+      const elementIndex = elements[0].index;
+      const status = followUpStatusData.labels[elementIndex];
+      if (status) {
+        navigate(`/follow-ups?status=${encodeURIComponent(status)}`);
+      }
+    }
+  };
+
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -194,7 +211,64 @@ const DashboardPage: React.FC = () => {
       }
     }
   };
-  // --- End Chart Data Preparation ---
+
+  const followUpChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    onClick: onFollowUpStatusClick,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+      },
+      title: {
+        display: true,
+        text: 'Follow-up Statuses'
+      }
+    },
+    events: ['mousemove', 'mouseout', 'click', 'touchstart', 'touchmove'] as const,
+  };
+
+  const lineChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+      },
+      title: {
+        display: true,
+        text: 'New Leads (Last 6 Months)'
+      }
+    }
+  };
+
+  const meetingStatusChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+      },
+      title: {
+        display: true,
+        text: 'Meeting Statuses'
+      }
+    }
+  };
+
+  const leadSourceChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+      },
+      title: {
+        display: true,
+        text: 'Lead Source Distribution'
+      }
+    }
+  };
 
   if (authLoading || isLoading) { // Combined loading state for auth and data
     return <div className="p-6 text-center text-xl">Loading dashboard data...</div>;
@@ -275,13 +349,7 @@ const DashboardPage: React.FC = () => {
           <div style={{ height: '350px' }}> 
             <Pie 
               data={followUpStatusData} 
-              options={{
-                ...chartOptions,
-                plugins: {
-                  ...chartOptions.plugins,
-                  title: { display: true, text: 'Follow-Up Distribution' }
-                }
-              }} 
+              options={followUpChartOptions} 
             />
           </div>
         </div>
@@ -290,13 +358,7 @@ const DashboardPage: React.FC = () => {
           <div style={{ height: '350px' }}> 
             <Line 
               data={leadsOverTimeData} 
-              options={{
-                ...chartOptions,
-                plugins: {
-                  ...chartOptions.plugins,
-                  title: { display: true, text: 'Monthly New Leads' }
-                }
-              }}
+              options={lineChartOptions}
             />
           </div>
         </div>
@@ -305,13 +367,7 @@ const DashboardPage: React.FC = () => {
           <div style={{ height: '350px' }}> 
             <Pie 
               data={meetingStatusChartData} 
-              options={{
-                ...chartOptions,
-                plugins: {
-                  ...chartOptions.plugins,
-                  title: { display: true, text: 'Meeting Status Distribution' }
-                }
-              }} 
+              options={meetingStatusChartOptions} 
             />
           </div>
         </div>
@@ -320,13 +376,7 @@ const DashboardPage: React.FC = () => {
           <div style={{ height: '350px' }}> 
             <Pie 
               data={leadSourceChartData} 
-              options={{
-                ...chartOptions,
-                plugins: {
-                  ...chartOptions.plugins,
-                  title: { display: true, text: 'Lead Source Distribution' }
-                }
-              }} 
+              options={leadSourceChartOptions} 
             />
           </div>
         </div>
@@ -337,7 +387,7 @@ const DashboardPage: React.FC = () => {
         <h2 className="text-xl font-semibold text-gray-700 mb-4">Activity Feed (Coming Soon)</h2>
         <p className="text-gray-500">Recent activities and updates will appear here.</p>
       </div> */}
-
+      
       {profile.role === 'agent' && renderAgentDashboard()}
       {profile.role === 'manager' && renderManagerDashboard()}
       {profile.role === 'super_admin' && renderSuperAdminDashboard()}

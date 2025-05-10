@@ -1,6 +1,87 @@
 @tailwind base;
 @tailwind components;
-@tailwind utilities; 
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 40% 98%;
+    --foreground: 220 13% 23%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 13% 23%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 13% 23%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 172 61% 50%;
+    --secondary-foreground: 172 30% 20%;
+    --muted: 220 20% 92%;
+    --muted-foreground: 220 10% 45%;
+    --accent: 190 70% 55%;
+    --accent-foreground: 190 30% 20%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 220 15% 88%;
+    --input: 220 15% 94%; /* Used for input backgrounds or borders */
+    --ring: 217 91% 70%; /* For focus rings */
+    --radius: 0.75rem; /* Slightly larger radius for modern look */
+  }
+
+  .dark {
+    /* Define dark theme variables here if needed in the future */
+    /* For example:
+    --background: 220 13% 18%;
+    --foreground: 210 40% 90%;
+    --card: 220 13% 22%;
+    --card-foreground: 210 40% 90%;
+    --popover: 220 13% 18%;
+    --popover-foreground: 210 40% 90%;
+    --primary: 217 91% 65%;
+    --primary-foreground: 220 13% 10%;
+    --secondary: 172 61% 55%;
+    --secondary-foreground: 172 25% 15%;
+    --muted: 220 15% 30%;
+    --muted-foreground: 220 10% 65%;
+    --accent: 190 70% 60%;
+    --accent-foreground: 190 25% 15%;
+    --destructive: 0 65% 55%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 220 15% 35%;
+    --input: 220 15% 30%;
+    --ring: 217 91% 60%;
+    */
+  }
+}
+
+@layer base {
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1; /* Common ligatures and contextual alternates */
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display tracking-tight;
+  }
+
+  /* More rounded inputs and buttons globally */
+  input, textarea, select, button {
+    @apply rounded-md;
+  }
+
+  /* Custom scrollbar for a more modern look (optional) */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-muted/50;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-primary/50 rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-primary/70;
+  }
+}
 
 
 

@@ -461,8 +461,8 @@ const MeetingsPage: React.FC = () => {
                             <TrashIcon /> Delete
                         </button>
                     </div>
-                  </div>
-                ))}
+          </div>
+        ))}
             </div>
         )}
       </div>

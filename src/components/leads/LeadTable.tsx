@@ -20,6 +20,7 @@ import { ChevronUpIcon, ChevronDownIcon, ChevronUpDownIcon, ChevronLeftIcon, Che
 import Fuse from 'fuse.js'; // Import Fuse.js
 import { Popover, Transition } from '@headlessui/react'; // Import Popover and Transition
 import { Fragment } from 'react'; // Import Fragment for Transition
+import { Button } from '../ui/button'; // Import the themed Button component
 
 const columnHelper = createColumnHelper<Lead>();
 
@@ -143,7 +144,7 @@ interface FilterButtonProps {
 const FilterButton: React.FC<FilterButtonProps> = ({ column, renderPanel, title }) => (
   <Popover className="relative inline-flex">
     <Popover.Button 
-      className="ml-1 inline-flex items-center rounded-md bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-600 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1"
+      className="ml-1 inline-flex items-center rounded-md bg-muted/20 px-1.5 py-0.5 text-xs font-medium text-muted-foreground hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 ring-1 ring-inset ring-transparent hover:ring-border"
       aria-label={`Open filter for ${title}`}
     >
       <FunnelIcon className="h-3 w-3" aria-hidden="true" />
@@ -157,9 +158,9 @@ const FilterButton: React.FC<FilterButtonProps> = ({ column, renderPanel, title 
       leaveFrom="opacity-100 translate-y-0"
       leaveTo="opacity-0 translate-y-1"
     >
-      <Popover.Panel className="absolute z-20 mt-2 w-56 rounded-md bg-white py-3 shadow-lg ring-1 ring-black/5 focus:outline-none">
+      <Popover.Panel className="absolute z-20 mt-2 w-56 rounded-xl bg-popover text-popover-foreground shadow-xl ring-1 ring-border focus:outline-none">
         <div className="px-3 py-2">
-            <h4 className="text-xs font-medium text-gray-900 mb-2">Filter by {title}</h4>
+            <h4 className="text-sm font-semibold text-popover-foreground mb-3 border-b border-border pb-2">Filter by {title}</h4>
             {renderPanel()}
         </div>
       </Popover.Panel>
@@ -194,22 +195,23 @@ const TextColumnFilterPanel: React.FC<TextColumnFilterPanelProps> = ({ column, o
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder={`Filter by ${column.id}...`}
-        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-xs p-1.5"
+        className="block w-full rounded-md border-input bg-background p-2 text-sm text-foreground shadow-sm focus:border-ring focus:ring-2 focus:ring-ring focus:outline-none"
         onClick={(e) => e.stopPropagation()} // Prevent popover from closing if input inside is clicked
       />
-      <div className="flex justify-end space-x-2">
-        <button 
+      <div className="flex justify-end space-x-2 pt-2 border-t border-border">
+        <Button 
           onClick={handleClear} 
-          className="rounded-md px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 ring-1 ring-inset ring-gray-300"
+          variant="ghost"
+          size="sm"
         >
           Clear
-        </button>
-        <button 
+        </Button>
+        <Button 
           onClick={handleApply} 
-          className="rounded-md bg-indigo-600 px-2 py-1 text-xs font-medium text-white hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+          size="sm"
         >
           Apply
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -385,37 +387,40 @@ const DealValueRangeFilterPanel: React.FC<DealValueRangeFilterPanelProps> = ({ c
 
   return (
     <div className="space-y-3">
-      <div className="flex space-x-2">
+      <div className="grid grid-cols-2 gap-2">
         <input 
           type="number"
           value={min ?? ''}
           onChange={(e) => setMin(e.target.value === '' ? undefined : parseFloat(e.target.value))}
           placeholder="Min value"
-          onClick={(e) => e.stopPropagation()} 
-          className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-xs p-1.5"
+          onClick={(e) => e.stopPropagation()} // Prevent sorting
+          className="block w-full rounded-md border-input bg-background p-2 text-sm text-foreground shadow-sm focus:border-ring focus:ring-2 focus:ring-ring focus:outline-none col-span-1"
         />
         <input 
           type="number"
           value={max ?? ''}
           onChange={(e) => setMax(e.target.value === '' ? undefined : parseFloat(e.target.value))}
           placeholder="Max value"
-          onClick={(e) => e.stopPropagation()} 
-          className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-xs p-1.5"
+          onClick={(e) => e.stopPropagation()} // Prevent sorting
+          className="block w-full rounded-md border-input bg-background p-2 text-sm text-foreground shadow-sm focus:border-ring focus:ring-2 focus:ring-ring focus:outline-none col-span-1"
         />
       </div>
-      <div className="flex justify-end space-x-2 pt-2 border-t border-gray-200">
-         <button 
-            onClick={handleClear}
-            className="rounded-md px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 ring-1 ring-inset ring-gray-300"
-        >
-            Clear
-        </button>
-        <button 
-            onClick={handleApply} 
-            className="rounded-md bg-indigo-600 px-2 py-1 text-xs font-medium text-white hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+      <div className="flex justify-end space-x-2 pt-2 border-t border-border">
+        {(min !== undefined || max !== undefined) && (
+            <Button 
+                onClick={clearFilter}
+                variant="ghost"
+                size="sm"
+            >
+                Clear
+            </Button>
+        )}
+        <Button 
+            onClick={handleApply}
+            size="sm"
         >
             Apply
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -705,37 +710,40 @@ interface BulkActionsBarProps {
 const BulkActionsBar: React.FC<BulkActionsBarProps> = (
   { selectedRowCount, onClearSelection, onBulkScheduleFollowUps, onBulkScheduleMeetings }
 ) => {
-  if (selectedRowCount === 0) return null;
-
   return (
-    <div className="fixed inset-x-0 bottom-0 z-20 flex items-center justify-between bg-white px-6 py-3 shadow-md ring-1 ring-gray-200">
-      <div className="flex items-center">
-        <p className="text-sm font-medium text-gray-700">
-          {selectedRowCount} {selectedRowCount === 1 ? 'item' : 'items'} selected
-        </p>
-        <button 
-          onClick={onClearSelection} 
-          className="ml-3 text-sm font-medium text-indigo-600 hover:text-indigo-500"
+    <div className="flex items-center justify-between p-3 bg-muted/70 rounded-lg shadow-md w-full sm:w-auto">
+      <p className="text-sm font-medium text-foreground mr-4">
+        {selectedRowCount} lead{selectedRowCount > 1 ? 's' : ''} selected
+      </p>
+      <div className="flex items-center space-x-2">
+        <Button 
+          variant="outline"
+          size="sm"
+          onClick={onBulkScheduleFollowUps}
+          aria-label="Schedule follow-ups for selected leads"
         >
-          Clear selection
-        </button>
-      </div>
-      <div className="flex space-x-3">
-        <button 
-          onClick={onBulkScheduleFollowUps} 
-          className="inline-flex items-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+          <BellAlertIcon className="h-4 w-4 mr-1.5" />
+          Schedule Follow-up
+        </Button>
+        <Button 
+          variant="outline"
+          size="sm"
+          onClick={onBulkScheduleMeetings}
+          aria-label="Schedule meetings for selected leads"
         >
-          <BellAlertIcon className="-ml-0.5 mr-1.5 h-5 w-5" aria-hidden="true" />
-          Add to Follow-Ups
-        </button>
-        <button 
-          onClick={onBulkScheduleMeetings} 
-          className="inline-flex items-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+          <CalendarDaysIcon className="h-4 w-4 mr-1.5" />
+          Schedule Meeting
+        </Button>
+        {/* Add other bulk action buttons here, e.g., Delete, Change Status */}
+        <Button 
+          variant="ghost"
+          size="sm"
+          onClick={onClearSelection}
+          className="text-muted-foreground hover:text-foreground"
+          aria-label="Clear selection"
         >
-          <CalendarDaysIcon className="-ml-0.5 mr-1.5 h-5 w-5" aria-hidden="true" />
-          Add to Meetings
-        </button>
-        {/* Add other bulk action buttons here */}
+          Clear Selection
+        </Button>
       </div>
     </div>
   );
@@ -748,188 +756,242 @@ export const LeadTable: React.FC<LeadTableProps> = ({
   onBulkScheduleFollowUps,
   onBulkScheduleMeetings
 }) => {
+  const { data: leadsResponse, isLoading, error } = useLeadsQuery({});
+  const allLeads = useMemo(() => leadsResponse?.leads || [], [leadsResponse]);
+
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [globalFilter, setGlobalFilter] = useState('');
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+  const [globalFilter, setGlobalFilter] = useState('');
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 10,
   });
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
-  const { 
-    data: queryData,
-    isLoading,
-    isError,
-    error,
-  } = useLeadsQuery({
-    page: pagination.pageIndex + 1,
-    limit: pagination.pageSize,
-  });
+  // Fuzzy search memoization
+  const fuzzySearch = useMemo(() => {
+    if (!allLeads.length) return () => [];
+    const fuse = new Fuse(allLeads, {
+      keys: ['clients.client_name', 'clients.contact_email', 'lead_source', 'status_bucket', 'tags'],
+      threshold: 0.3, // Adjust threshold for sensitivity
+    });
+    return (query: string) => query ? fuse.search(query).map(result => result.item) : allLeads;
+  }, [allLeads]);
 
-  const rawData = useMemo(() => queryData?.leads || [], [queryData]);
-  const totalLeadsCount = useMemo(() => queryData?.count || 0, [queryData]);
-
-  const fuse = useMemo(() => {
-    if (rawData.length === 0) return null;
-    const searchKeys = [ 'clients.client_name', 'clients.company', 'status_bucket', 'users.full_name', 'lead_source', 'contact_person', 'email', 'next_step', 'tags', ];
-    return new Fuse(rawData, { keys: searchKeys, threshold: 0.3, getFn: (obj: any, path: string | string[]) => { const pathArray = Array.isArray(path) ? path : path.split('.'); let value = obj; for (const key of pathArray) { if (value === null || value === undefined) return null; value = value[key]; } return value; } });
-  }, [rawData]);
-
-  const dataAfterGlobalFilter = useMemo(() => {
-    if (!globalFilter || !fuse) return rawData;
-    const results = fuse.search(globalFilter);
-    return results.map(result => result.item);
-  }, [rawData, globalFilter, fuse]);
-
-  const tableColumns = useMemo(() => getColumns(onRowClick, rawData, onScheduleFollowUp, onScheduleMeeting), [onRowClick, rawData, onScheduleFollowUp, onScheduleMeeting]);
+  const filteredData = useMemo(() => {
+    return globalFilter ? fuzzySearch(globalFilter) : allLeads;
+  }, [allLeads, globalFilter, fuzzySearch]);
+  
+  // Columns definition using the helper, including the new RowActionsMenu
+  // Memoize columns to prevent re-renderings
+  const columns = useMemo(() => getColumns(onRowClick, allLeads, onScheduleFollowUp, onScheduleMeeting), [onRowClick, allLeads, onScheduleFollowUp, onScheduleMeeting]);
 
   const table = useReactTable({
-    data: dataAfterGlobalFilter,
-    columns: tableColumns,
+    data: filteredData, // Use fuzzy searched data if globalFilter is active
+    columns,
     state: {
       sorting,
       columnFilters,
+      globalFilter,
       pagination,
       rowSelection,
     },
-    enableRowSelection: true,
-    onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
     onPaginationChange: setPagination,
+    onRowSelectionChange: setRowSelection,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
+    getFilteredRowModel: getFilteredRowModel(), // Ensure this is included for column filters
     getPaginationRowModel: getPaginationRowModel(),
-    manualPagination: true,
-    pageCount: Math.ceil(totalLeadsCount / pagination.pageSize),
-    getRowId: row => row.id,
+    enableRowSelection: true, 
+    meta: {
+      // updateData: (rowIndex, columnId, value) => { /* ... */ } // If inline editing is needed
+    },
+    debugTable: false, // process.env.NODE_ENV === 'development',
+    debugHeaders: false, // process.env.NODE_ENV === 'development',
+    debugColumns: false, // process.env.NODE_ENV === 'development',
   });
 
-  const selectedRowsCount = Object.keys(rowSelection).length;
-  const selectedLeadObjects = useMemo(() => 
-    table.getSelectedRowModel().flatRows.map(row => row.original)
-  , [rowSelection, table]);
-
-  // Effect to call onBulkScheduleFollowUps/Meetings when selection changes
   useEffect(() => {
-    const selectedRowsData = table.getSelectedRowModel().rows.map(row => row.original);
-    if (selectedRowsData.length > 0) {
-      // This is just an example of how you might trigger.
-      // The actual call is done via the BulkActionsBar buttons.
+    // If onBulkScheduleFollowUps or onBulkScheduleMeetings is not provided, disable row selection
+    if (!onBulkScheduleFollowUps || !onBulkScheduleMeetings) {
+      table.setOptions(prev => ({ ...prev, enableRowSelection: false }));
     }
-  }, [rowSelection, table, onBulkScheduleFollowUps, onBulkScheduleMeetings]);
+  }, [onBulkScheduleFollowUps, onBulkScheduleMeetings, table]);
 
-  if (isLoading) return <div className="p-4 text-center">Loading leads...</div>;
-  if (isError) return <div className="p-4 text-center text-red-500">Error loading leads: {error?.message}</div>;
-  if (!queryData) return <div className="p-4 text-center">No leads data.</div>;
+  const selectedLeads = table.getSelectedRowModel().flatRows.map(row => row.original);
+
+  if (isLoading) {
+    return <div className="p-6 text-center text-foreground">Loading leads...</div>;
+  }
+
+  if (error) {
+    return <div className="p-6 text-center text-destructive">Error loading leads: {error.message}</div>;
+  }
+
+  if (!allLeads.length) {
+    return <div className="p-6 text-center text-muted-foreground">No leads found.</div>;
+  }
 
   return (
-    <div className="overflow-x-auto scrollbar-thin">
-      {Object.keys(rowSelection).length > 0 && onBulkScheduleFollowUps && onBulkScheduleMeetings && (
-        <BulkActionsBar
-          selectedRowCount={Object.keys(rowSelection).length}
-          onClearSelection={() => table.resetRowSelection()}
-          onBulkScheduleFollowUps={() => {
-            const selectedLeads = table.getSelectedRowModel().rows.map(row => row.original);
-            onBulkScheduleFollowUps(selectedLeads);
-          }}
-          onBulkScheduleMeetings={() => {
-            const selectedLeads = table.getSelectedRowModel().rows.map(row => row.original);
-            onBulkScheduleMeetings(selectedLeads);
-          }}
+    <div className="flex flex-col gap-4 p-4">
+      {/* Global Filter and Bulk Actions */}
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+        <input
+          type="text"
+          value={globalFilter}
+          onChange={(e) => setGlobalFilter(e.target.value)}
+          placeholder="Search all leads..."
+          className="px-4 py-2 border border-input bg-background text-foreground rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring sm:max-w-xs w-full"
         />
-      )}
-      <table className="min-w-full divide-y divide-gray-200 text-sm">
-        <thead className="bg-gray-50">
-          {table.getHeaderGroups().map(headerGroup => (
-            <tr key={headerGroup.id}>
-              {headerGroup.headers.map(header => (
-                <th
-                  key={header.id}
-                  colSpan={header.colSpan}
-                  onClick={header.column.getCanSort() ? header.column.getToggleSortingHandler() : undefined}
-                  className={`whitespace-nowrap px-4 py-3 text-left font-semibold text-gray-700 ${header.column.getCanSort() ? 'cursor-pointer select-none' : ''}`}
-                  aria-sort={header.column.getCanSort() ? (header.column.getIsSorted() === 'asc' ? 'ascending' : header.column.getIsSorted() === 'desc' ? 'descending' : 'none') : undefined}
-                >
-                  <div className="flex items-center">
-                  {header.isPlaceholder
-                    ? null
-                    : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
-                  {header.column.getCanSort() && (
-                    <span className="ml-1">
-                      {header.column.getIsSorted() === 'asc' ? <ChevronUpIcon className="h-4 w-4"/> : header.column.getIsSorted() === 'desc' ? <ChevronDownIcon className="h-4 w-4"/> : <ChevronUpDownIcon className="h-4 w-4 text-gray-400"/>}
-                    </span>
-                  )}
-                  </div>
-                </th>
-              ))}
-            </tr>
-          ))}
-        </thead>
-        <tbody className="divide-y divide-gray-200 bg-white">
-          {table.getRowModel().rows.map(row => (
-            <tr 
-                key={row.id} 
-                onClick={() => onRowClick(row.original)} 
-                className={`cursor-pointer hover:bg-gray-50 ${row.getIsSelected() ? 'bg-indigo-50' : ''}`}
-                tabIndex={0}
-                onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                        onRowClick(row.original);
-                    }
-                }}
-            >
-              {row.getVisibleCells().map(cell => (
-                <td key={cell.id} className="whitespace-nowrap px-4 py-3 text-gray-700">
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <div className="flex items-center justify-between mt-4 p-2 border-t border-gray-200">
-        <div className="text-sm text-gray-700">
-          Page {' '}
-          <strong>
-            {table.getState().pagination.pageIndex + 1} of {table.getPageCount() > 0 ? table.getPageCount() : 1}
-          </strong> {' '}
-          | Go to page:
-          <input 
-            type="number"
-            defaultValue={table.getState().pagination.pageIndex + 1}
-            onChange={e => {
-              const page = e.target.value ? Number(e.target.value) - 1 : 0;
-              table.setPageIndex(page);
-            }}
-            className="border p-1 rounded w-16 ml-2 text-center"
-            min={1}
-            max={table.getPageCount() > 0 ? table.getPageCount() : 1}
+        {table.getSelectedRowModel().flatRows.length > 0 && onBulkScheduleFollowUps && onBulkScheduleMeetings && (
+          <BulkActionsBar
+            selectedRowCount={table.getSelectedRowModel().flatRows.length}
+            onClearSelection={() => table.resetRowSelection()}
+            onBulkScheduleFollowUps={() => onBulkScheduleFollowUps(selectedLeads)}
+            onBulkScheduleMeetings={() => onBulkScheduleMeetings(selectedLeads)}
           />
-        </div>
-        <div className="flex items-center space-x-2">
-          <select
-            value={table.getState().pagination.pageSize}
-            onChange={e => {
-              table.setPageSize(Number(e.target.value));
-            }}
-            className="p-1 border rounded"
-          >
-            {[10, 20, 30, 40, 50].map(pageSize => (
-              <option key={pageSize} value={pageSize}>
-                Show {pageSize}
-              </option>
-            ))}
-          </select>
-          <button onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()} className="p-1 border rounded hover:bg-gray-100 disabled:opacity-50" aria-label="Go to previous page"><ChevronLeftIcon className="w-5 h-5" /></button>
-          <button onClick={() => table.nextPage()} disabled={!table.getCanNextPage()} className="p-1 border rounded hover:bg-gray-100 disabled:opacity-50" aria-label="Go to next page"><ChevronRightIcon className="w-5 h-5" /></button>
-        </div>
+        )}
       </div>
+
+      {/* Table */}
+      <div className="overflow-x-auto rounded-lg border border-border">
+        <table className="min-w-full divide-y divide-border bg-card">
+          <thead className="bg-muted/50">
+            {table.getHeaderGroups().map(headerGroup => (
+              <tr key={headerGroup.id}>
+                {headerGroup.headers.map(header => (
+                  <th 
+                    key={header.id}
+                    colSpan={header.colSpan}
+                    scope="col"
+                    className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider group" // Added group for popover relative positioning
+                  >
+                    {header.isPlaceholder ? null : (
+                      <div
+                        {...{
+                          className: header.column.getCanSort()
+                            ? 'flex items-center cursor-pointer select-none'
+                            : 'flex items-center',
+                          onClick: header.column.getToggleSortingHandler(),
+                        }}
+                      >
+                        {flexRender(header.column.columnDef.header, header.getContext())}
+                        {{
+                          asc: <ChevronUpIcon className="h-4 w-4 ml-1 text-foreground" />,
+                          desc: <ChevronDownIcon className="h-4 w-4 ml-1 text-foreground" />,
+                        }[header.column.getIsSorted() as string] ?? (header.column.getCanSort() ? <ChevronUpDownIcon className="h-4 w-4 ml-1 text-muted-foreground/50" /> : null)}
+                        {header.column.getCanFilter() && (
+                           <FilterButton 
+                              column={header.column}
+                              title={typeof header.column.columnDef.header === 'string' ? header.column.columnDef.header : header.id}
+                              renderPanel={() => {
+                                // This example assumes a text filter for simplicity if no specific filter is defined
+                                // You'll need to enhance this to pick the correct filter type
+                                if (header.column.id === 'tags') {
+                                  return <TagsColumnFilterPanel column={header.column} allLeads={allLeads} />;
+                                }
+                                if (header.column.id === 'status_bucket') {
+                                  return <StatusColumnFilterPanel column={header.column} />;
+                                }
+                                if (header.column.id === 'deal_value') {
+                                   return <DealValueRangeFilterPanel column={header.column} />;
+                                }
+                                // Default text filter if no specific one matches
+                                return <TextColumnFilterPanel column={header.column} />;
+                              }}
+                           />
+                        )}
+                      </div>
+                    )}
+                  </th>
+                ))}
+              </tr>
+            ))}
+          </thead>
+          <tbody className="divide-y divide-border bg-card">
+            {table.getRowModel().rows.map(row => (
+              <tr 
+                key={row.id} 
+                className="hover:bg-muted/50 transition-colors duration-150"
+                // onClick={() => onRowClick(row.original)} // Keep this if you want row click for details
+              >
+                {row.getVisibleCells().map(cell => (
+                  <td 
+                    key={cell.id} 
+                    className="px-4 py-3 whitespace-nowrap text-sm text-foreground"
+                  >
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Pagination */}
+      {table.getPageCount() > 1 && (
+        <div className="flex items-center justify-between pt-4 border-t border-border mt-4">
+          <div className="text-sm text-muted-foreground">
+            Showing {table.getRowModel().rows.length} of {table.getPrePaginationRowModel().rows.length} leads
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.setPageIndex(0)}
+              disabled={!table.getCanPreviousPage()}
+            >
+              First
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+            >
+              <ChevronLeftIcon className="h-4 w-4" />
+              Previous
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+            >
+              Next
+              <ChevronRightIcon className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+              disabled={!table.getCanNextPage()}
+            >
+              Last
+            </Button>
+            <select
+              value={table.getState().pagination.pageSize}
+              onChange={e => {
+                table.setPageSize(Number(e.target.value))
+              }}
+              className="p-2 border border-input bg-background text-foreground rounded-md text-sm focus:ring-ring focus:border-ring"
+            >
+              {[10, 20, 30, 40, 50].map(pageSize => (
+                <option key={pageSize} value={pageSize}>
+                  Show {pageSize}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

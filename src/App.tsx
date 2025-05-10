@@ -49,9 +49,12 @@ function App() {
         }}
       />
       <Routes>
-        {/* Public Routes */}
-        <Route path="/login" element={<PublicLayout><LoginPage /></PublicLayout>} />
-        <Route path="/signup" element={<PublicLayout><SignupPage /></PublicLayout>} />
+        {/* Public Routes - Corrected Layout Routing */}
+        <Route element={<PublicLayout />}>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
+          <Route path="*" element={<NotFoundPage />} /> {/* Catch-all for 404 inside public layout */}
+        </Route>
 
         {/* Protected Routes Main Application Structure */}
         <Route element={<ProtectedRoute />}> {/* Ensures user is authenticated before trying to pick a role-based layout */}
@@ -69,8 +72,6 @@ function App() {
             </Route>
           </Route>
         </Route>
-        
-        <Route path="*" element={<PublicLayout><NotFoundPage /></PublicLayout>} />
       </Routes>
     </Router>
   );

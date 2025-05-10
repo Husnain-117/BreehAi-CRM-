@@ -11,6 +11,9 @@ import StatCard from '../components/dashboard/StatCard';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, Title, ChartEvent, ActiveElement } from 'chart.js';
 import { Pie, Line, getElementAtEvent } from 'react-chartjs-2';
 
+// Define a more specific type for chart events
+type ChartNativeEvent = keyof HTMLElementEventMap;
+
 // Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, Title);
 
@@ -225,7 +228,7 @@ const DashboardPage: React.FC = () => {
         text: 'Follow-up Statuses'
       }
     },
-    events: ['mousemove', 'mouseout', 'click', 'touchstart', 'touchmove'] as const,
+    events: ['mousemove', 'mouseout', 'click', 'touchstart', 'touchmove'] as ChartNativeEvent[],
   };
 
   const lineChartOptions = {
@@ -283,59 +286,55 @@ const DashboardPage: React.FC = () => {
     // const p2Count = leadsData?.leads.filter(l => l.status_bucket === 'P2').length || 0;
     // const p3Count = leadsData?.leads.filter(l => l.status_bucket === 'P3').length || 0;
     return (
-      <div>
-        <h2 className="text-2xl font-semibold mb-4">Agent Dashboard</h2>
-        <p>Welcome, {profile.full_name}!</p>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-          <div className="bg-white p-4 shadow rounded-lg">
-            <h3 className="font-semibold text-lg">My P1 Leads</h3>
-            {/* <p className="text-3xl">{leadsLoading ? '...' : p1Count}</p> */}
-            <p className="text-3xl">_Count_</p>
-          </div>
-          <div className="bg-white p-4 shadow rounded-lg">
-            <h3 className="font-semibold text-lg">My P2 Leads</h3>
-            {/* <p className="text-3xl">{leadsLoading ? '...' : p2Count}</p> */}
-            <p className="text-3xl">_Count_</p>
-          </div>
-          <div className="bg-white p-4 shadow rounded-lg">
-            <h3 className="font-semibold text-lg">My P3 Leads</h3>
-            {/* <p className="text-3xl">{leadsLoading ? '...' : p3Count}</p> */}
-            <p className="text-3xl">_Count_</p>
-          </div>
+      <div className="mt-8 p-6 bg-card shadow-xl rounded-xl border border-border">
+        <h2 className="text-2xl font-semibold text-foreground mb-4">Agent Dashboard</h2>
+        <p className="text-muted-foreground">Welcome, {profile.full_name}!</p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+          <StatCard title="My P1 Leads" value={0 /* Replace with actual data */} icon={<LeadsIcon />} description="High priority" />
+          <StatCard title="My Upcoming Follow-ups" value={0} icon={<FollowUpIcon />} />
+          <StatCard title="My Meetings Today" value={0} icon={<MeetingsIcon />} />
         </div>
-        {/* Placeholder for upcoming follow-ups, meetings scheduled */}
+        {/* Further agent-specific charts or lists can go here */}
       </div>
     );
   };
 
   const renderManagerDashboard = () => {
     return (
-      <div>
-        <h2 className="text-2xl font-semibold mb-4">Manager Dashboard</h2>
-        <p>Welcome, {profile.full_name}!</p>
-        <p className="mt-4">Team performance overview, lead distribution, etc. (Not yet implemented)</p>
-        {/* Placeholder for team P1/P2/P3 counts, conversion rates */}
+      <div className="mt-8 p-6 bg-card shadow-xl rounded-xl border border-border">
+        <h2 className="text-2xl font-semibold text-foreground mb-4">Manager Dashboard</h2>
+        <p className="text-muted-foreground">Welcome, {profile.full_name}!</p>
+        <p className="text-muted-foreground mt-4">Team performance overview, lead distribution, etc. will be displayed here.</p>
+        {/* Placeholder for team P1/P2/P3 counts, conversion rates, agent performance charts */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          <StatCard title="Team Open Leads" value={0} icon={<LeadsIcon />} />
+          <StatCard title="Team Conversion Rate" value={"0%"} icon={<UsersIcon />} /> 
+        </div>
       </div>
     );
   };
 
   const renderSuperAdminDashboard = () => {
     return (
-      <div>
-        <h2 className="text-2xl font-semibold mb-4">Super Admin Dashboard</h2>
-        <p>Welcome, {profile.full_name}!</p>
-        <p className="mt-4">Organization-wide overview, user activity summaries. (Not yet implemented)</p>
-        {/* Placeholder for system stats, user counts by role */}
+      <div className="mt-8 p-6 bg-card shadow-xl rounded-xl border border-border">
+        <h2 className="text-2xl font-semibold text-foreground mb-4">Super Admin Dashboard</h2>
+        <p className="text-muted-foreground">Welcome, {profile.full_name}!</p>
+        <p className="text-muted-foreground mt-4">Organization-wide overview, user activity, and system settings will be accessible here.</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          <StatCard title="Total Users" value={usersArray.length} icon={<UsersIcon />} />
+          <StatCard title="System Health" value={"Nominal"} icon={<UsersIcon />} /> {/* Placeholder icon */} 
+        </div>
       </div>
     );
   };
 
   return (
-    <div className="p-4 sm:p-6 bg-gray-100 min-h-screen flex flex-col">
-      <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-6">CRM Dashboard</h1>
+    <div className="p-4 sm:p-6 bg-background text-foreground min-h-screen flex flex-col">
+      <h1 className="text-3xl font-bold text-foreground mb-2">CRM Dashboard</h1>
+      <p className="text-muted-foreground mb-8">Overview of your sales and customer activities.</p>
 
       {/* KPI Cards Section */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
         <StatCard title="Total Leads" value={totalLeads} icon={<LeadsIcon />} />
         <StatCard title="Pending Follow-Ups" value={pendingFollowUps} icon={<FollowUpIcon />} description={`out of ${totalFollowUps} total`} />
         <StatCard title="Scheduled Meetings" value={scheduledMeetings} icon={<MeetingsIcon />} description={`out of ${totalMeetings} total`} />
@@ -344,8 +343,8 @@ const DashboardPage: React.FC = () => {
 
       {/* Charts Section - now a 2x2 grid for potentially 4 charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <div className="bg-white shadow-lg rounded-xl p-5 border border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-700 mb-4 text-center">Follow-Up Status</h2>
+        <div className="bg-card shadow-xl rounded-xl p-6 border border-border">
+          <h2 className="text-xl font-semibold text-center text-foreground mb-4">Follow-Up Status</h2>
           <div style={{ height: '350px' }}> 
             <Pie 
               data={followUpStatusData} 
@@ -353,8 +352,8 @@ const DashboardPage: React.FC = () => {
             />
           </div>
         </div>
-        <div className="bg-white shadow-lg rounded-xl p-5 border border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-700 mb-4 text-center">New Leads (Last 6 Months)</h2>
+        <div className="bg-card shadow-xl rounded-xl p-6 border border-border">
+          <h2 className="text-xl font-semibold text-center text-foreground mb-4">New Leads (Last 6 Months)</h2>
           <div style={{ height: '350px' }}> 
             <Line 
               data={leadsOverTimeData} 
@@ -362,8 +361,8 @@ const DashboardPage: React.FC = () => {
             />
           </div>
         </div>
-        <div className="bg-white shadow-lg rounded-xl p-5 border border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-700 mb-4 text-center">Meeting Status</h2>
+        <div className="bg-card shadow-xl rounded-xl p-6 border border-border">
+          <h2 className="text-xl font-semibold text-center text-foreground mb-4">Meeting Status</h2>
           <div style={{ height: '350px' }}> 
             <Pie 
               data={meetingStatusChartData} 
@@ -371,8 +370,8 @@ const DashboardPage: React.FC = () => {
             />
           </div>
         </div>
-        <div className="bg-white shadow-lg rounded-xl p-5 border border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-700 mb-4 text-center">Lead Sources</h2>
+        <div className="bg-card shadow-xl rounded-xl p-6 border border-border">
+          <h2 className="text-xl font-semibold text-center text-foreground mb-4">Lead Sources</h2>
           <div style={{ height: '350px' }}> 
             <Pie 
               data={leadSourceChartData} 

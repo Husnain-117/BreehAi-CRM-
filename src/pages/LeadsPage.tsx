@@ -108,6 +108,10 @@ const LeadsPage: React.FC = () => {
     setIsImportLeadsModalOpen(false);
   };
 
+  const handleImportSuccess = () => {
+    refetchLeads();
+  };
+
   const breadcrumbItems = [
     { name: 'Admin', href: '/' },
     { name: 'Leads', href: '/leads', current: true }
@@ -187,6 +191,7 @@ const LeadsPage: React.FC = () => {
         <ImportLeadsModal
           isOpen={isImportLeadsModalOpen}
           onClose={handleCloseImportLeadsModal}
+          onImportSuccess={handleImportSuccess}
         />
       )}
     </section>

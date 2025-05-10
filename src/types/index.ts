@@ -73,6 +73,7 @@ export interface Meeting {
   title: string;
   start_time: string;
   end_time: string;
+  status: 'Scheduled' | 'Completed' | 'Pending' | 'Cancelled';
   location?: string | null;
   notes?: string | null;
   created_at: string;

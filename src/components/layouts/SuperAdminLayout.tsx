@@ -41,9 +41,9 @@ const SuperAdminLayout: React.FC = () => {
   const { logout, profile } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const commonNavLinkClasses = 'flex items-center space-x-3 px-3 py-2.5 text-sm font-medium transition-all duration-150 ease-in-out';
-  const activeNavLinkClasses = 'bg-primary/10 text-primary rounded-lg';
-  const inactiveNavLinkClasses = 'text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg';
+  const commonNavLinkClasses = 'flex items-center space-x-3 px-3 py-2.5 text-sm font-medium transition-all duration-200 ease-in-out';
+  const activeNavLinkClasses = 'bg-primary/10 text-primary rounded-lg font-semibold';
+  const inactiveNavLinkClasses = 'text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-lg';
 
   const adminNavLinks = [
     { to: '/dashboard', label: 'Dashboard', icon: null }, // Add generic dashboard icon if desired
@@ -51,6 +51,7 @@ const SuperAdminLayout: React.FC = () => {
     { to: '/admin/users', label: 'User Management', icon: UsersIcon },
     { to: '/admin/settings', label: 'System Settings', icon: SettingsIcon },
     { to: '/admin/team-progress', label: 'Team Progress', icon: UsersIcon },
+    { to: '/daily-report', label: 'Daily Reports', icon: null }, // Placeholder icon
     // Add other general links like Follow-ups, Meetings if super admin needs them at top level
     { to: '/follow-ups', label: 'All Follow-Ups', icon: null },
     { to: '/meetings', label: 'All Meetings', icon: null },

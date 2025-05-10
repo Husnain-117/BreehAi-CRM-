@@ -6,22 +6,31 @@ interface StatCardProps {
   icon: React.ReactNode;
   description?: string;
   className?: string;
+  // New prop for icon color variant if needed, e.g., based on stat type
+  // iconVariant?: 'primary' | 'secondary' | 'accent'; 
 }
 
 const StatCard: React.FC<StatCardProps> = ({ title, value, icon, description, className }) => {
+  // const iconBgColor = iconVariant === 'secondary' ? 'bg-secondary' : iconVariant === 'accent' ? 'bg-accent' : 'bg-primary';
+  // const iconTextColor = iconVariant === 'secondary' ? 'text-secondary-foreground' : iconVariant === 'accent' ? 'text-accent-foreground' : 'text-primary-foreground';
+
   return (
-    <div className={`bg-white shadow-lg rounded-xl p-5 border border-gray-200 hover:shadow-xl transition-shadow duration-300 ease-in-out ${className}`}>
+    <div 
+      className={`bg-card shadow-md rounded-lg p-5 border border-border hover:shadow-lg transition-all duration-300 ease-in-out group ${className}`}
+    >
       <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium text-gray-500 uppercase truncate">{title}</p>
-          <p className="mt-1 text-3xl font-semibold text-gray-900">{value}</p>
+        <div className="flex-1">
+          <p className="text-xs font-medium text-muted-foreground uppercase truncate tracking-wider">{title}</p>
+          <p className="mt-1 text-2xl font-semibold text-foreground">{value}</p>
         </div>
-        <div className="flex-shrink-0 p-3 bg-indigo-500 rounded-md text-white">
-          {icon}
+        <div 
+          className={`ml-4 flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-md bg-primary text-primary-foreground transition-transform duration-300 group-hover:scale-110`}
+        >
+          {icon} 
         </div>
       </div>
       {description && (
-        <p className="mt-2 text-sm text-gray-500">{description}</p>
+        <p className="mt-3 text-xs text-muted-foreground">{description}</p>
       )}
     </div>
   );

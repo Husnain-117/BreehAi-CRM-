@@ -38,6 +38,7 @@ const ManagerLayout: React.FC = () => {
     { to: '/leads', label: 'All Leads' }, 
     { to: '/follow-ups', label: 'All Follow-Ups' },
     { to: '/meetings', label: 'All Meetings' },
+    { to: '/daily-report', label: 'Daily Reports' },
     // Example manager-specific links (add actual routes and components later)
     // { to: '/manager/team-performance', label: 'Team Performance' },
     // { to: '/manager/agent-overview', label: 'Agent Overview' },

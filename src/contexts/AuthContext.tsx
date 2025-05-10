@@ -6,7 +6,7 @@ import { supabase } from '../api/supabaseClient';
 export interface UserProfile {
   id: string;
   email?: string;
-  role?: string; // 'agent', 'manager', 'super_admin'
+  role?: 'agent' | 'manager' | 'super_admin'; // Changed from string to specific union
   full_name?: string;
   manager_id?: string | null;
   // Add other profile fields you might need from public.users

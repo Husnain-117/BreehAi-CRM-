@@ -15,6 +15,7 @@ import MeetingsPage from './pages/MeetingsPage';
 import AdminUsersPage from './pages/admin/AdminUsersPage';
 import AdminSettingsPage from './pages/admin/AdminSettingsPage';
 import TeamProgressPage from './pages/admin/TeamProgressPage'; // Import the new page
+import DailyReportPage from './pages/DailyReportPage'; // Import the new Daily Report page
 import NotFoundPage from './pages/NotFoundPage';
 
 function App() {
@@ -65,6 +66,7 @@ function App() {
             <Route path="/leads" element={<LeadsPage />} />
             <Route path="/follow-ups" element={<FollowUpsPage />} />
             <Route path="/meetings" element={<MeetingsPage />} />
+            <Route path="/daily-report" element={<DailyReportPage />} />
             
             {/* Admin specific routes nested further under ProtectedRoute with specific roles */}
             <Route path="admin" element={<ProtectedRoute allowedRoles={['super_admin']} />}>

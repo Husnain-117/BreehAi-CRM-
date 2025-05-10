@@ -12,7 +12,15 @@ const CORS_HEADERS = {
 serve(async (req: Request) => {
   // Handle OPTIONS preflight request
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: CORS_HEADERS });
+    return new Response(null, {
+        status: 204,
+        headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+            'Content-Length': '0'
+        }
+    });
   }
 
   try {

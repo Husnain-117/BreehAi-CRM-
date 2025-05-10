@@ -58,7 +58,7 @@ export interface FollowUp {
   lead_id: string;
   agent_id: string;
   due_date: string;
-  status: string; // 'pending', 'completed', 'rescheduled'
+  status: 'Pending' | 'Completed' | 'Rescheduled' | 'Cancelled';
   notes?: string | null;
   created_at: string;
   updated_at: string;

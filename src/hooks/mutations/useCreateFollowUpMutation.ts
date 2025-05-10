@@ -4,13 +4,14 @@ import { FollowUp } from '../../types'; // Assuming FollowUp type might need cre
 import { PostgrestError } from '@supabase/supabase-js'; // Import PostgrestError
 import { toast } from 'react-hot-toast'; // Assuming react-hot-toast
 
-// Interface for the data needed to create a new follow-up
+// Type for the data needed to create a new follow-up
+// This should align with the form data and exclude DB-generated fields
 export interface NewFollowUpData {
   lead_id: string;
-  agent_id: string; // Should be the ID of the currently authenticated user or assigned agent
-  due_date: string; // ISO string format e.g., YYYY-MM-DD
+  agent_id: string;
+  due_date: string; // ISO string format
+  status: 'Pending' | 'Completed' | 'Rescheduled' | 'Cancelled';
   notes?: string;
-  status: 'pending' | 'completed' | 'rescheduled'; // Aligned with FollowUp type comment
 }
 
 // The actual FollowUp type might include id, created_at, updated_at
@@ -20,64 +21,52 @@ export interface NewFollowUpData {
 export const useCreateFollowUpMutation = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<FollowUp, Error, NewFollowUpData>(
+  return useMutation<
+    FollowUp,        // Expected return type on success (the created follow-up)
+    Error,           // Error type
+    NewFollowUpData  // Input type to the mutation function
+  >(
     async (followUpData: NewFollowUpData) => {
+      // Ensure notes is explicitly null if empty, or undefined if your DB handles it
+      const dataToInsert = {
+        ...followUpData,
+        notes: followUpData.notes || null, 
+      };
+
       const { data, error } = await supabase
-        .from('follow_ups')
-        .insert([
-          {
-            lead_id: followUpData.lead_id,
-            agent_id: followUpData.agent_id,
-            due_date: followUpData.due_date,
-            notes: followUpData.notes,
-            status: followUpData.status,
-          },
-        ])
+        .from('follow_ups') // Target the 'follow_ups' table
+        .insert(dataToInsert)
         .select()
         .single(); // Assuming you want the created record back
 
       if (error) {
         console.error('Error creating follow-up:', error);
-        // Throw the error so it can be caught by onError
-        throw error; 
+        toast.error(`Error creating follow-up: ${error.message}`);
+        throw error;
       }
       if (!data) {
-        // This case should ideally not happen if insert is successful and select().single() is used.
-        // But if it does, it's a different kind of error.
-        throw new Error('No data returned after creating follow-up despite no explicit error.');
+        throw new Error('No data returned after creating follow-up.');
       }
-      return data as FollowUp; // Cast to your FollowUp type
+      return data as FollowUp;
     },
     {
-      onSuccess: (data, variables) => {
-        console.log('Follow-up created successfully:', data);
-        toast.success('Follow-up scheduled successfully');
-        
-        // Invalidate queries to refetch data
-        // More aggressive cache invalidation strategy
-        queryClient.invalidateQueries({ queryKey: ['leads'] }); 
-        queryClient.invalidateQueries({ queryKey: ['follow_ups'] }); 
-        
-        // If there's a specific lead, invalidate that too
-        if (variables.lead_id) {
-          queryClient.invalidateQueries({ queryKey: ['follow_ups', variables.lead_id] });
+      onSuccess: (data) => {
+        toast.success('Follow-up created successfully!');
+        // Invalidate queries to refetch follow-ups list
+        queryClient.invalidateQueries({ queryKey: ['follow_ups'] });
+        // Potentially invalidate queries related to the specific lead or agent
+        if (data.lead_id) {
+          queryClient.invalidateQueries({ queryKey: ['leads', data.lead_id] });
+          queryClient.invalidateQueries({ queryKey: ['follow_ups', data.lead_id] }); // If you query follow-ups by lead
         }
-        
-        // Invalidate agent queries if needed
-        if (variables.agent_id) {
-          queryClient.invalidateQueries({ queryKey: ['user_tasks', variables.agent_id] });
-        }
+        // todo: invalidate agent specific queries if any
       },
       onError: (error: Error | PostgrestError) => {
         console.error('Mutation error creating follow-up:', error.message);
-        if ('code' in error && error.code === '42501') {
-          // This is a PostgrestError with an RLS violation
-          toast.error('Permission Denied: You do not have the required permissions to create this follow-up.');
-          // TODO: Replace alert with a toast notification
-        } else {
-          // Handle other types of errors or show a generic message
-          // The FollowUpModal already displays mutationError.message, so an alert might be redundant
-          // unless specific handling is needed here.
+        // Toast error is handled in the mutation function for Supabase errors.
+        // Add more specific handling here if needed for other error types.
+        if (!('code' in error)) { // General errors not from Supabase
+           toast.error(`Failed to create follow-up: ${error.message}`);
         }
       },
     }

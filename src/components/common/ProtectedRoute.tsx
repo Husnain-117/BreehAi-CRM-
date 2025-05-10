@@ -1,6 +1,6 @@
-import React from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
-import { useAuth, UserProfile } from '../../contexts/AuthContext'; // Adjusted path
+import React, { useEffect } from 'react';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { useAuth, UserProfile } from '../../contexts/AuthContext';
 
 interface ProtectedRouteProps {
   allowedRoles?: UserProfile['role'][];
@@ -8,20 +8,34 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles, children }) => {
-  const { user, profile, loading } = useAuth();
-  console.log('ProtectedRoute loading state:', loading, 'User:', user, 'Profile:', profile);
+  const { user, profile, loading, logout } = useAuth();
+  const location = useLocation();
+  console.log('ProtectedRoute loading state:', loading, 'User:', user, 'Profile:', profile, 'Path:', location.pathname);
 
   if (loading) {
-    return <div>Loading session...</div>; // Replace with a proper spinner/loader
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-indigo-600"></div>
+      </div>
+    );
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    console.log('ProtectedRoute: No user found, redirecting to login.');
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (allowedRoles && profile?.role && !allowedRoles.includes(profile.role)) {
+  if (!profile) {
+    console.warn('ProtectedRoute: User exists but profile is null. Logging out and redirecting to login.');
+    useEffect(() => {
+      logout();
+    }, [logout]);
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (allowedRoles && !allowedRoles.includes(profile.role as UserProfile['role'])) {
     console.warn(`ProtectedRoute: User role '${profile.role}' not in allowed roles: ${allowedRoles.join(', ')} for route.`);
-    return <Navigate to="/dashboard" replace />; // Or to an "Unauthorized" page
+    return <Navigate to="/dashboard" replace />;
   }
 
   return children ? <>{children}</> : <Outlet />;

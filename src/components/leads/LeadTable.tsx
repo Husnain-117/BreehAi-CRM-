@@ -382,7 +382,7 @@ const DealValueRangeFilterPanel: React.FC<DealValueRangeFilterPanelProps> = ({ c
           value={min ?? ''}
           onChange={(e) => setMin(e.target.value === '' ? undefined : parseFloat(e.target.value))}
           placeholder="Min value"
-          onClick={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()} 
           className="block w-full rounded-md border-input bg-background p-2 text-sm text-foreground shadow-sm focus:border-ring focus:ring-2 focus:ring-ring focus:outline-none col-span-1"
         />
         <input 
@@ -390,14 +390,14 @@ const DealValueRangeFilterPanel: React.FC<DealValueRangeFilterPanelProps> = ({ c
           value={max ?? ''}
           onChange={(e) => setMax(e.target.value === '' ? undefined : parseFloat(e.target.value))}
           placeholder="Max value"
-          onClick={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()} 
           className="block w-full rounded-md border-input bg-background p-2 text-sm text-foreground shadow-sm focus:border-ring focus:ring-2 focus:ring-ring focus:outline-none col-span-1"
         />
       </div>
       <div className="flex justify-end space-x-2 pt-2 border-t border-border">
         {(min !== undefined || max !== undefined) && (
             <Button 
-                onClick={handleClear}
+            onClick={handleClear}
                 variant="ghost"
                 size="sm"
         >
@@ -860,7 +860,7 @@ export const LeadTable: React.FC<LeadTableProps> = ({
   const selectedLeads = table.getSelectedRowModel().flatRows.map(row => row.original);
 
   if (isLoadingLeads || isLoadingAgents) {
-    return (
+  return (
       <div className="flex justify-center items-center h-96">
         <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-indigo-500"></div>
         <span className="ml-4 text-lg text-gray-600">Loading leads data...</span>

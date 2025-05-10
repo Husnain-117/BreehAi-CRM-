@@ -421,7 +421,7 @@ const FollowUpsPage: React.FC = () => {
                       <LeadIcon /> 
                       <span className="ml-1.5">Follow-up for {followUp.leads?.clients?.client_name || followUp.leads?.contact_person || (followUp.lead_id ? `Lead ID ${followUp.lead_id.substring(0,8)}...` : 'N/A')}
                     </span>
-                    </h2>
+            </h2>
                     {followUp.status && (
                       <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${getStatusColor(followUp.status)}`}>
                         {followUp.status}

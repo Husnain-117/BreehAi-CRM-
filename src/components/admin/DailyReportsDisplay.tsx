@@ -2,15 +2,15 @@ import React from 'react';
 import { DailyReportWithNames } from '../../hooks/queries/useDailyReportsQuery';
 import { UserProfile, TeamType } from '../../types'; // Corrected TeamType import
 
-// Table imports commented out as ShadCN Table is not yet installed
-// import {
-//   Table,
-//   TableBody,
-//   TableCell,
-//   TableHead,
-//   TableHeader,
-//   TableRow,
-// } from '../ui/table';
+// Uncomment or add Table imports if using Shadcn UI Table
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../ui/table'; // Adjust path if needed
 
 interface DailyReportsDisplayProps {
   reports: DailyReportWithNames[];
@@ -19,62 +19,49 @@ interface DailyReportsDisplayProps {
 
 const DailyReportsDisplay: React.FC<DailyReportsDisplayProps> = ({ reports, currentUserProfile }) => {
   if (!reports || reports.length === 0) {
-    return <p className="text-gray-600 dark:text-gray-400">No daily reports found for the selected criteria.</p>;
+    return <p className="text-muted-foreground">No daily reports found for the selected criteria.</p>;
   }
 
   const isSuperAdmin = currentUserProfile?.role === 'super_admin';
 
-  // Helper to render metrics for list view
-  const renderMetricsList = (report: DailyReportWithNames) => {
-    let metrics: { label: string; value: string | number | boolean | null | undefined }[] = [];
+  // Helper to render metrics concisely for the table
+  const renderMetricsCell = (report: DailyReportWithNames) => {
     switch (report.team_type) {
       case 'telesales':
-        metrics = [
-          { label: 'Outreach', value: report.outreach_count },
-          { label: 'Responses', value: report.responses_count },
-        ];
-        break;
+        return `Outreach: ${report.outreach_count ?? '-'}, Responses: ${report.responses_count ?? '-'}`;
       case 'linkedin':
-        metrics = [
-          { label: 'Outreach', value: report.outreach_count },
-          { label: 'Responses', value: report.responses_count },
-          { label: 'Comments', value: report.comments_done },
-          { label: 'Content Posted', value: report.content_posted ? 'Yes' : 'No' },
-        ];
-        break;
+        return `Outreach: ${report.outreach_count ?? '-'}, Responses: ${report.responses_count ?? '-'}, Comments: ${report.comments_done ?? '-'}, Posted: ${report.content_posted ? 'Yes' : 'No'}`;
       case 'cold_email':
-        metrics = [
-          { label: 'Emails Sent', value: report.emails_sent },
-          { label: 'Responses', value: report.responses_count },
-        ];
-        break;
+        return `Sent: ${report.emails_sent ?? '-'}, Responses: ${report.responses_count ?? '-'}`;
       default:
-        return <li className="text-sm text-red-500">Unknown team type</li>;
+        return <span className="text-red-500">Unknown team type</span>;
     }
-    return metrics.map(metric => (
-      <li key={metric.label} className="text-sm">
-        <span className="font-medium">{metric.label}:</span> {String(metric.value ?? '-')}
-      </li>
-    ));
   };
 
   return (
-    <div className="space-y-4">
-      {reports.map((report) => (
-        <div key={report.id} className="bg-card border border-border p-4 rounded-lg shadow">
-          <h3 className="text-lg font-semibold text-card-foreground">
-            Report Date: {new Date(report.report_date).toLocaleDateString()}
-          </h3>
-          <p className="text-sm text-muted-foreground">Agent: {report.agent_name}</p>
-          {isSuperAdmin && <p className="text-sm text-muted-foreground">Manager: {report.manager_name}</p>}
-          <p className="text-sm text-muted-foreground">
-            Team: {report.team_type.charAt(0).toUpperCase() + report.team_type.slice(1)}
-          </p>
-          <ul className="mt-2 space-y-1">
-            {renderMetricsList(report)}
-          </ul>
-        </div>
-      ))}
+    <div className="border rounded-lg overflow-hidden">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Report Date</TableHead>
+            <TableHead>Agent</TableHead>
+            {isSuperAdmin && <TableHead>Manager</TableHead>}
+            <TableHead>Team</TableHead>
+            <TableHead>Metrics</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {reports.map((report) => (
+            <TableRow key={report.id}>
+              <TableCell>{new Date(report.report_date).toLocaleDateString()}</TableCell>
+              <TableCell>{report.agent_name}</TableCell>
+              {isSuperAdmin && <TableCell>{report.manager_name}</TableCell>}
+              <TableCell className="capitalize">{report.team_type.replace('_', ' ')}</TableCell>
+              <TableCell className="text-xs">{renderMetricsCell(report)}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 };

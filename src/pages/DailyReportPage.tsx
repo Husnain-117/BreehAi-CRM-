@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, ChangeEvent } from 'react';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../api/supabaseClient';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { DailyReport, TeamType } from '../types';
+import { DailyReport, TeamType, UserProfile } from '../types';
 import { Button } from '../components/ui/button';
 import { InputField } from '../components/ui/InputField';
 import { SelectField } from '../components/ui/SelectField';
@@ -14,6 +14,9 @@ import { SelectField } from '../components/ui/SelectField';
 // New imports for Manager/Superadmin view
 import { useDailyReportsQuery } from '../hooks/queries/useDailyReportsQuery';
 import DailyReportsDisplay from '../components/admin/DailyReportsDisplay';
+import { Input } from '../components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { useUsersQuery } from '../hooks/queries/useUsersQuery';
 
 // --- Zod Schemas for Validation ---
 const baseReportSchema = {
@@ -66,18 +69,31 @@ const DailyReportPage: React.FC = () => {
   const queryClient = useQueryClient();
   const [selectedTeamType, setSelectedTeamType] = useState<TeamType | '' >('');
 
+  // --- Filter State --- 
+  const [dateFrom, setDateFrom] = useState(''); // YYYY-MM-DD
+  const [dateTo, setDateTo] = useState('');     // YYYY-MM-DD
+  const [selectedAgentId, setSelectedAgentId] = useState('');
+  const [selectedManagerId, setSelectedManagerId] = useState('');
+  const [filterTeamType, setFilterTeamType] = useState<TeamType | '' >('');
+
+  // Fetch users for filter dropdowns
+  const { data: allUsers } = useUsersQuery({}); // Fetch all users
+  const agents = useMemo(() => allUsers?.filter(u => u.role === 'agent') || [], [allUsers]);
+  const managers = useMemo(() => allUsers?.filter(u => u.role === 'manager') || [], [allUsers]);
+
   // Fetch reports for manager or superadmin
-  const isManagerOrSuperAdmin = profile?.role === 'manager' || profile?.role === 'super_admin';
+  const isManagerViewer = profile?.role === 'manager';
+  const isSuperAdminViewer = profile?.role === 'super_admin';
   const { 
     data: reportsData,
     isLoading: reportsLoading,
     error: reportsError,
   } = useDailyReportsQuery(
     { // Args for fetchDailyReports
-      managerId: profile?.role === 'manager' ? profile.id : undefined,
+      managerId: isManagerViewer ? profile.id : undefined,
     },
     { // Options for useQuery
-      enabled: isManagerOrSuperAdmin && !authLoading && !!profile 
+      enabled: (isManagerViewer || isSuperAdminViewer) && !authLoading && !!profile 
     }
   );
 
@@ -153,20 +169,99 @@ const DailyReportPage: React.FC = () => {
     mutation.mutate(reportToSave);
   };
 
+  // Filtered reports based on state
+  const filteredReports = useMemo(() => {
+    if (!reportsData || !profile) return [];
+    return reportsData.filter(report => {
+      const reportDate = new Date(report.report_date);
+      const fromDate = dateFrom ? new Date(dateFrom + 'T00:00:00') : null;
+      const toDate = dateTo ? new Date(dateTo + 'T23:59:59') : null;
+
+      if (fromDate && reportDate < fromDate) return false;
+      if (toDate && reportDate > toDate) return false;
+      if (selectedAgentId && report.agent_id !== selectedAgentId) return false;
+      if (isSuperAdminViewer && selectedManagerId && report.manager_id !== selectedManagerId) return false;
+      if (filterTeamType && report.team_type !== filterTeamType) return false;
+
+      return true;
+    });
+  }, [reportsData, dateFrom, dateTo, selectedAgentId, selectedManagerId, filterTeamType, profile, isSuperAdminViewer]);
+
   if (authLoading) return <div className="p-6 text-center">Loading user profile...</div>;
   if (!profile) return <div className="p-6 text-center">Please login to access this page.</div>;
 
   // Manager and Superadmin Views
-  if (profile.role === 'manager' || profile.role === 'super_admin') {
+  if (isManagerViewer || isSuperAdminViewer) {
     if (reportsLoading) return <div className="p-6 text-center">Loading reports...</div>;
     if (reportsError) return <div className="p-6 text-center text-destructive">Error loading reports: {reportsError.message}</div>;
 
     return (
       <div className="container mx-auto p-4 sm:p-6">
         <h1 className="text-2xl sm:text-3xl font-bold mb-6 text-foreground">
-          {profile.role === 'manager' ? "Your Team's Daily Reports" : "All Daily Reports"}
+          {isManagerViewer ? "Your Team's Daily Reports" : "All Daily Reports"}
         </h1>
-        <DailyReportsDisplay reports={reportsData || []} currentUserProfile={profile} />
+
+        {/* --- Filter Controls --- */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6 p-4 border rounded-lg bg-card">
+          {/* Date From */}
+          <div>
+            <label htmlFor="dateFrom" className="block text-sm font-medium text-muted-foreground mb-1">Date From</label>
+            <Input type="date" id="dateFrom" value={dateFrom} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDateFrom(e.target.value)} />
+          </div>
+          {/* Date To */}
+          <div>
+            <label htmlFor="dateTo" className="block text-sm font-medium text-muted-foreground mb-1">Date To</label>
+            <Input type="date" id="dateTo" value={dateTo} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDateTo(e.target.value)} />
+          </div>
+          {/* Agent Filter */}
+          <div>
+            <label htmlFor="agentFilter" className="block text-sm font-medium text-muted-foreground mb-1">Agent</label>
+            <Select value={selectedAgentId || ''} onValueChange={(value: string) => setSelectedAgentId(value)}>
+              <SelectTrigger id="agentFilter"><SelectValue placeholder="All Agents" /></SelectTrigger>
+              <SelectContent>
+                {agents.map(agent => (
+                  agent.id ? (
+                    <SelectItem key={agent.id} value={agent.id}>
+                      {agent.full_name || agent.email}
+                    </SelectItem>
+                  ) : null 
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {/* Manager Filter (Super Admin only) */}
+          {isSuperAdminViewer && (
+            <div>
+              <label htmlFor="managerFilter" className="block text-sm font-medium text-muted-foreground mb-1">Manager</label>
+              <Select value={selectedManagerId || ''} onValueChange={(value: string) => setSelectedManagerId(value)}>
+                <SelectTrigger id="managerFilter"><SelectValue placeholder="All Managers" /></SelectTrigger>
+                <SelectContent>
+                  {managers.map(manager => (
+                    manager.id ? (
+                      <SelectItem key={manager.id} value={manager.id}>
+                        {manager.full_name || manager.email}
+                      </SelectItem>
+                    ) : null 
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          {/* Team Filter */}
+          <div>
+            <label htmlFor="teamFilter" className="block text-sm font-medium text-muted-foreground mb-1">Team</label>
+            <Select value={filterTeamType || ''} onValueChange={(value: string) => setFilterTeamType(value as TeamType | '')}>
+              <SelectTrigger id="teamFilter"><SelectValue placeholder="All Teams" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="telesales">Telesales</SelectItem>
+                <SelectItem value="linkedin">LinkedIn</SelectItem>
+                <SelectItem value="cold_email">Cold Email</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <DailyReportsDisplay reports={filteredReports || []} currentUserProfile={profile} />
       </div>
     );
   }
@@ -381,6 +476,7 @@ const DailyReportPage: React.FC = () => {
       </div>
     );
   }
+  return <div className="p-6 text-center">You do not have access to this page.</div>;
 };
 
 export default DailyReportPage; 

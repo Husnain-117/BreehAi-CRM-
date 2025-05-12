@@ -16,8 +16,14 @@ export const useCreateUserMutation = () => {
 
   return useMutation(
     async (userData: CreateUserFormData) => {
+      // Prepare data for the Edge Function
+      const payload = {
+        ...userData,
+        manager_id: userData.role === 'agent' && userData.manager_id ? userData.manager_id : null,
+      };
+
       const { data, error } = await supabase.functions.invoke('create-user', {
-        body: userData,
+        body: payload, // Send the modified payload
       });
 
       if (error) {

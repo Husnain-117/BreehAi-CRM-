@@ -7,6 +7,7 @@ import { Button } from '../components/ui/button';
 import toast from 'react-hot-toast'; // Added for error notifications
 import { Loader2 } from 'lucide-react'; // For loading spinner icon
 import { useUserAttendanceHistoryQuery } from '../hooks/queries/useUserAttendanceHistoryQuery'; // Added
+import { useTeamAttendanceQuery, TeamAttendanceRecord } from '../hooks/queries/useTeamAttendanceQuery'; // Import the new hook and type
 import AttendanceListDisplay from '../components/attendance/AttendanceListDisplay'; // Added
 
 const AttendancePage: React.FC = () => {
@@ -103,16 +104,34 @@ const AttendancePage: React.FC = () => {
   };
 
   const renderManagerAdminView = () => {
-    // Placeholder for Manager/Superadmin views
-    // Here you would use useTeamAttendanceQuery or useAllAttendanceQuery
-    // and display data using a component like DailyReportsDisplay (adapted for attendance)
+    const isManager = profile?.role === 'manager';
+    const isSuperAdmin = profile?.role === 'super_admin';
+
+    // Define query arguments
+    const queryArgs = {
+      managerId: isManager ? profile.id : undefined,
+    };
+    // Define query options (like enabled)
+    const queryOptions = {
+      enabled: !!profile && (isManager || isSuperAdmin),
+    };
+
+    // Call the hook correctly with args and options
+    const { 
+      data: teamAttendance, 
+      isLoading: teamLoading, 
+      error: teamError 
+    } = useTeamAttendanceQuery(queryArgs, queryOptions);
+
     return (
-      <div className="mt-8 bg-card p-6 rounded-lg shadow border border-border">
-        <h2 className="text-xl font-semibold text-foreground mb-4">
-          {profile.role === 'manager' ? 'Team Attendance Overview' : 'All User Attendance'}
-        </h2>
-        <p className="text-muted-foreground">Manager and Superadmin attendance views are under construction.</p>
-        {/* Example: <TeamAttendanceDisplay teamId={profile.id} /> */}
+      <div className="mt-8">
+        <AttendanceListDisplay 
+          attendanceRecords={teamAttendance || []}
+          isLoading={teamLoading}
+          error={teamError}
+          title={isManager ? 'Team Attendance History' : 'All User Attendance History'}
+          showUserName={true}
+        />
       </div>
     );
   }

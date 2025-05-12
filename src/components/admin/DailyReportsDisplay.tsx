@@ -39,30 +39,36 @@ const DailyReportsDisplay: React.FC<DailyReportsDisplayProps> = ({ reports, curr
   };
 
   return (
-    <div className="border rounded-lg overflow-hidden">
-      <Table>
-        <TableHeader>
+    <Table>
+      <TableHeader>
+        <TableRow className="border-b hover:bg-transparent">
+          <TableHead className="w-[120px]">Report Date</TableHead>
+          <TableHead>Agent</TableHead>
+          {isSuperAdmin && <TableHead>Manager</TableHead>}
+          <TableHead>Team</TableHead>
+          <TableHead className="text-right">Metrics</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {reports.length === 0 ? (
           <TableRow>
-            <TableHead>Report Date</TableHead>
-            <TableHead>Agent</TableHead>
-            {isSuperAdmin && <TableHead>Manager</TableHead>}
-            <TableHead>Team</TableHead>
-            <TableHead>Metrics</TableHead>
+            <TableCell colSpan={isSuperAdmin ? 5 : 4} className="h-24 text-center text-muted-foreground">
+              No reports match the current filters.
+            </TableCell>
           </TableRow>
-        </TableHeader>
-        <TableBody>
-          {reports.map((report) => (
-            <TableRow key={report.id}>
-              <TableCell>{new Date(report.report_date).toLocaleDateString()}</TableCell>
-              <TableCell>{report.agent_name}</TableCell>
-              {isSuperAdmin && <TableCell>{report.manager_name}</TableCell>}
-              <TableCell className="capitalize">{report.team_type.replace('_', ' ')}</TableCell>
-              <TableCell className="text-xs">{renderMetricsCell(report)}</TableCell>
+        ) : (
+          reports.map((report) => (
+            <TableRow key={report.id} className="border-b hover:bg-muted/50">
+              <TableCell className="py-2 font-medium">{new Date(report.report_date).toLocaleDateString()}</TableCell>
+              <TableCell className="py-2">{report.agent_name}</TableCell>
+              {isSuperAdmin && <TableCell className="py-2">{report.manager_name}</TableCell>}
+              <TableCell className="py-2 capitalize">{report.team_type.replace('_', ' ')}</TableCell>
+              <TableCell className="py-2 text-right text-xs text-muted-foreground">{renderMetricsCell(report)}</TableCell>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+          ))
+        )}
+      </TableBody>
+    </Table>
   );
 };
 

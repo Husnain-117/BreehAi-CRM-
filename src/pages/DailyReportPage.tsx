@@ -18,6 +18,9 @@ import { Input } from '../components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { useUsersQuery } from '../hooks/queries/useUsersQuery';
 
+// Import icons from lucide-react
+import { CalendarDays, User, Users, ListFilter } from 'lucide-react';
+
 // --- Zod Schemas for Validation ---
 const baseReportSchema = {
   report_date: z.string().refine(val => /^\d{4}-\d{2}-\d{2}$/.test(val), { message: "Date must be in YYYY-MM-DD format" }),
@@ -196,28 +199,37 @@ const DailyReportPage: React.FC = () => {
     if (reportsError) return <div className="p-6 text-center text-destructive">Error loading reports: {reportsError.message}</div>;
 
     return (
-      <div className="container mx-auto p-4 sm:p-6">
-        <h1 className="text-2xl sm:text-3xl font-bold mb-6 text-foreground">
+      <div className="container mx-auto p-6 md:p-8">
+        <h1 className="text-3xl font-bold mb-8 text-foreground">
           {isManagerViewer ? "Your Team's Daily Reports" : "All Daily Reports"}
         </h1>
 
         {/* --- Filter Controls --- */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6 p-4 border rounded-lg bg-card">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 md:gap-6 mb-8 p-5 border rounded-lg bg-card shadow-sm">
           {/* Date From */}
-          <div>
-            <label htmlFor="dateFrom" className="block text-sm font-medium text-muted-foreground mb-1">Date From</label>
-            <Input type="date" id="dateFrom" value={dateFrom} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDateFrom(e.target.value)} />
+          <div className="space-y-1.5">
+            <label htmlFor="dateFrom" className="flex items-center text-sm font-medium text-muted-foreground">
+              <CalendarDays className="w-4 h-4 mr-2 text-muted-foreground" />
+              Date From
+            </label>
+            <Input type="date" id="dateFrom" value={dateFrom} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDateFrom(e.target.value)} className="h-9" />
           </div>
           {/* Date To */}
-          <div>
-            <label htmlFor="dateTo" className="block text-sm font-medium text-muted-foreground mb-1">Date To</label>
-            <Input type="date" id="dateTo" value={dateTo} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDateTo(e.target.value)} />
+          <div className="space-y-1.5">
+            <label htmlFor="dateTo" className="flex items-center text-sm font-medium text-muted-foreground">
+              <CalendarDays className="w-4 h-4 mr-2 text-muted-foreground" />
+              Date To
+            </label>
+            <Input type="date" id="dateTo" value={dateTo} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDateTo(e.target.value)} className="h-9"/>
           </div>
           {/* Agent Filter */}
-          <div>
-            <label htmlFor="agentFilter" className="block text-sm font-medium text-muted-foreground mb-1">Agent</label>
+          <div className="space-y-1.5">
+            <label htmlFor="agentFilter" className="flex items-center text-sm font-medium text-muted-foreground">
+              <User className="w-4 h-4 mr-2 text-muted-foreground" />
+              Agent
+            </label>
             <Select value={selectedAgentId || ''} onValueChange={(value: string) => setSelectedAgentId(value)}>
-              <SelectTrigger id="agentFilter"><SelectValue placeholder="All Agents" /></SelectTrigger>
+              <SelectTrigger id="agentFilter" className="h-9"><SelectValue placeholder="All Agents" /></SelectTrigger>
               <SelectContent>
                 {agents.map(agent => (
                   agent.id ? (
@@ -231,10 +243,13 @@ const DailyReportPage: React.FC = () => {
           </div>
           {/* Manager Filter (Super Admin only) */}
           {isSuperAdminViewer && (
-            <div>
-              <label htmlFor="managerFilter" className="block text-sm font-medium text-muted-foreground mb-1">Manager</label>
+            <div className="space-y-1.5">
+              <label htmlFor="managerFilter" className="flex items-center text-sm font-medium text-muted-foreground">
+                <Users className="w-4 h-4 mr-2 text-muted-foreground" />
+                Manager
+              </label>
               <Select value={selectedManagerId || ''} onValueChange={(value: string) => setSelectedManagerId(value)}>
-                <SelectTrigger id="managerFilter"><SelectValue placeholder="All Managers" /></SelectTrigger>
+                <SelectTrigger id="managerFilter" className="h-9"><SelectValue placeholder="All Managers" /></SelectTrigger>
                 <SelectContent>
                   {managers.map(manager => (
                     manager.id ? (
@@ -248,10 +263,13 @@ const DailyReportPage: React.FC = () => {
             </div>
           )}
           {/* Team Filter */}
-          <div>
-            <label htmlFor="teamFilter" className="block text-sm font-medium text-muted-foreground mb-1">Team</label>
+          <div className="space-y-1.5">
+            <label htmlFor="teamFilter" className="flex items-center text-sm font-medium text-muted-foreground">
+              <ListFilter className="w-4 h-4 mr-2 text-muted-foreground" />
+              Team
+            </label>
             <Select value={filterTeamType || ''} onValueChange={(value: string) => setFilterTeamType(value as TeamType | '')}>
-              <SelectTrigger id="teamFilter"><SelectValue placeholder="All Teams" /></SelectTrigger>
+              <SelectTrigger id="teamFilter" className="h-9"><SelectValue placeholder="All Teams" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="telesales">Telesales</SelectItem>
                 <SelectItem value="linkedin">LinkedIn</SelectItem>
@@ -260,7 +278,6 @@ const DailyReportPage: React.FC = () => {
             </Select>
           </div>
         </div>
-
         <DailyReportsDisplay reports={filteredReports || []} currentUserProfile={profile} />
       </div>
     );

@@ -1,14 +1,20 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useUserTodayAttendanceQuery } from '../hooks/queries/useUserTodayAttendanceQuery';
 import { useCheckInMutation } from '../hooks/mutations/useCheckInMutation';
 import { useCheckOutMutation } from '../hooks/mutations/useCheckOutMutation';
 import { Button } from '../components/ui/button';
 import toast from 'react-hot-toast'; // Added for error notifications
-import { Loader2 } from 'lucide-react'; // For loading spinner icon
+import { Loader2, CalendarDays, User, Users, ListFilter, SlidersHorizontal } from 'lucide-react'; // Added SlidersHorizontal
 import { useUserAttendanceHistoryQuery } from '../hooks/queries/useUserAttendanceHistoryQuery'; // Added
 import { useTeamAttendanceQuery, TeamAttendanceRecord } from '../hooks/queries/useTeamAttendanceQuery'; // Import the new hook and type
 import AttendanceListDisplay from '../components/attendance/AttendanceListDisplay'; // Added
+import { DatePicker } from '../components/ui/date-picker'; // Import DatePicker
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select'; // For filters
+import { useUsersQuery } from '../hooks/queries/useUsersQuery'; // For agent/manager dropdowns
+
+// Add ALL_VALUE constant
+const ALL_VALUE = "__ALL__";
 
 const AttendancePage: React.FC = () => {
   const { profile, loading: authLoading } = useAuth();
@@ -28,6 +34,19 @@ const AttendancePage: React.FC = () => {
     isLoading: historyLoading,
     error: historyError,
   } = useUserAttendanceHistoryQuery();
+
+  // --- State for Team/All View Filters ---
+  const [filterStartDate, setFilterStartDate] = useState<Date | undefined>(undefined);
+  const [filterEndDate, setFilterEndDate] = useState<Date | undefined>(undefined);
+  // Initialize filters with ALL_VALUE
+  const [filterAgentId, setFilterAgentId] = useState<string>(ALL_VALUE);
+  const [filterManagerId, setFilterManagerId] = useState<string>(ALL_VALUE); // Specific for super admin filter
+  const [filterStatus, setFilterStatus] = useState<'CheckedIn' | 'CheckedOut' | 'OnLeave' | typeof ALL_VALUE >(ALL_VALUE);
+
+  // Fetch users for dropdowns
+  const { data: allUsers } = useUsersQuery({}); 
+  const agents = useMemo(() => allUsers?.filter(u => u.role === 'agent') || [], [allUsers]);
+  const managers = useMemo(() => allUsers?.filter(u => u.role === 'manager') || [], [allUsers]);
 
   const handleCheckIn = () => {
     if (!profile?.id) return;
@@ -107,16 +126,20 @@ const AttendancePage: React.FC = () => {
     const isManager = profile?.role === 'manager';
     const isSuperAdmin = profile?.role === 'super_admin';
 
-    // Define query arguments
+    // Determine manager ID for query: specific manager for super admin filter, or logged-in manager
+    const managerIdForQuery = isSuperAdmin ? (filterManagerId === ALL_VALUE ? undefined : filterManagerId) : (isManager ? profile.id : undefined);
+
     const queryArgs = {
-      managerId: isManager ? profile.id : undefined,
+      managerId: managerIdForQuery,
+      agentId: filterAgentId === ALL_VALUE ? undefined : filterAgentId, 
+      startDate: filterStartDate ? filterStartDate.toISOString().split('T')[0] : undefined,
+      endDate: filterEndDate ? filterEndDate.toISOString().split('T')[0] : undefined,
+      status: filterStatus === ALL_VALUE ? undefined : filterStatus,
     };
-    // Define query options (like enabled)
     const queryOptions = {
       enabled: !!profile && (isManager || isSuperAdmin),
     };
 
-    // Call the hook correctly with args and options
     const { 
       data: teamAttendance, 
       isLoading: teamLoading, 
@@ -124,13 +147,96 @@ const AttendancePage: React.FC = () => {
     } = useTeamAttendanceQuery(queryArgs, queryOptions);
 
     return (
-      <div className="mt-8">
+      <div className="mt-8 space-y-6">
+        <h2 className="text-xl font-semibold text-foreground">
+          {isManager ? 'Team Attendance' : 'All User Attendance'}
+        </h2>
+        
+        {/* --- Filter Controls --- */}
+        <div className="p-4 border rounded-lg bg-card shadow-sm">
+            <h3 className="flex items-center text-md font-semibold mb-4 text-foreground">
+               <SlidersHorizontal className="w-5 h-5 mr-2 text-muted-foreground"/> Filters
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+              {/* Date Start */}
+              <div className="space-y-1.5">
+                <label className="flex items-center text-sm font-medium text-muted-foreground">
+                  <CalendarDays className="w-4 h-4 mr-1.5" /> Start Date
+                </label>
+                <DatePicker date={filterStartDate} setDate={setFilterStartDate} />
+              </div>
+              {/* Date End */}
+              <div className="space-y-1.5">
+                <label className="flex items-center text-sm font-medium text-muted-foreground">
+                  <CalendarDays className="w-4 h-4 mr-1.5" /> End Date
+                </label>
+                <DatePicker date={filterEndDate} setDate={setFilterEndDate} />
+              </div>
+              {/* Agent Filter (Super Admin only - maybe manager too?) */}
+              {/* Decide if Manager should also see Agent filter */} 
+              {(isSuperAdmin || isManager) && (
+                 <div className="space-y-1.5">
+                  <label className="flex items-center text-sm font-medium text-muted-foreground">
+                    <User className="w-4 h-4 mr-1.5" /> Agent
+                  </label>
+                  {/* Use ALL_VALUE for the 'All' option */}
+                  <Select value={filterAgentId} onValueChange={(value: string) => setFilterAgentId(value)}>
+                    <SelectTrigger className="h-9"><SelectValue placeholder="All Agents" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={ALL_VALUE}>All Agents</SelectItem>
+                      {/* Only show agents relevant to the selected manager if manager is filtered */}
+                      {(isSuperAdmin && filterManagerId !== ALL_VALUE ? agents.filter(a => a.manager_id === filterManagerId) : agents)
+                        .map(agent => (
+                        agent.id ? <SelectItem key={agent.id} value={agent.id}>{agent.full_name || agent.email}</SelectItem> : null
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              {/* Manager Filter (Super Admin only) */}
+              {isSuperAdmin && (
+                <div className="space-y-1.5">
+                  <label className="flex items-center text-sm font-medium text-muted-foreground">
+                    <Users className="w-4 h-4 mr-1.5" /> Manager
+                  </label>
+                  {/* Use ALL_VALUE for the 'All' option */}
+                  <Select value={filterManagerId} onValueChange={(value: string) => { setFilterManagerId(value); setFilterAgentId(ALL_VALUE); /* Reset agent if manager changes */ }}>
+                    <SelectTrigger className="h-9"><SelectValue placeholder="All Managers" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={ALL_VALUE}>All Managers</SelectItem>
+                      {managers.map(manager => (
+                        manager.id ? <SelectItem key={manager.id} value={manager.id}>{manager.full_name || manager.email}</SelectItem> : null
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              {/* Status Filter */}
+              <div className="space-y-1.5">
+                <label className="flex items-center text-sm font-medium text-muted-foreground">
+                  <ListFilter className="w-4 h-4 mr-1.5" /> Status
+                </label>
+                {/* Use ALL_VALUE for the 'All' option */}
+                <Select value={filterStatus} onValueChange={(value: string) => setFilterStatus(value as any /* Cast needed, or type ALL_VALUE */)}>
+                  <SelectTrigger className="h-9"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ALL_VALUE}>All Statuses</SelectItem>
+                    <SelectItem value="CheckedIn">Checked In</SelectItem>
+                    <SelectItem value="CheckedOut">Checked Out</SelectItem>
+                    <SelectItem value="OnLeave">On Leave</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+        </div>
+
+        {/* Attendance List Display */}
         <AttendanceListDisplay 
           attendanceRecords={teamAttendance || []}
           isLoading={teamLoading}
           error={teamError}
-          title={isManager ? 'Team Attendance History' : 'All User Attendance History'}
-          showUserName={true}
+          title="Filtered Attendance History" // Changed title
+          showUserName={true} 
         />
       </div>
     );
@@ -150,13 +256,24 @@ const AttendancePage: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto p-4 sm:p-6">
-      <h1 className="text-2xl sm:text-3xl font-bold mb-8 text-foreground">Attendance</h1>
-      {renderUserAttendanceActions()}
-      {(profile.role === 'manager' || profile.role === 'super_admin') && renderManagerAdminView()}
-      {/* Placeholder for viewing own attendance history - Replaced with actual component */}
-      <div className="mt-8">
-        {renderMyAttendanceHistory()} 
+    <div className="container mx-auto p-4 sm:p-6 space-y-8">
+      <h1 className="text-3xl font-bold text-foreground">Attendance</h1>
+      
+      {/* Grid layout for sections */} 
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        
+        {/* Column 1: Actions and Own History */} 
+        <div className="lg:col-span-1 space-y-8">
+           {renderUserAttendanceActions()}
+           {renderMyAttendanceHistory()}
+        </div>
+        
+        {/* Column 2: Team/All View (if applicable) */} 
+        {(profile?.role === 'manager' || profile?.role === 'super_admin') && (
+            <div className="lg:col-span-2">
+                 {renderManagerAdminView()} 
+            </div>
+        )}
       </div>
     </div>
   );

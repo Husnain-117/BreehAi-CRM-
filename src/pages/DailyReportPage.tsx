@@ -27,6 +27,9 @@ import { DatePicker } from '../components/ui/date-picker';
 // Import date-fns format if needed elsewhere, or rely on DatePicker internal formatting
 import { format as formatDate } from 'date-fns';
 
+// Add ALL_VALUE constant
+const ALL_VALUE = "__ALL__";
+
 // --- Zod Schemas for Validation ---
 const baseReportSchema = {
   report_date: z.string().refine(val => /^\d{4}-\d{2}-\d{2}$/.test(val), { message: "Date must be in YYYY-MM-DD format" }),
@@ -81,9 +84,9 @@ const DailyReportPage: React.FC = () => {
   // --- Filter State (Change date state to Date | undefined) --- 
   const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
   const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
-  const [selectedAgentId, setSelectedAgentId] = useState('');
-  const [selectedManagerId, setSelectedManagerId] = useState('');
-  const [filterTeamType, setFilterTeamType] = useState<TeamType | '' >('');
+  const [selectedAgentId, setSelectedAgentId] = useState(ALL_VALUE);
+  const [selectedManagerId, setSelectedManagerId] = useState(ALL_VALUE);
+  const [filterTeamType, setFilterTeamType] = useState<TeamType | typeof ALL_VALUE>(ALL_VALUE);
 
   // Fetch users for filter dropdowns
   const { data: allUsers } = useUsersQuery({}); // Fetch all users
@@ -193,9 +196,10 @@ const DailyReportPage: React.FC = () => {
         if (reportDate > endOfDay) return false;
       }
 
-      if (selectedAgentId && report.agent_id !== selectedAgentId) return false;
-      if (isSuperAdminViewer && selectedManagerId && report.manager_id !== selectedManagerId) return false;
-      if (filterTeamType && report.team_type !== filterTeamType) return false;
+      // Check filters against ALL_VALUE
+      if (selectedAgentId !== ALL_VALUE && report.agent_id !== selectedAgentId) return false;
+      if (isSuperAdminViewer && selectedManagerId !== ALL_VALUE && report.manager_id !== selectedManagerId) return false;
+      if (filterTeamType !== ALL_VALUE && report.team_type !== filterTeamType) return false;
 
       return true;
     });
@@ -241,10 +245,10 @@ const DailyReportPage: React.FC = () => {
               <User className="w-4 h-4 mr-2 text-muted-foreground" />
               Agent
             </label>
-            <Select value={selectedAgentId || ''} onValueChange={(value: string) => setSelectedAgentId(value)}>
+            <Select value={selectedAgentId} onValueChange={(value: string) => setSelectedAgentId(value)}>
               <SelectTrigger id="agentFilter" className="h-9"><SelectValue placeholder="All Agents" /></SelectTrigger>
               <SelectContent>
-                {/* <SelectItem value="">All Agents</SelectItem> */}
+                <SelectItem value={ALL_VALUE}>All Agents</SelectItem>
                 {agents.map(agent => (
                   agent.id ? (
                     <SelectItem key={agent.id} value={agent.id}>
@@ -262,10 +266,10 @@ const DailyReportPage: React.FC = () => {
                 <Users className="w-4 h-4 mr-2 text-muted-foreground" />
                 Manager
               </label>
-              <Select value={selectedManagerId || ''} onValueChange={(value: string) => setSelectedManagerId(value)}>
+              <Select value={selectedManagerId} onValueChange={(value: string) => setSelectedManagerId(value)}>
                 <SelectTrigger id="managerFilter" className="h-9"><SelectValue placeholder="All Managers" /></SelectTrigger>
                 <SelectContent>
-                  {/* <SelectItem value="">All Managers</SelectItem> */}
+                  <SelectItem value={ALL_VALUE}>All Managers</SelectItem>
                   {managers.map(manager => (
                     manager.id ? (
                       <SelectItem key={manager.id} value={manager.id}>
@@ -283,10 +287,10 @@ const DailyReportPage: React.FC = () => {
               <ListFilter className="w-4 h-4 mr-2 text-muted-foreground" />
               Team
             </label>
-            <Select value={filterTeamType || ''} onValueChange={(value: string) => setFilterTeamType(value as TeamType | '')}>
+            <Select value={filterTeamType} onValueChange={(value: string) => setFilterTeamType(value as TeamType | typeof ALL_VALUE)}>
               <SelectTrigger id="teamFilter" className="h-9"><SelectValue placeholder="All Teams" /></SelectTrigger>
               <SelectContent>
-                {/* <SelectItem value="">All Teams</SelectItem> */}
+                <SelectItem value={ALL_VALUE}>All Types</SelectItem>
                 <SelectItem value="telesales">Telesales</SelectItem>
                 <SelectItem value="linkedin">LinkedIn</SelectItem>
                 <SelectItem value="cold_email">Cold Email</SelectItem>

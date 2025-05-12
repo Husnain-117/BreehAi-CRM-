@@ -21,6 +21,12 @@ import { useUsersQuery } from '../hooks/queries/useUsersQuery';
 // Import icons from lucide-react
 import { CalendarDays, User, Users, ListFilter } from 'lucide-react';
 
+// Import the new DatePicker
+import { DatePicker } from '../components/ui/date-picker';
+
+// Import date-fns format if needed elsewhere, or rely on DatePicker internal formatting
+import { format as formatDate } from 'date-fns';
+
 // --- Zod Schemas for Validation ---
 const baseReportSchema = {
   report_date: z.string().refine(val => /^\d{4}-\d{2}-\d{2}$/.test(val), { message: "Date must be in YYYY-MM-DD format" }),
@@ -72,9 +78,9 @@ const DailyReportPage: React.FC = () => {
   const queryClient = useQueryClient();
   const [selectedTeamType, setSelectedTeamType] = useState<TeamType | '' >('');
 
-  // --- Filter State --- 
-  const [dateFrom, setDateFrom] = useState(''); // YYYY-MM-DD
-  const [dateTo, setDateTo] = useState('');     // YYYY-MM-DD
+  // --- Filter State (Change date state to Date | undefined) --- 
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
+  const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
   const [selectedAgentId, setSelectedAgentId] = useState('');
   const [selectedManagerId, setSelectedManagerId] = useState('');
   const [filterTeamType, setFilterTeamType] = useState<TeamType | '' >('');
@@ -172,22 +178,28 @@ const DailyReportPage: React.FC = () => {
     mutation.mutate(reportToSave);
   };
 
-  // Filtered reports based on state
+  // Filtered reports logic needs to adapt to Date objects
   const filteredReports = useMemo(() => {
     if (!reportsData || !profile) return [];
     return reportsData.filter(report => {
-      const reportDate = new Date(report.report_date);
-      const fromDate = dateFrom ? new Date(dateFrom + 'T00:00:00') : null;
-      const toDate = dateTo ? new Date(dateTo + 'T23:59:59') : null;
+      const reportDate = new Date(report.report_date); // This is already a Date
+      
+      // Adjust comparison for Date objects
+      if (dateFrom && reportDate < dateFrom) return false;
+      // For dateTo, compare against the end of the selected day
+      if (dateTo) {
+        const endOfDay = new Date(dateTo);
+        endOfDay.setHours(23, 59, 59, 999);
+        if (reportDate > endOfDay) return false;
+      }
 
-      if (fromDate && reportDate < fromDate) return false;
-      if (toDate && reportDate > toDate) return false;
       if (selectedAgentId && report.agent_id !== selectedAgentId) return false;
       if (isSuperAdminViewer && selectedManagerId && report.manager_id !== selectedManagerId) return false;
       if (filterTeamType && report.team_type !== filterTeamType) return false;
 
       return true;
     });
+    // Update dependencies for useMemo
   }, [reportsData, dateFrom, dateTo, selectedAgentId, selectedManagerId, filterTeamType, profile, isSuperAdminViewer]);
 
   if (authLoading) return <div className="p-6 text-center">Loading user profile...</div>;
@@ -206,21 +218,22 @@ const DailyReportPage: React.FC = () => {
 
         {/* --- Filter Controls --- */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 md:gap-6 mb-8 p-5 border rounded-lg bg-card shadow-sm">
-          {/* Date From */}
+          {/* Date From - Use DatePicker */}
           <div className="space-y-1.5">
-            <label htmlFor="dateFrom" className="flex items-center text-sm font-medium text-muted-foreground">
+            <label htmlFor="dateFromTrigger" className="flex items-center text-sm font-medium text-muted-foreground">
               <CalendarDays className="w-4 h-4 mr-2 text-muted-foreground" />
               Date From
             </label>
-            <Input type="date" id="dateFrom" value={dateFrom} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDateFrom(e.target.value)} className="h-9" />
+            {/* The DatePicker itself doesn't need an ID for the label, the trigger button inside does implicitly */}
+            <DatePicker date={dateFrom} setDate={setDateFrom} />
           </div>
-          {/* Date To */}
+          {/* Date To - Use DatePicker */}
           <div className="space-y-1.5">
-            <label htmlFor="dateTo" className="flex items-center text-sm font-medium text-muted-foreground">
+            <label htmlFor="dateToTrigger" className="flex items-center text-sm font-medium text-muted-foreground">
               <CalendarDays className="w-4 h-4 mr-2 text-muted-foreground" />
               Date To
             </label>
-            <Input type="date" id="dateTo" value={dateTo} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDateTo(e.target.value)} className="h-9"/>
+            <DatePicker date={dateTo} setDate={setDateTo} />
           </div>
           {/* Agent Filter */}
           <div className="space-y-1.5">
@@ -231,6 +244,7 @@ const DailyReportPage: React.FC = () => {
             <Select value={selectedAgentId || ''} onValueChange={(value: string) => setSelectedAgentId(value)}>
               <SelectTrigger id="agentFilter" className="h-9"><SelectValue placeholder="All Agents" /></SelectTrigger>
               <SelectContent>
+                {/* <SelectItem value="">All Agents</SelectItem> */}
                 {agents.map(agent => (
                   agent.id ? (
                     <SelectItem key={agent.id} value={agent.id}>
@@ -251,6 +265,7 @@ const DailyReportPage: React.FC = () => {
               <Select value={selectedManagerId || ''} onValueChange={(value: string) => setSelectedManagerId(value)}>
                 <SelectTrigger id="managerFilter" className="h-9"><SelectValue placeholder="All Managers" /></SelectTrigger>
                 <SelectContent>
+                  {/* <SelectItem value="">All Managers</SelectItem> */}
                   {managers.map(manager => (
                     manager.id ? (
                       <SelectItem key={manager.id} value={manager.id}>
@@ -271,6 +286,7 @@ const DailyReportPage: React.FC = () => {
             <Select value={filterTeamType || ''} onValueChange={(value: string) => setFilterTeamType(value as TeamType | '')}>
               <SelectTrigger id="teamFilter" className="h-9"><SelectValue placeholder="All Teams" /></SelectTrigger>
               <SelectContent>
+                {/* <SelectItem value="">All Teams</SelectItem> */}
                 <SelectItem value="telesales">Telesales</SelectItem>
                 <SelectItem value="linkedin">LinkedIn</SelectItem>
                 <SelectItem value="cold_email">Cold Email</SelectItem>

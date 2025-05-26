@@ -62,5 +62,9 @@ export const useMeetingsQuery = (args: UseMeetingsQueryArgs = {}) => {
   return useQuery<Meeting[], Error>({
     queryKey: ['meetings', args],
     queryFn: () => fetchMeetings(args),
+    staleTime: 0,
+    cacheTime: 5 * 60 * 1000,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 }; 

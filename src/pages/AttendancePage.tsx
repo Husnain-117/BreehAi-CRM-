@@ -264,8 +264,8 @@ const AttendancePage: React.FC = () => {
         
         {/* Column 1: Actions and Own History */} 
         <div className="lg:col-span-1 space-y-8">
-           {renderUserAttendanceActions()}
-           {renderMyAttendanceHistory()}
+      {renderUserAttendanceActions()}
+        {renderMyAttendanceHistory()} 
         </div>
         
         {/* Column 2: Team/All View (if applicable) */} 

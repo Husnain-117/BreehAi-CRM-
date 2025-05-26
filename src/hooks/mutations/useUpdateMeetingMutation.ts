@@ -16,6 +16,7 @@ export interface UpdateMeetingData {
   status?: 'Scheduled' | 'Completed' | 'Pending' | 'Cancelled'; // Include status for updates
   location?: string;
   notes?: string;
+  updated_at?: string; // Add updated_at field
 }
 
 export const useUpdateMeetingMutation = () => {
@@ -29,6 +30,8 @@ export const useUpdateMeetingMutation = () => {
     async (meetingData: UpdateMeetingData) => {
       const { id, ...updateData } = meetingData;
       
+      console.log('Updating meeting with data:', { id, ...updateData }); // Add logging
+      
       // Remove undefined fields from updateData to prevent overwriting with undefined in Supabase
       const filteredUpdateData = Object.entries(updateData).reduce((acc, [key, value]) => {
         if (value !== undefined) {
@@ -38,29 +41,34 @@ export const useUpdateMeetingMutation = () => {
       }, {} as Partial<Omit<UpdateMeetingData, 'id'>>);
 
       if (Object.keys(filteredUpdateData).length === 0) {
-        // Avoid making an update call if no fields are actually being changed (excluding id)
-        // Or handle as an error/warning, or return the original meeting data if appropriate
-        const existingMeeting = queryClient.getQueryData<Meeting[]>(['meetings'])?.find(m => m.id === id) || 
-                                queryClient.getQueryData<Meeting>(['meetings', id]);
-        if (existingMeeting) return existingMeeting;
         throw new Error('No data provided for update.');
       }
+
+      // Add updated_at timestamp
+      filteredUpdateData.updated_at = new Date().toISOString();
+
+      console.log('Filtered update data:', filteredUpdateData); // Add logging
 
       const { data, error } = await supabase
         .from('meetings')
         .update(filteredUpdateData)
         .eq('id', id)
-        .select()
+        .select('*, leads (id, client_id, status_bucket, contact_person, clients (client_name)), users:agent_id (id, full_name)')
         .single();
 
       if (error) {
         console.error('Error updating meeting:', error);
+        console.error('Error details:', { code: error.code, hint: error.hint, details: error.details }); // Add detailed error logging
         toast.error(`Error updating meeting: ${error.message}`);
         throw error;
       }
       if (!data) {
-        throw new Error('No data returned after updating meeting.');
+        const err = new Error('No data returned after updating meeting.');
+        console.error(err);
+        throw err;
       }
+      
+      console.log('Meeting updated successfully:', data); // Add success logging
       return data as Meeting;
     },
     {

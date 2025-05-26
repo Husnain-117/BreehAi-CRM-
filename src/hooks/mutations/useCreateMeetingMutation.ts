@@ -31,6 +31,7 @@ export const useCreateMeetingMutation = () => {
             end_time: meetingData.end_time,
             location: meetingData.location,
             notes: meetingData.notes,
+            status: 'Pending', // Explicitly set initial status
           },
         ])
         .select()

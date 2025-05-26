@@ -1,4 +1,3 @@
-// src/pages/MeetingsPage.tsx
 import React, { useState, useEffect } from 'react';
 import { useMeetingsQuery } from '../hooks/queries/useMeetingsQuery';
 import { Meeting } from '../types'; // Assuming Meeting type is exported from types
@@ -28,7 +27,7 @@ const UserIcon = () => (
 
 const LeadIcon = () => ( // Using a generic document icon for Lead for now
   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1.5 text-gray-500 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V7a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
   </svg>
 );
 
@@ -68,7 +67,8 @@ const TrashIcon = () => (
 );
 const FilterIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6 Life
+    .586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
   </svg>
 );
 
@@ -112,7 +112,6 @@ const MeetingsPage: React.FC = () => {
         dateMatch = dateMatch && new Date(meeting.start_time) >= new Date(dateFrom);
     }
     if (dateTo) {
-        // Add 1 day to dateTo to make the range inclusive of the selected end date
         const inclusiveDateTo = new Date(dateTo);
         inclusiveDateTo.setDate(inclusiveDateTo.getDate() + 1);
         dateMatch = dateMatch && new Date(meeting.start_time) < inclusiveDateTo;
@@ -139,8 +138,6 @@ const MeetingsPage: React.FC = () => {
   } else if (sortBy === 'status_desc') {
     processedMeetings.sort((a, b) => (b.status || '').localeCompare(a.status || ''));
   }
-  // Note: For a more robust status sort that considers a specific order (e.g., Pending, Scheduled, Completed, Cancelled),
-  // you would need a custom sort function with a predefined order map.
 
   const getStatusColor = (status: Meeting['status']) => {
     switch (status) {
@@ -153,17 +150,14 @@ const MeetingsPage: React.FC = () => {
   };
 
   const handleCreateMeetingSubmit = async (formData: Omit<Meeting, 'id' | 'created_at' | 'updated_at' | 'leads' | 'users'> & { lead_id: string; agent_id: string }) => {
-    // Data structure expected by useCreateMeetingMutation (NewMeetingData)
     const meetingPayload: NewMeetingData = {
       title: formData.title,
-      lead_id: formData.lead_id, // Ensure this is not null if your DB/mutation requires it. NewMeetingData allows null.
+      lead_id: formData.lead_id,
       agent_id: formData.agent_id,
       start_time: formData.start_time,
       end_time: formData.end_time,
-      location: formData.location || undefined, // Ensure it's string or undefined
-      notes: formData.notes || undefined,       // Ensure it's string or undefined
-      // Status is not part of NewMeetingData, so it's omitted here.
-      // The backend might set a default status.
+      location: formData.location || undefined,
+      notes: formData.notes || undefined,
     };
 
     try {
@@ -213,11 +207,35 @@ const MeetingsPage: React.FC = () => {
   const handleCompleteMeeting = async (meetingId: string, meetingTitle: string) => {
     if (window.confirm(`Are you sure you want to mark the meeting "${meetingTitle}" as Completed?`)) {
       try {
-        await updateMeetingMutation.mutateAsync({ id: meetingId, status: 'Completed' });
+        // Refetch meetings to ensure we have the latest data
+        await refetchMeetings();
+        const meetingToUpdate = meetings?.find(m => m.id === meetingId);
+        
+        if (!meetingToUpdate) {
+          toast.error(`Meeting "${meetingTitle}" not found. It may have been deleted or modified.`);
+          return;
+        }
+
+        await updateMeetingMutation.mutateAsync({
+          id: meetingId,
+          status: 'Completed',
+          start_time: meetingToUpdate.start_time,
+          end_time: meetingToUpdate.end_time,
+          location: meetingToUpdate.location,
+          notes: meetingToUpdate.notes,
+          lead_id: meetingToUpdate.lead_id,
+          agent_id: meetingToUpdate.agent_id,
+        });
+        refetchMeetings();
+        toast.success('Meeting marked as completed!');
       } catch (err) {
         console.error("Error completing meeting:", err);
-        const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
-        toast.error(`Failed to mark meeting as completed: ${errorMessage}`);
+        const errorMessage = err instanceof Error ? err.message : JSON.stringify(err);
+        if (errorMessage.includes('PGRST116')) {
+          toast.error(`Failed to mark meeting as completed: Meeting "${meetingTitle}" not found in the database.`);
+        } else {
+          toast.error(`Failed to mark meeting as completed: ${errorMessage}`);
+        }
       }
     }
   };
@@ -235,14 +253,26 @@ const MeetingsPage: React.FC = () => {
 
   const handleRescheduleMeetingSubmit = async (data: { id: string; start_time: string; end_time: string }) => {
     try {
+      await refetchMeetings();
+      const meetingToUpdate = meetings?.find(m => m.id === data.id);
+      if (!meetingToUpdate) {
+        toast.error('Meeting not found. It may have been deleted or modified.');
+        return;
+      }
       await updateMeetingMutation.mutateAsync({
         id: data.id,
         start_time: data.start_time,
         end_time: data.end_time,
-        status: 'Scheduled', // Or keep existing status if it was e.g. Pending
+        status: 'Scheduled',
+        location: meetingToUpdate?.location,
+        notes: meetingToUpdate?.notes,
+        lead_id: meetingToUpdate?.lead_id,
+        agent_id: meetingToUpdate?.agent_id,
       });
       setIsRescheduleModalOpen(false);
       setCurrentReschedulingMeeting(null);
+      refetchMeetings();
+      toast.success('Meeting rescheduled successfully!');
     } catch (err) {
       console.error("Error rescheduling meeting:", err);
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
@@ -288,7 +318,6 @@ const MeetingsPage: React.FC = () => {
 
   if (isLoading) return <div className="p-4 text-center">Loading data...</div>;
   if (errorMeetings) return <div className="p-4 text-center text-red-500">Error fetching meetings: {errorMeetings.message}</div>;
-  // Potentially add error handling for leads/users queries too
 
   return (
     <div className="p-4 sm:p-6 bg-gray-100 min-h-screen flex flex-col">
@@ -312,7 +341,6 @@ const MeetingsPage: React.FC = () => {
               </button>
               </div>
           </div>
-          {/* Filter Section - adjust grid to make space for sort dropdown */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 items-end p-3 bg-white rounded-lg shadow mb-6">
               <div className="col-span-1 sm:col-span-2 md:col-span-3 lg:col-span-1 flex items-center">
                   <FilterIcon /> 
@@ -354,7 +382,6 @@ const MeetingsPage: React.FC = () => {
                   <label htmlFor="dateTo" className="text-xs text-gray-600 mb-0.5">Date To:</label>
                   <input type="date" id="dateTo" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="p-2 border border-gray-300 rounded-md text-sm w-full focus:ring-indigo-500 focus:border-indigo-500" />
               </div>
-              {/* Sort Dropdown */}
               <div className="flex flex-col">
                   <label htmlFor="sortBy" className="text-xs text-gray-600 mb-0.5">Sort By:</label>
                   <select 
@@ -425,10 +452,9 @@ const MeetingsPage: React.FC = () => {
                         )}
                       </div>
                     </div>
-                    {/* Action Buttons Section */}
                     <div className="mt-4 pt-4 border-t border-gray-200 flex flex-wrap gap-2 justify-center">
                         <button 
-                            onClick={() => handleOpenViewDetailsModal(meeting)} // Call view details handler
+                            onClick={() => handleOpenViewDetailsModal(meeting)}
                             className="text-xs px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md shadow-sm flex items-center transition-colors">
                             <EyeIcon /> View
                         </button>
@@ -438,8 +464,8 @@ const MeetingsPage: React.FC = () => {
                             <PencilIcon /> Edit
                         </button>
                         <button 
-                            onClick={() => handleCompleteMeeting(meeting.id, meeting.title)} // Call complete handler
-                            disabled={meeting.status === 'Completed' || meeting.status === 'Cancelled'} // Disable if already completed/cancelled
+                            onClick={() => handleCompleteMeeting(meeting.id, meeting.title)}
+                            disabled={meeting.status === 'Completed' || meeting.status === 'Cancelled'}
                             className={`text-xs px-3 py-1.5 rounded-md shadow-sm flex items-center transition-colors 
                                         ${meeting.status === 'Completed' || meeting.status === 'Cancelled' 
                                           ? 'bg-gray-50 text-gray-400 cursor-not-allowed' 
@@ -447,8 +473,8 @@ const MeetingsPage: React.FC = () => {
                             <CheckCircleIcon /> Complete
                         </button>
                         <button 
-                            onClick={() => handleOpenRescheduleModal(meeting)} // Call reschedule handler
-                            disabled={meeting.status === 'Completed' || meeting.status === 'Cancelled'} // Disable if already completed/cancelled
+                            onClick={() => handleOpenRescheduleModal(meeting)}
+                            disabled={meeting.status === 'Completed' || meeting.status === 'Cancelled'}
                             className={`text-xs px-3 py-1.5 rounded-md shadow-sm flex items-center transition-colors 
                                         ${meeting.status === 'Completed' || meeting.status === 'Cancelled' 
                                           ? 'bg-gray-50 text-gray-400 cursor-not-allowed' 
@@ -461,13 +487,12 @@ const MeetingsPage: React.FC = () => {
                             <TrashIcon /> Delete
                         </button>
                     </div>
-          </div>
-        ))}
+                  </div>
+                ))}
             </div>
         )}
       </div>
 
-      {/* Pagination Controls */}
       {totalPages > 1 && (
         <div className="py-6 flex justify-center items-center space-x-2 bg-white shadow-md rounded-b-lg mt-auto">
           <button 
@@ -479,11 +504,10 @@ const MeetingsPage: React.FC = () => {
           </button>
           {[...Array(totalPages).keys()].map(number => {
             const pageNumber = number + 1;
-            // Show a limited number of page buttons, e.g., first, last, current, and a few around current
             const showButton = pageNumber === 1 || pageNumber === totalPages || 
                                (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1) ||
-                               (currentPage <= 3 && pageNumber <=3) || // show first 3 if current is 1,2 or 3
-                               (currentPage >= totalPages - 2 && pageNumber >= totalPages -2); // show last 3 if current is near end
+                               (currentPage <= 3 && pageNumber <=3) || 
+                               (currentPage >= totalPages - 2 && pageNumber >= totalPages -2);
             
             const showEllipsisBefore = currentPage > 3 && pageNumber === currentPage - 2 && pageNumber > 2;
             const showEllipsisAfter = currentPage < totalPages - 2 && pageNumber === currentPage + 2 && pageNumber < totalPages -1;
@@ -546,7 +570,6 @@ const MeetingsPage: React.FC = () => {
         />
       )}
 
-      {/* Add the RescheduleMeetingModal instance here */}
       {currentReschedulingMeeting && (
         <RescheduleMeetingModal
           isOpen={isRescheduleModalOpen}
@@ -573,4 +596,4 @@ const MeetingsPage: React.FC = () => {
   );
 };
 
-export default MeetingsPage; 
+export default MeetingsPage;

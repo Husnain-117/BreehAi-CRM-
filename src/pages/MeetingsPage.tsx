@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useMeetingsQuery } from '../hooks/queries/useMeetingsQuery';
+import { useLeadsQuery } from '../hooks/queries/useLeadsQuery';
+import { useUsersQuery } from '../hooks/queries/useUsersQuery';
 import { useCreateMeetingMutation, NewMeetingData } from '../hooks/mutations/useCreateMeetingMutation';
 import { useUpdateMeetingMutation, UpdateMeetingData } from '../hooks/mutations/useUpdateMeetingMutation';
 import { useDeleteMeetingMutation } from '../hooks/mutations/useDeleteMeetingMutation';
@@ -7,14 +9,14 @@ import CreateMeetingModal from '../components/modals/CreateMeetingModal';
 import EditMeetingModal from '../components/modals/EditMeetingModal';
 import RescheduleMeetingModal from '../components/modals/RescheduleMeetingModal';
 import ViewMeetingDetailsModal from '../components/modals/ViewMeetingDetailsModal';
-import MeetingList from '../components/meeting/MeetingList'; // Updated path
+import MeetingList from '../components/meeting/MeetingList';
 import { Meeting } from '../types';
 import { toast } from 'react-hot-toast';
 
 const MeetingsPage: React.FC = () => {
-  const { data: meetings, refetch: refetchMeetings } = useMeetingsQuery({}); // Added refetchMeetings
-  const { data: leadsResponse, isLoading: isLoadingLeads } = useMeetingsQuery({});
-  const { data: usersArray, isLoading: isLoadingUsers } = useMeetingsQuery({});
+  const { data: meetings, refetch: refetchMeetings, isFetching: isFetchingMeetings } = useMeetingsQuery({});
+  const { data: leadsResponse, isLoading: isLoadingLeads } = useLeadsQuery({});
+  const { data: usersArray, isLoading: isLoadingUsers } = useUsersQuery({});
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedAgent, setSelectedAgent] = useState<string>('');
@@ -96,36 +98,31 @@ const MeetingsPage: React.FC = () => {
   };
 
   const handleCompleteMeeting = async (meetingId: string, meetingTitle: string) => {
+    console.log('handleCompleteMeeting called with ID:', meetingId, 'Title:', meetingTitle);
     if (window.confirm(`Are you sure you want to mark the meeting "${meetingTitle}" as Completed?`)) {
       try {
-        await refetchMeetings();
-        const meetingToUpdate = meetings?.find(m => m.id === meetingId);
-        
+        // Wait for the refetch to complete and get the updated data
+        const { data: updatedMeetings } = await refetchMeetings();
+        console.log('Refetched meetings:', updatedMeetings);
+
+        // Check if the meeting still exists in the updated data
+        const meetingToUpdate = updatedMeetings?.find(m => m.id === meetingId);
         if (!meetingToUpdate) {
           toast.error(`Meeting "${meetingTitle}" not found. It may have been deleted or modified.`);
           return;
         }
 
+        // Proceed with the update
         await updateMeetingMutation.mutateAsync({
           id: meetingId,
           status: 'Completed',
-          start_time: meetingToUpdate.start_time,
-          end_time: meetingToUpdate.end_time,
-          location: meetingToUpdate.location,
-          notes: meetingToUpdate.notes,
-          lead_id: meetingToUpdate.lead_id,
-          agent_id: meetingToUpdate.agent_id,
         });
+
+        // Refetch again to ensure UI is up-to-date
         await refetchMeetings();
         toast.success('Meeting marked as completed!');
       } catch (err) {
         console.error("Error completing meeting:", err);
-        const errorMessage = err instanceof Error ? err.message : JSON.stringify(err);
-        if (errorMessage.includes('PGRST116')) {
-          toast.error(`Failed to mark meeting as completed: Meeting "${meetingTitle}" not found in the database.`);
-        } else {
-          toast.error(`Failed to mark meeting as completed: ${errorMessage}`);
-        }
       }
     }
   };
@@ -137,30 +134,26 @@ const MeetingsPage: React.FC = () => {
 
   const handleRescheduleMeetingSubmit = async (data: { id: string; start_time: string; end_time: string }) => {
     try {
-      await refetchMeetings();
-      const meetingToUpdate = meetings?.find(m => m.id === data.id);
+      const { data: updatedMeetings } = await refetchMeetings();
+      const meetingToUpdate = updatedMeetings?.find(m => m.id === data.id);
       if (!meetingToUpdate) {
         toast.error('Meeting not found. It may have been deleted or modified.');
         return;
       }
+
       await updateMeetingMutation.mutateAsync({
         id: data.id,
         start_time: data.start_time,
         end_time: data.end_time,
         status: 'Scheduled',
-        location: meetingToUpdate?.location,
-        notes: meetingToUpdate?.notes,
-        lead_id: meetingToUpdate?.lead_id,
-        agent_id: meetingToUpdate?.agent_id,
       });
+
       setIsRescheduleModalOpen(false);
       setCurrentReschedulingMeeting(null);
       await refetchMeetings();
       toast.success('Meeting rescheduled successfully!');
     } catch (err) {
       console.error("Error rescheduling meeting:", err);
-      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
-      toast.error(`Failed to reschedule meeting: ${errorMessage}`);
     }
   };
 
@@ -175,6 +168,9 @@ const MeetingsPage: React.FC = () => {
 
   return (
     <div className="p-4 sm:p-6 bg-gray-100 min-h-screen flex flex-col">
+      {isFetchingMeetings && (
+        <div className="p-4 text-center text-gray-600">Loading meetings...</div>
+      )}
       <div className="flex-grow">
         <div className="mb-6">
           <div className="flex flex-col md:flex-row justify-between items-center mb-4">

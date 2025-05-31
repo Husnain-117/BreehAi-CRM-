@@ -23,23 +23,22 @@ const addNewLead = async (formData: LeadFormData) => {
   try {
     let clientId: string | null = null;
 
-    // 1. Check for existing client or create a new one
+    // 1. Check for existing client by client_name
     const { data: existingClients, error: fetchClientError } = await supabase
       .from('clients')
       .select('id')
-      .eq('client_name', formData.clientName)
-      .eq('company', formData.companyName); // Assuming companyName maps to 'company' column
+      .eq('client_name', formData.clientName);
 
     if (fetchClientError) {
-      console.error('[addNewLead] Error fetching client:', fetchClientError);
+      console.error('[addNewLead] Error fetching client by name:', fetchClientError);
       throw new Error('Failed to check for existing client.');
     }
 
     if (existingClients && existingClients.length > 0) {
       clientId = existingClients[0].id;
-      console.log('[addNewLead] Found existing client with ID:', clientId);
+      console.log('[addNewLead] Found existing client with ID (by name):', clientId);
     } else {
-      console.log('[addNewLead] No existing client found. Creating new client...');
+      console.log('[addNewLead] No existing client found with this name. Creating new client...');
       const { data: newClient, error: createClientError } = await supabase
         .from('clients')
         .insert({

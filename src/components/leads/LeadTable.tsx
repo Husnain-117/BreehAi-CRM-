@@ -13,16 +13,29 @@ import {
   RowSelectionState,
   Column,
 } from '@tanstack/react-table';
-import { useLeadsQuery, useUsersQuery } from '../../hooks/queries';
-import { Lead, UserProfile } from '../../types';
+import { useLeadsQuery, useUsersQuery } from '@/hooks/queries';
+import { Lead, UserProfile } from '@/types';
 import { RowActionsMenu } from './RowActionsMenu';
-import { ChevronUpIcon, ChevronDownIcon, ChevronUpDownIcon, ChevronLeftIcon, ChevronRightIcon, CalendarDaysIcon, BellAlertIcon, FunnelIcon } from '@heroicons/react/20/solid';
+import { 
+  ChevronUpIcon, 
+  ChevronDownIcon, 
+  ChevronUpDownIcon, 
+  ChevronLeftIcon, 
+  ChevronRightIcon, 
+  CalendarDaysIcon, 
+  BellAlertIcon, 
+  FunnelIcon,
+  TrashIcon,
+  ExclamationTriangleIcon
+} from '@heroicons/react/20/solid';
 import Fuse from 'fuse.js';
 import { Popover, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
-import { Button } from '../ui/button';
-import { useUpdateLeadAgentMutation } from '../../hooks/mutations/useUpdateLeadAgentMutation';
-import { SelectField } from '../ui/SelectField';
+import { Button } from '@/components/ui/button';
+import { useUpdateLeadAgentMutation } from '@/hooks/mutations/useUpdateLeadAgentMutation';
+import { useBulkDeleteLeadsMutation } from '@/hooks/mutations/useBulkDeleteLeadsMutation';
+import { SelectField } from '@/components/ui/SelectField';
+import toast from 'react-hot-toast';
 
 const columnHelper = createColumnHelper<Lead>();
 
@@ -42,12 +55,14 @@ interface LeadTableProps {
   onScheduleMeeting: (lead: Lead) => void;
   onBulkScheduleFollowUps?: (selectedLeads: Lead[]) => void;
   onBulkScheduleMeetings?: (selectedLeads: Lead[]) => void;
+  onBulkDelete?: (selectedLeads: Lead[]) => void;
 }
 
 interface TagsColumnFilterProps {
   column: any;
   allLeads: Lead[];
 }
+
 const TagsColumnFilter: React.FC<TagsColumnFilterProps> = ({ column, allLeads }) => {
   const filterValue = (column.getFilterValue() || []) as string[];
   
@@ -72,11 +87,24 @@ const TagsColumnFilter: React.FC<TagsColumnFilterProps> = ({ column, allLeads })
     <div className="mt-1 p-1 space-y-1 max-h-32 overflow-y-auto">
       {uniqueTags.map(tag => (
         <label key={tag} className="flex items-center space-x-2 text-xs">
-          <input type="checkbox" className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" checked={filterValue.includes(tag)} onChange={(e) => handleCheckboxChange(tag, e.target.checked)} onClick={(e) => e.stopPropagation()} />
+          <input 
+            type="checkbox" 
+            className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" 
+            checked={filterValue.includes(tag)} 
+            onChange={(e) => handleCheckboxChange(tag, e.target.checked)} 
+            onClick={(e) => e.stopPropagation()} 
+          />
           <span>{tag}</span>
         </label>
       ))}
-      {filterValue.length > 0 && (<button onClick={(e) => { e.stopPropagation(); column.setFilterValue(undefined); }} className="text-xs text-indigo-600 hover:text-indigo-800 mt-1 w-full text-left"> Clear Tags Filter </button>)}
+      {filterValue.length > 0 && (
+        <button 
+          onClick={(e) => { e.stopPropagation(); column.setFilterValue(undefined); }} 
+          className="text-xs text-indigo-600 hover:text-indigo-800 mt-1 w-full text-left"
+        > 
+          Clear Tags Filter 
+        </button>
+      )}
     </div>
   );
 };
@@ -737,11 +765,16 @@ interface BulkActionsBarProps {
   onClearSelection: () => void;
   onBulkScheduleFollowUps: () => void;
   onBulkScheduleMeetings: () => void;
+  onBulkDelete: () => void;
 }
 
-const BulkActionsBar: React.FC<BulkActionsBarProps> = (
-  { selectedRowCount, onClearSelection, onBulkScheduleFollowUps, onBulkScheduleMeetings }
-) => {
+const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
+  selectedRowCount,
+  onClearSelection,
+  onBulkScheduleFollowUps,
+  onBulkScheduleMeetings,
+  onBulkDelete,
+}) => {
   return (
     <div className="flex items-center justify-between p-3 bg-muted/70 rounded-lg shadow-md w-full sm:w-auto">
       <p className="text-sm font-medium text-foreground mr-4">
@@ -767,6 +800,15 @@ const BulkActionsBar: React.FC<BulkActionsBarProps> = (
           Schedule Meeting
         </Button>
         <Button 
+          variant="destructive"
+          size="sm"
+          onClick={onBulkDelete}
+          aria-label="Delete selected leads"
+        >
+          <TrashIcon className="h-4 w-4 mr-1.5" />
+          Delete ({selectedRowCount})
+        </Button>
+        <Button 
           variant="ghost"
           size="sm"
           onClick={onClearSelection}
@@ -785,7 +827,8 @@ export const LeadTable: React.FC<LeadTableProps> = ({
   onScheduleFollowUp, 
   onScheduleMeeting,
   onBulkScheduleFollowUps,
-  onBulkScheduleMeetings
+  onBulkScheduleMeetings,
+  onBulkDelete
 }) => {
   const { data: leadsResponse, isLoading: isLoadingLeads, error: leadsError } = useLeadsQuery({});
   const allLeads = useMemo(() => leadsResponse?.leads || [], [leadsResponse]);
@@ -798,6 +841,36 @@ export const LeadTable: React.FC<LeadTableProps> = ({
     pageSize: 10,
   });
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+
+  // Bulk delete state and mutation
+  const bulkDeleteMutation = useBulkDeleteLeadsMutation();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [leadsToDelete, setLeadsToDelete] = useState<Lead[]>([]);
+
+  const handleBulkDelete = async (selectedLeads: Lead[]) => {
+    if (selectedLeads.length === 0) {
+      toast.error('No leads selected for deletion');
+      return;
+    }
+
+    setLeadsToDelete(selectedLeads);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmBulkDelete = async () => {
+    try {
+      const leadIds = leadsToDelete.map(lead => lead.id);
+      await bulkDeleteMutation.mutateAsync(leadIds);
+      
+      toast.success(`Successfully deleted ${leadsToDelete.length} leads`);
+      table.resetRowSelection(); // Clear selection after deletion
+      setShowDeleteConfirm(false);
+      setLeadsToDelete([]);
+    } catch (error) {
+      console.error('Bulk delete failed:', error);
+      // Error toast is handled by the mutation
+    }
+  };
 
   const fuzzySearch = useMemo(() => {
     if (!allLeads.length) return () => [];
@@ -896,6 +969,7 @@ export const LeadTable: React.FC<LeadTableProps> = ({
           onClearSelection={() => table.resetRowSelection()}
             onBulkScheduleFollowUps={() => onBulkScheduleFollowUps(selectedLeads)}
             onBulkScheduleMeetings={() => onBulkScheduleMeetings(selectedLeads)}
+            onBulkDelete={() => handleBulkDelete(selectedLeads)}
           />
         )}
       </div>
@@ -1029,6 +1103,41 @@ export const LeadTable: React.FC<LeadTableProps> = ({
           </select>
         </div>
       </div>
+      )}
+
+      {/* Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="flex items-center mb-4">
+              <ExclamationTriangleIcon className="h-8 w-8 text-red-500 mr-3" />
+              <h3 className="text-lg font-semibold text-gray-900">Confirm Bulk Delete</h3>
+            </div>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete <strong>{leadsToDelete.length}</strong> selected leads? 
+              This will also delete all related follow-ups and meetings. This action cannot be undone.
+            </p>
+            <div className="flex justify-end space-x-3">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  setLeadsToDelete([]);
+                }}
+                disabled={bulkDeleteMutation.isLoading}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={confirmBulkDelete}
+                disabled={bulkDeleteMutation.isLoading}
+              >
+                {bulkDeleteMutation.isLoading ? 'Deleting...' : 'Delete All'}
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

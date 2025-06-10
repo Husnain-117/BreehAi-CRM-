@@ -4,119 +4,220 @@ import { LeadFormData } from '../../types/leadSchema';
 import toast from 'react-hot-toast';
 
 interface ImportLeadsData {
-  leads: LeadFormData[];
+  leads: LeadFormData[] | any[]; // Accept both types
+  currentUserId?: string; // Current user ID for auto-assignment
+  skipValidationErrors?: boolean;
 }
 
-const importLeads = async ({ leads }: ImportLeadsData): Promise<number> => {
+interface ImportResult {
+  successCount: number;
+  errorCount: number;
+  errors: Array<{
+    leadIndex: number;
+    leadData: any;
+    error: string;
+  }>;
+}
+
+// Helper function to clean and validate data
+const cleanLeadData = (leadData: any): any => {
+  return {
+    ...leadData,
+    // Clean phone numbers - remove all non-digits except +
+    phone: leadData.phone ? leadData.phone.toString().replace(/[^\d+]/g, '') : null,
+    // Clean deal values - remove currency symbols and commas
+    dealValue: leadData.dealValue ? parseFloat(leadData.dealValue.toString().replace(/[^\d.]/g, '')) || null : null,
+    // Clean email - lowercase and trim
+    email: leadData.email ? leadData.email.toLowerCase().trim() : null,
+    // Convert empty strings to null
+    clientName: leadData.clientName?.trim() || null,
+    companyName: leadData.companyName?.trim() || null,
+    contactPerson: leadData.contactPerson?.trim() || null,
+    leadSource: leadData.leadSource?.trim() || null,
+    notes: leadData.notes?.trim() || null,
+    tags: leadData.tags?.trim() || null,
+  };
+};
+
+const importLeads = async ({ 
+  leads, 
+  currentUserId,
+  skipValidationErrors = true 
+}: ImportLeadsData): Promise<ImportResult> => {
   if (!leads || leads.length === 0) {
-    return 0;
+    return { successCount: 0, errorCount: 0, errors: [] };
   }
 
-  const processedLeadsForDb: any[] = [];
-  let successfullyProcessedCount = 0;
+  if (!currentUserId) {
+    throw new Error('Current user ID is required for lead assignment');
+  }
 
-  for (const leadData of leads) {
+  const result: ImportResult = {
+    successCount: 0,
+    errorCount: 0,
+    errors: []
+  };
+
+  console.log(`Starting import of ${leads.length} leads assigned to user: ${currentUserId}`);
+  
+  // Process leads one by one for better error handling
+  for (let i = 0; i < leads.length; i++) {
+    const leadData = leads[i];
+    
     try {
-      // Step 1: Upsert client information
+      // Clean the lead data first
+      const cleanedLead = cleanLeadData(leadData);
+      
+      // Validate required fields
+      if (!cleanedLead.clientName && !cleanedLead.companyName) {
+        throw new Error('Either Client Name or Company Name is required');
+      }
+      
+      if (!cleanedLead.email && !cleanedLead.phone) {
+        throw new Error('Either Email or Phone is required');
+      }
+      
+      // Step 1: Auto-assign to current user (no agent lookup needed)
+      const agentId = currentUserId;
+      
+      // Step 2: Upsert client information
       const clientToUpsert = {
-        client_name: leadData.clientName,
-        company: leadData.companyName,
-        // Ensure companySize is a number or null, not empty string from Zod coercion
-        company_size: typeof leadData.companySize === 'number' ? leadData.companySize : null, 
-        // Add other client-specific fields if they exist in LeadFormData and map to clients table
-        email: leadData.email, // Assuming client's direct email if relevant for clients table
-        phone: leadData.phone, // Assuming client's direct phone if relevant for clients table
+        client_name: cleanedLead.clientName || cleanedLead.companyName,
+        company: cleanedLead.companyName || cleanedLead.clientName,
+        company_size: typeof cleanedLead.companySize === 'number' ? cleanedLead.companySize : null,
+        email: cleanedLead.email,
+        phone: cleanedLead.phone,
+        industry: cleanedLead.industry || null,
       };
 
       const { data: clientData, error: clientError } = await supabase
         .from('clients')
-        .upsert(clientToUpsert, { onConflict: 'client_name' }) // Assuming client_name is unique
+        .upsert(clientToUpsert, { 
+          onConflict: 'client_name',
+          ignoreDuplicates: false 
+        })
         .select('id')
         .single();
 
-      if (clientError || !clientData) {
-        console.error('Error upserting client:', clientError?.message, 'for lead:', leadData.clientName);
-        // Optionally, collect this error and report it, or skip this lead
-        continue; // Skip this lead if client upsert fails
+      if (clientError) {
+        // Try to get existing client if upsert failed
+        const { data: existingClient } = await supabase
+          .from('clients')
+          .select('id')
+          .eq('client_name', clientToUpsert.client_name)
+          .single();
+          
+        if (!existingClient) {
+          throw new Error(`Failed to create/find client: ${clientError.message}`);
+        }
+        
+        clientData.id = existingClient.id;
       }
 
-      const clientId = clientData.id;
+      if (!clientData?.id) {
+        throw new Error('Could not obtain client ID');
+      }
 
-      // Step 2: Prepare lead object for 'leads' table
+      // Step 3: Prepare lead object for database
       let tagsArray: string[] | null = null;
-      if (leadData.tags && typeof leadData.tags === 'string') {
-        tagsArray = leadData.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
-      } else if (Array.isArray(leadData.tags)) { // Should not happen based on Zod schema, but good practice
-        tagsArray = leadData.tags;
+      if (cleanedLead.tags && typeof cleanedLead.tags === 'string') {
+        tagsArray = cleanedLead.tags
+          .split(',')
+          .map(tag => tag.trim())
+          .filter(tag => tag.length > 0);
       }
       
       const leadForDb = {
-        client_id: clientId,
-        agent_id: leadData.agent_id || null, // Ensure null if empty string
-        status_bucket: leadData.status, // Direct mapping from Zod schema
-        lead_source: leadData.leadSource,
-        contact_person: leadData.contactPerson,
-        email: leadData.email, // Lead's specific email
-        phone: leadData.phone, // Lead's specific phone
-        deal_value: typeof leadData.dealValue === 'number' ? leadData.dealValue : null,
+        client_id: clientData.id,
+        agent_id: agentId, // Always use current user
+        status_bucket: cleanedLead.status || 'P1',
+        lead_source: cleanedLead.leadSource || 'Import',
+        contact_person: cleanedLead.contactPerson || cleanedLead.clientName,
+        email: cleanedLead.email,
+        phone: cleanedLead.phone,
+        deal_value: cleanedLead.dealValue,
         tags: tagsArray,
-        notes: leadData.notes,
-        // other fields from LeadFormData that map directly to 'leads' table columns
-        // e.g., progress_details, next_step if they were in LeadFormData
+        notes: cleanedLead.notes,
+        next_step: cleanedLead.nextStep || null,
+        progress_details: cleanedLead.progress || null,
       };
 
-      processedLeadsForDb.push(leadForDb);
-    } catch (individualError) {
-        console.error('Error processing individual lead:', leadData.clientName, individualError);
-        // Optionally, collect errors for individual leads
+      // Step 4: Insert the lead
+      const { error: leadInsertError } = await supabase
+        .from('leads')
+        .insert(leadForDb);
+
+      if (leadInsertError) {
+        throw new Error(`Failed to insert lead: ${leadInsertError.message}`);
+      }
+
+      result.successCount++;
+      console.log(`Successfully imported lead ${i + 1}: ${cleanedLead.clientName || cleanedLead.companyName}`);
+
+    } catch (error) {
+      result.errorCount++;
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
+      result.errors.push({
+        leadIndex: i + 1,
+        leadData: {
+          clientName: leadData.clientName,
+          companyName: leadData.companyName,
+          email: leadData.email,
+          phone: leadData.phone
+        },
+        error: errorMessage
+      });
+      
+      console.error(`Error importing lead ${i + 1}:`, errorMessage, leadData);
+      
+      // If skipValidationErrors is false, stop on first error
+      if (!skipValidationErrors) {
+        break;
+      }
     }
   }
 
-  if (processedLeadsForDb.length === 0) {
-    toast.error("No leads could be prepared for import after processing.");
-    return 0;
-  }
-
-  // Step 3: Batch insert processed leads into 'leads' table
-  const { error: leadsInsertError, count: insertedLeadsCount } = await supabase
-    .from('leads')
-    .insert(processedLeadsForDb);
-
-  if (leadsInsertError) {
-    console.error('Error inserting leads:', leadsInsertError);
-    let message = leadsInsertError.message;
-    // Attempt to provide a more specific error message if possible
-    if (leadsInsertError.details?.includes('violates unique constraint')) {
-        message = 'One or more leads violate a unique constraint (e.g., duplicate email or phone if unique in DB for leads).';
-    } else if (leadsInsertError.details?.includes('violates foreign key constraint')) {
-        message = 'One or more leads reference a non-existent entity (e.g., invalid agent_id).';
-    }
-    throw new Error(`Supabase error during leads insert: ${message}`);
-  }
+  console.log(`Import completed: ${result.successCount} successful, ${result.errorCount} failed`);
   
-  successfullyProcessedCount = insertedLeadsCount !== null ? insertedLeadsCount : 0;
-  
-  if (successfullyProcessedCount < leads.length && successfullyProcessedCount == 0 && processedLeadsForDb.length > 0) {
-    // This means all leads were processed for DB, but insert returned 0, which implies a deeper issue or all failed server-side
-     toast.error(`Leads were prepared, but Supabase reported 0 successful inserts. Check server logs or data validity.`);
-  } else if (successfullyProcessedCount < leads.length) {
-    toast.error(`${leads.length - successfullyProcessedCount} leads could not be imported due to issues during client creation or final insert.`);
-  }
-
-  return successfullyProcessedCount;
+  return result;
 };
 
 export const useImportLeadsMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation(importLeads, {
-    onSuccess: (insertedCount) => {
-      toast.success(`${insertedCount} leads imported successfully!`);
-      queryClient.invalidateQueries({ queryKey: ['leads'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboardStats'] }); // Invalidate dashboard too
+    onSuccess: (result) => {
+      const { successCount, errorCount, errors } = result;
+      
+      if (successCount > 0) {
+        toast.success(`${successCount} leads imported and assigned to you successfully!`);
+        
+        // Invalidate queries to refresh the UI
+        queryClient.invalidateQueries({ queryKey: ['leads'] });
+        queryClient.invalidateQueries({ queryKey: ['clients'] });
+        queryClient.invalidateQueries({ queryKey: ['users'] });
+        queryClient.invalidateQueries({ queryKey: ['dashboardStats'] });
+      }
+      
+      if (errorCount > 0) {
+        toast.error(`${errorCount} leads failed to import. Check console for details.`);
+        
+        // Log detailed errors for debugging
+        console.group('Import Errors Details:');
+        errors.forEach(error => {
+          console.error(`Row ${error.leadIndex}:`, error.error, error.leadData);
+        });
+        console.groupEnd();
+      }
+      
+      if (successCount === 0 && errorCount > 0) {
+        toast.error('No leads were imported. Please check your data format and try again.');
+      }
     },
     onError: (error: Error) => {
+      console.error('Import mutation failed:', error);
       toast.error(`Import failed: ${error.message}`);
     },
   });
-}; 
+};

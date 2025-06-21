@@ -44,38 +44,53 @@ export function useMeetingsQuery(args: UseMeetingsQueryArgs) {
   useEffect(() => {
     console.log('[useMeetingsQuery] Setting up new channel subscription.');
     
-    // Always create a fresh channel to avoid subscription conflicts
-    const channel = supabase.channel(CHANNEL_TOPIC + '_' + Math.random().toString(36).substr(2, 9));
+    // Create a unique channel name for each subscription
+    const channelName = `meetings_${Math.random().toString(36).substr(2, 9)}`;
+    const channel = supabase.channel(channelName, {
+      config: {
+        broadcast: { ack: true },
+      },
+    });
     
     // Set up the postgres changes listener
-    channel.on(
-      'postgres_changes',
-      { event: '*', schema: 'public', table: 'meetings' },
-      (payload) => {
-        console.log('[useMeetingsQuery] Postgres change received:', payload);
-        queryClient.invalidateQueries({ queryKey: ['meetings'] });
-      }
-    );
-
-    // Subscribe to the channel
-    channel.subscribe(status => {
-      console.log(`[useMeetingsQuery] Realtime status for ${channel.topic} → ${status}`);
-    });
+    channel
+      .on(
+        'postgres_changes',
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'meetings',
+          filter: args.leadId ? `lead_id=eq.${args.leadId}` : undefined
+        },
+        (payload) => {
+          console.log('[useMeetingsQuery] Postgres change received:', payload);
+          queryClient.invalidateQueries({ 
+            queryKey: ['meetings', args],
+            refetchType: 'active',
+          });
+        }
+      )
+      .subscribe((status, err) => {
+        if (err) {
+          console.error('[useMeetingsQuery] Subscription error:', err);
+          return;
+        }
+        console.log(`[useMeetingsQuery] Realtime status for ${channelName} → ${status}`);
+      });
     
     channelRef.current = channel;
 
     // Cleanup function
     return () => {
-      console.log(`[useMeetingsQuery] Cleanup: Removing channel ${channelRef.current?.topic}.`);
-      const chanToCleanup = channelRef.current;
-      if (chanToCleanup) {
-        supabase.removeChannel(chanToCleanup)
-          .then(() => console.log(`[useMeetingsQuery] Channel ${chanToCleanup.topic} removed successfully.`))
-          .catch(err => console.error(`[useMeetingsQuery] Error removing channel ${chanToCleanup.topic}:`, err));
+      console.log(`[useMeetingsQuery] Cleanup: Removing channel ${channelName}.`);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current)
+          .then(() => console.log(`[useMeetingsQuery] Channel ${channelName} removed successfully.`))
+          .catch(err => console.error(`[useMeetingsQuery] Error removing channel ${channelName}:`, err));
         channelRef.current = null;
       }
     };
-  }, [queryClient, CHANNEL_TOPIC]);
+  }, [queryClient, JSON.stringify(args)]); // Use JSON.stringify for deep comparison of args
 
   /* vanilla react-query usage */
   return useQuery<Meeting[], Error>({

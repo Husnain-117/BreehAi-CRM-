@@ -112,22 +112,51 @@ export const useLeadsQuery = (options: LeadsQueryOptions = {}) => {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    const channel = supabase
-      .channel('realtime-leads')
+    console.log('[useLeadsQuery] Setting up realtime subscription');
+    
+    // Create a unique channel name for each subscription
+    const channelName = `leads_${Math.random().toString(36).substr(2, 9)}`;
+    const channel = supabase.channel(channelName, {
+      config: {
+        broadcast: { ack: true },
+      },
+    });
+
+    // Set up the postgres changes listener
+    channel
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'leads' },
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'leads' 
+        },
         (payload) => {
-          console.log('Change received on leads table!', payload);
-          queryClient.invalidateQueries({ queryKey: ['leads', options] });
+          console.log('[useLeadsQuery] Change received on leads table!', payload);
+          queryClient.invalidateQueries({ 
+            queryKey: ['leads', options],
+            refetchType: 'active',
+          });
         }
       )
-      .subscribe();
+      .subscribe((status, err) => {
+        if (err) {
+          console.error('[useLeadsQuery] Subscription error:', err);
+          return;
+        }
+        console.log(`[useLeadsQuery] Realtime status for ${channelName} → ${status}`);
+      });
 
+    // Cleanup function
     return () => {
-      supabase.removeChannel(channel);
+      console.log(`[useLeadsQuery] Cleanup: Removing channel ${channelName}.`);
+      if (channel) {
+        supabase.removeChannel(channel)
+          .then(() => console.log(`[useLeadsQuery] Channel ${channelName} removed successfully.`))
+          .catch(err => console.error(`[useLeadsQuery] Error removing channel ${channelName}:`, err));
+      }
     };
-  }, [queryClient, options]);
+  }, [queryClient, JSON.stringify(options)]); // Use JSON.stringify for deep comparison of options
 
   return useQuery<{ leads: Lead[], count: number }, Error>(
     ['leads', options], 

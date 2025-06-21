@@ -8,18 +8,11 @@ import { SelectField } from '../ui/SelectField';
 import { XIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { supabase } from '../../lib/supabaseClient';
+import { useAuth } from '../../contexts/AuthContext'; // Import useAuth to get current user
 
-// API functions using the REAL Supabase client
-const fetchUsersList = async () => {
-  const { data, error } = await supabase.from('users').select('id, full_name');
-  if (error) {
-    console.error('Error fetching users:', error);
-    throw new Error(error.message || 'Failed to fetch users.');
-  }
-  return data.map((user: any) => ({ id: user.id, name: user.full_name || user.name }));
-};
+// Remove the fetchUsersList function since we don't need it anymore
 
-const addNewLead = async (formData: LeadFormData) => {
+const addNewLead = async (formData: LeadFormData, currentUserId: string) => {
   try {
     let clientId: string | null = null;
 
@@ -69,14 +62,13 @@ const addNewLead = async (formData: LeadFormData) => {
 
     const leadInsertData: { [key: string]: any } = {
       client_id: clientId,
-      agent_id: formData.agent_id === '' ? null : formData.agent_id,
+      agent_id: currentUserId, // Automatically assign to current user
       status_bucket: formData.status,
       lead_source: formData.leadSource,
       contact_person: formData.contactPerson,
       email: formData.email,
       phone: formData.phone,
       deal_value: formData.dealValue === undefined ? null : formData.dealValue,
-      // ADD THIS LINE
       industry: formData.industry === '' ? null : formData.industry,
       notes: formData.notes === '' ? null : formData.notes,
       tags: formData.tags && formData.tags.trim() !== '' 
@@ -113,8 +105,8 @@ interface AddLeadModalProps {
 }
 
 export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onLeadAdded }) => {
-  const [users, setUsers] = useState<Array<{ id: string; name: string }>>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { profile } = useAuth(); // Get current user profile
 
   const {
     register,
@@ -127,14 +119,14 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
       clientName: '',
       companyName: '',
       status: 'P1',
-      agent_id: '',
+      agent_id: '', // This will be ignored since we auto-assign
       leadSource: '',
       contactPerson: '',
       email: '',
       phone: '',
       dealValue: undefined,
       companySize: undefined,
-      industry: '', // ADD THIS
+      industry: '',
       tags: '',
       notes: '',
     }
@@ -142,25 +134,21 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
 
   useEffect(() => {
     if (isOpen) {
-      const loadUsers = async () => {
-        try {
-          const fetchedUsers = await fetchUsersList();
-          setUsers(fetchedUsers);
-        } catch (err) {
-          toast.error((err as Error).message || 'Could not load users.');
-        }
-      };
-      loadUsers();
-      reset();
+      reset(); // Reset form when modal opens
     }
   }, [isOpen, reset]);
 
   const onSubmit = async (data: LeadFormData) => {
+    if (!profile?.id) {
+      toast.error('User profile not found. Cannot create lead.');
+      return;
+    }
+
     setIsSubmitting(true);
     const toastId = toast.loading('Adding new lead...');
     try {
-      await addNewLead(data);
-      toast.success('Lead added successfully!', { id: toastId });
+      await addNewLead(data, profile.id); // Pass current user ID
+      toast.success(`Lead added successfully and assigned to ${profile.full_name}!`, { id: toastId });
       onLeadAdded();
       onClose();
     } catch (error) {
@@ -174,7 +162,6 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
   if (!isOpen) return null;
 
   const statusOptions = leadStatusSchema.options.map(status => ({ value: status, label: status }));
-  const agentOptions = users.map(user => ({ value: user.id, label: user.name }));
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4" aria-labelledby="add-lead-modal-title" role="dialog" aria-modal="true">
@@ -186,19 +173,33 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
           </Button>
         </div>
 
+        {/* Show current user info */}
+        {profile && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <h3 className="font-semibold text-blue-800 mb-2">👤 Lead Assignment</h3>
+            <p className="text-sm text-blue-700">
+              This lead will be automatically assigned to: <strong>{profile.full_name}</strong>
+            </p>
+            <p className="text-xs text-blue-600 mt-1">
+              No need to select an agent - it's automatically assigned to you!
+            </p>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
             <InputField label="Client Name" {...register('clientName')} error={errors.clientName?.message} placeholder="e.g., Acme Corp" autoFocus />
             <InputField label="Company Name" {...register('companyName')} error={errors.companyName?.message} placeholder="e.g., Acme Inc."/>
             <SelectField label="Status" {...register('status')} options={statusOptions} error={errors.status?.message} />
-            <SelectField label="Assigned Agent" {...register('agent_id')} options={agentOptions} error={errors.agent_id?.message} />
+            
+            {/* Remove the Assigned Agent field completely */}
+            
             <InputField label="Lead Source" {...register('leadSource')} error={errors.leadSource?.message} placeholder="e.g., Website, Referral"/>
             <InputField label="Contact Person Name" {...register('contactPerson')} error={errors.contactPerson?.message} placeholder="e.g., John Doe"/>
             <InputField label="Email Address" type="email" {...register('email')} error={errors.email?.message} placeholder="e.g., john.doe@example.com"/>
             <InputField label="Phone Number" type="tel" {...register('phone')} error={errors.phone?.message} placeholder="e.g., (555) 123-4567"/>
-            <InputField label="Deal Value" type="number" {...register('dealValue')} error={errors.dealValue?.message} placeholder="e.g., 5000" step="0.01"/>
-            <InputField label="Company Size" type="number" {...register('companySize')} error={errors.companySize?.message} placeholder="e.g., 50" step="1"/>
-            {/* ADD INDUSTRY FIELD */}
+            <InputField label="Deal Value ($)" type="number" {...register('dealValue')} error={errors.dealValue?.message} placeholder="e.g., 5000" step="0.01"/>
+            <InputField label="Company Size (Employees)" type="number" {...register('companySize')} error={errors.companySize?.message} placeholder="e.g., 50" step="1"/>
             <SelectField 
               label="Industry" 
               {...register('industry')} 

@@ -15,6 +15,7 @@ import {
 } from '@tanstack/react-table';
 import { useLeadsQuery, useUsersQuery } from '@/hooks/queries';
 import { Lead, UserProfile } from '@/types';
+import { INDUSTRY_OPTIONS } from '@/types/leadSchema';
 import { RowActionsMenu } from './RowActionsMenu';
 import { 
   ChevronUpIcon, 
@@ -156,6 +157,60 @@ const DealValueRangeFilter: React.FC<{ column: any }> = ({ column }) => {
             Clear Deal Value Filter
         </button>
       )}
+    </div>
+  );
+};
+
+// Industry Filter Panel Component
+const IndustryColumnFilterPanel: React.FC<{ column: Column<Lead, unknown>; onClose?: () => void }> = ({ column, onClose }) => {
+  const currentFilter = (column.getFilterValue() || []) as string[];
+
+  const handleCheckboxChange = (industry: string, checked: boolean) => {
+    const newFilter = checked 
+      ? [...currentFilter, industry] 
+      : currentFilter.filter(s => s !== industry);
+    column.setFilterValue(newFilter.length > 0 ? newFilter : undefined);
+  };
+
+  const handleClear = () => {
+    column.setFilterValue(undefined);
+    onClose?.();
+  };
+  
+  const handleApply = () => {
+    onClose?.();
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
+        {INDUSTRY_OPTIONS.slice(1).map(industry => ( // Skip the first "Select Industry" option
+          <label key={industry.value} className="flex items-center space-x-2 text-xs cursor-pointer">
+            <input 
+              type="checkbox" 
+              className="h-3.5 w-3.5 rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500 focus:ring-offset-0"
+              checked={currentFilter.includes(industry.value)}
+              onChange={(e) => handleCheckboxChange(industry.value, e.target.checked)}
+              onClick={(e) => e.stopPropagation()}
+            />
+            <span>{industry.label}</span>
+          </label>
+        ))}
+      </div>
+      <div className="flex justify-end space-x-2 pt-2 border-t border-gray-200">
+        <button 
+          onClick={handleClear}
+          className="rounded-md px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 ring-1 ring-inset ring-gray-300"
+        >
+          Clear
+        </button>
+        <button 
+          onClick={handleApply} 
+          className="rounded-md bg-indigo-600 px-2 py-1 text-xs font-medium text-white hover:bg-indigo-500"
+        >
+          Apply
+        </button>
+      </div>
     </div>
   );
 };
@@ -683,6 +738,67 @@ const getColumns = (
     enableSorting: true,
     enableColumnFilter: false,
   }),
+  // ADD INDUSTRY COLUMN HERE
+  columnHelper.accessor('industry', {
+    header: ({ column }) => (
+      <div className="flex items-center">
+        Industry
+        <FilterButton 
+          column={column} 
+          title="Industry"
+          renderPanel={() => <IndustryColumnFilterPanel column={column} />}
+        />
+      </div>
+    ),
+    cell: info => {
+      const industry = info.getValue();
+      if (!industry) return 'N/A';
+      
+      const industryOption = INDUSTRY_OPTIONS.find(opt => opt.value === industry);
+      const displayName = industryOption?.label || industry;
+      
+      // Color coding for industries
+      const getIndustryColor = (industry: string) => {
+        const colorMap: Record<string, string> = {
+          'technology': 'bg-blue-100 text-blue-800',
+          'healthcare': 'bg-green-100 text-green-800',
+          'finance': 'bg-yellow-100 text-yellow-800',
+          'retail': 'bg-purple-100 text-purple-800',
+          'manufacturing': 'bg-gray-100 text-gray-800',
+          'education': 'bg-indigo-100 text-indigo-800',
+          'real-estate': 'bg-orange-100 text-orange-800',
+          'consulting': 'bg-teal-100 text-teal-800',
+          'media': 'bg-pink-100 text-pink-800',
+          'transportation': 'bg-cyan-100 text-cyan-800',
+          'energy': 'bg-emerald-100 text-emerald-800',
+          'agriculture': 'bg-lime-100 text-lime-800',
+          'construction': 'bg-amber-100 text-amber-800',
+          'hospitality': 'bg-rose-100 text-rose-800',
+          'legal': 'bg-violet-100 text-violet-800',
+          'nonprofit': 'bg-slate-100 text-slate-800',
+          'government': 'bg-stone-100 text-stone-800',
+        };
+        return colorMap[industry] || 'bg-slate-100 text-slate-800';
+      };
+      
+      return (
+        <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ring-opacity-20 ${getIndustryColor(industry)}`}>
+          {displayName}
+        </span>
+      );
+    },
+    enableSorting: true,
+    enableColumnFilter: true,
+    filterFn: (row, columnId, filterValue) => {
+      if (!filterValue || (Array.isArray(filterValue) && filterValue.length === 0)) {
+        return true;
+      }
+      if (Array.isArray(filterValue)) {
+        return filterValue.includes(row.getValue(columnId));
+      }
+      return true;
+    },
+  }),
   columnHelper.accessor('tags', { 
     header: ({ column }) => (
         <div className="flex items-center">
@@ -875,7 +991,7 @@ export const LeadTable: React.FC<LeadTableProps> = ({
   const fuzzySearch = useMemo(() => {
     if (!allLeads.length) return () => [];
     const fuse = new Fuse(allLeads, {
-      keys: ['clients.client_name', 'clients.contact_email', 'lead_source', 'status_bucket', 'tags'],
+      keys: ['clients.client_name', 'clients.contact_email', 'lead_source', 'status_bucket', 'tags', 'industry'],
       threshold: 0.3,
     });
     return (query: string) => query ? fuse.search(query).map(result => result.item) : allLeads;
@@ -1013,6 +1129,9 @@ export const LeadTable: React.FC<LeadTableProps> = ({
                                 }
                                 if (header.column.id === 'deal_value') {
                                    return <DealValueRangeFilterPanel column={header.column} />;
+                                }
+                                if (header.column.id === 'industry') {
+                                   return <IndustryColumnFilterPanel column={header.column} />;
                                 }
                                 return <TextColumnFilterPanel column={header.column} />;
                               }}

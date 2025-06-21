@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { leadSchema, LeadFormData, leadStatusSchema } from '../../types/leadSchema';
-import { Lead, UserProfile } from '../../types'; // Import Lead for prop type
+import { leadSchema, LeadFormData, leadStatusSchema, INDUSTRY_OPTIONS } from '../../types/leadSchema';
+import { Lead, UserProfile } from '../../types';
 import { Button } from '../ui/button';
 import { InputField } from '../ui/InputField';
 import { SelectField } from '../ui/SelectField';
-import { TextareaField } from '../ui/TextareaField'; // Assuming this exists
+import { TextareaField } from '../ui/TextareaField';
 import { XIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useUsersQuery } from '../../hooks/queries';
@@ -15,7 +15,7 @@ import { useUpdateLeadMutation } from '../../hooks/mutations/useUpdateLeadMutati
 interface EditLeadModalProps {
   isOpen: boolean;
   onClose: () => void;
-  lead: Lead | null; // Lead data to edit
+  lead: Lead | null;
 }
 
 export const EditLeadModal: React.FC<EditLeadModalProps> = ({ isOpen, onClose, lead }) => {
@@ -31,7 +31,7 @@ export const EditLeadModal: React.FC<EditLeadModalProps> = ({ isOpen, onClose, l
     watch,
   } = useForm<LeadFormData>({
     resolver: zodResolver(leadSchema),
-    defaultValues: { // Default values will be overridden by useEffect
+    defaultValues: {
       clientName: '',
       companyName: '',
       status: 'P1',
@@ -42,6 +42,7 @@ export const EditLeadModal: React.FC<EditLeadModalProps> = ({ isOpen, onClose, l
       phone: '',
       dealValue: undefined,
       companySize: undefined,
+      industry: '', // ADD THIS
       tags: '',
       notes: '',
     }
@@ -60,6 +61,8 @@ export const EditLeadModal: React.FC<EditLeadModalProps> = ({ isOpen, onClose, l
         phone: lead.phone || '', 
         dealValue: lead.deal_value === null ? undefined : lead.deal_value,
         companySize: lead.clients?.company_size === null ? undefined : lead.clients?.company_size,
+        // ADD THIS LINE
+        industry: lead.industry || '',
         tags: lead.tags?.join(', ') || '',
         notes: lead.notes || '',
       });
@@ -115,8 +118,16 @@ export const EditLeadModal: React.FC<EditLeadModalProps> = ({ isOpen, onClose, l
             <InputField label="Contact Person" name="contactPerson" register={register} error={errors.contactPerson} />
             <InputField label="Email" name="email" type="email" register={register} error={errors.email} required />
             <InputField label="Phone" name="phone" register={register} error={errors.phone} required />
-            <InputField label="Deal Value ($")" name="dealValue" type="number" step="0.01" register={register} error={errors.dealValue} />
+            <InputField label="Deal Value ($)" name="dealValue" type="number" step="0.01" register={register} error={errors.dealValue} />
             <InputField label="Company Size (Employees)" name="companySize" type="number" register={register} error={errors.companySize} />
+            {/* ADD INDUSTRY FIELD */}
+            <SelectField 
+              label="Industry" 
+              name="industry" 
+              register={register} 
+              error={errors.industry} 
+              options={INDUSTRY_OPTIONS} 
+            />
           </div>
           
           <TextareaField label="Tags (comma-separated)" name="tags" register={register} error={errors.tags} placeholder="e.g., interested, demo-scheduled, high-priority" />
@@ -134,4 +145,4 @@ export const EditLeadModal: React.FC<EditLeadModalProps> = ({ isOpen, onClose, l
       </div>
     </div>
   );
-}; 
+};

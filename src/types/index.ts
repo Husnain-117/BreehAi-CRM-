@@ -32,25 +32,23 @@ export interface Lead {
   client_id: string;
   agent_id: string | null;
   status_bucket: 'P1' | 'P2' | 'P3';
-  progress_details?: string | null;
-  next_step?: string | null;
-  sync_lock?: boolean | null;
+  progress_details: string | null;
+  next_step: string | null;
+  lead_source: string | null;
+  contact_person: string | null;
+  email: string | null;
+  phone: string | null;
+  deal_value: number | null;
+  tags: string[] | null;
+  follow_up_due_date: string | null;
+  notes: string | null;
+  // ADD THIS FIELD
+  industry: string | null;
   created_at: string;
   updated_at: string;
-  clients?: {
-    client_name: string;
-    company?: string | null;
-    company_size?: number | null;
-  } | null;
-  users?: Pick<UserProfile, 'full_name'> | null;
-  lead_source?: string | null;
-  contact_person?: string | null;
-  email?: string | null;
-  phone?: string | null;
-  deal_value?: number | null;
-  tags?: string[] | null;
-  follow_up_due_date?: string | null;
-  notes?: string | null;
+  sync_lock: boolean;
+  clients?: Client;
+  users?: UserProfile;
 }
 
 // You can add more types here as needed for FollowUps, Meetings etc.

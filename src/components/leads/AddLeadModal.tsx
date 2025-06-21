@@ -1,22 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { leadSchema, LeadFormData, leadStatusSchema } from '../../types/leadSchema';
+import { leadSchema, LeadFormData, leadStatusSchema, INDUSTRY_OPTIONS } from '../../types/leadSchema';
 import { Button } from '../ui/button';
 import { InputField } from '../ui/InputField';
 import { SelectField } from '../ui/SelectField';
-import { XIcon } from 'lucide-react'; // For close button
-import toast from 'react-hot-toast'; // Import toast
-import { supabase } from '../../lib/supabaseClient'; // Adjust path if necessary
+import { XIcon } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { supabase } from '../../lib/supabaseClient';
 
 // API functions using the REAL Supabase client
 const fetchUsersList = async () => {
-  const { data, error } = await supabase.from('users').select('id, full_name'); // Adjust if your user table/columns differ
+  const { data, error } = await supabase.from('users').select('id, full_name');
   if (error) {
     console.error('Error fetching users:', error);
     throw new Error(error.message || 'Failed to fetch users.');
   }
-  return data.map((user: any) => ({ id: user.id, name: user.full_name || user.name })); // Adjust name mapping if needed
+  return data.map((user: any) => ({ id: user.id, name: user.full_name || user.name }));
 };
 
 const addNewLead = async (formData: LeadFormData) => {
@@ -43,12 +43,13 @@ const addNewLead = async (formData: LeadFormData) => {
         .from('clients')
         .insert({
           client_name: formData.clientName,
-          company: formData.companyName, // Assuming companyName maps to 'company' column
+          company: formData.companyName,
           company_size: formData.companySize === undefined ? null : formData.companySize,
-          // Add other necessary fields for the clients table if any
+          // Add industry to clients table if you want company-level categorization
+          industry: formData.industry === '' ? null : formData.industry,
         })
         .select('id')
-        .single(); // .single() expects exactly one row or throws error
+        .single();
 
       if (createClientError) {
         console.error('[addNewLead] Error creating new client:', createClientError);
@@ -67,7 +68,7 @@ const addNewLead = async (formData: LeadFormData) => {
     }
 
     const leadInsertData: { [key: string]: any } = {
-      client_id: clientId, // Set the obtained client_id
+      client_id: clientId,
       agent_id: formData.agent_id === '' ? null : formData.agent_id,
       status_bucket: formData.status,
       lead_source: formData.leadSource,
@@ -75,6 +76,8 @@ const addNewLead = async (formData: LeadFormData) => {
       email: formData.email,
       phone: formData.phone,
       deal_value: formData.dealValue === undefined ? null : formData.dealValue,
+      // ADD THIS LINE
+      industry: formData.industry === '' ? null : formData.industry,
       notes: formData.notes === '' ? null : formData.notes,
       tags: formData.tags && formData.tags.trim() !== '' 
             ? formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag !== '') 
@@ -129,8 +132,9 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
       contactPerson: '',
       email: '',
       phone: '',
-      dealValue: undefined, // Let z.coerce.number handle undefined for initial empty state
-      companySize: undefined, // Let z.coerce.number handle undefined for initial empty state
+      dealValue: undefined,
+      companySize: undefined,
+      industry: '', // ADD THIS
       tags: '',
       notes: '',
     }
@@ -147,7 +151,7 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
         }
       };
       loadUsers();
-      reset(); // Reset form when modal opens
+      reset();
     }
   }, [isOpen, reset]);
 
@@ -155,11 +159,10 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
     setIsSubmitting(true);
     const toastId = toast.loading('Adding new lead...');
     try {
-      // console.log("Form data to submit:", data);
       await addNewLead(data);
       toast.success('Lead added successfully!', { id: toastId });
-      onLeadAdded(); // Call parent callback to refresh data
-      onClose(); // Close modal on success
+      onLeadAdded();
+      onClose();
     } catch (error) {
       console.error('Failed to submit lead:', error);
       toast.error((error as Error).message || 'An unexpected error occurred.', { id: toastId });
@@ -195,6 +198,13 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
             <InputField label="Phone Number" type="tel" {...register('phone')} error={errors.phone?.message} placeholder="e.g., (555) 123-4567"/>
             <InputField label="Deal Value" type="number" {...register('dealValue')} error={errors.dealValue?.message} placeholder="e.g., 5000" step="0.01"/>
             <InputField label="Company Size" type="number" {...register('companySize')} error={errors.companySize?.message} placeholder="e.g., 50" step="1"/>
+            {/* ADD INDUSTRY FIELD */}
+            <SelectField 
+              label="Industry" 
+              {...register('industry')} 
+              options={INDUSTRY_OPTIONS} 
+              error={errors.industry?.message} 
+            />
           </div>
           
           <div className="mt-4">
@@ -225,4 +235,4 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
       </div>
     </div>
   );
-}; 
+};

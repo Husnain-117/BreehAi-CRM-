@@ -9,7 +9,7 @@ import * as Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 import { SelectField } from '../ui/SelectField';
 import { useImportLeadsMutation } from '../../hooks/mutations/useImportLeadsMutation';
-import { useAuth } from '../../contexts/AuthContext'; // Import auth context
+import { useAuth } from '../../contexts/AuthContext';
 
 interface ImportLeadsModalProps {
   isOpen: boolean;
@@ -37,7 +37,7 @@ interface ValidationResults {
   };
 }
 
-// Smart field mapping suggestions (removed agent mapping)
+// Smart field mapping suggestions (with industry added)
 const SMART_MAPPING_RULES = {
   // Client name mappings
   clientName: [
@@ -69,9 +69,9 @@ const SMART_MAPPING_RULES = {
   status: [
     'status', 'lead status', 'stage', 'priority', 'bucket'
   ],
-  // Industry mappings
+  // Industry mappings - ADD THIS
   industry: [
-    'industry', 'sector', 'business type', 'vertical'
+    'industry', 'sector', 'business type', 'vertical', 'category', 'field'
   ],
   // Lead source mappings
   leadSource: [
@@ -109,7 +109,7 @@ export const ImportLeadsModal: React.FC<ImportLeadsModalProps> = ({
   const [validationResults, setValidationResults] = useState<ValidationResults | null>(null);
 
   const importLeadsMutation = useImportLeadsMutation();
-  const { profile } = useAuth(); // Get current user profile
+  const { profile } = useAuth();
 
   const resetWizard = useCallback(() => {
     setFile(null);
@@ -283,7 +283,7 @@ export const ImportLeadsModal: React.FC<ImportLeadsModalProps> = ({
     { value: 'phone', label: '📞 Phone *' },
     { value: 'dealValue', label: '💰 Deal Value' },
     { value: 'status', label: '📊 Status/Priority' },
-    { value: 'industry', label: '🏭 Industry' },
+    { value: 'industry', label: '🏭 Industry/Category' }, // ADD THIS
     { value: 'leadSource', label: '📍 Lead Source' },
     { value: 'nextStep', label: '➡️ Next Step' },
     { value: 'notes', label: '📝 Notes/Comments' },
@@ -324,7 +324,7 @@ export const ImportLeadsModal: React.FC<ImportLeadsModalProps> = ({
         let hasRequiredFields = false;
         let warnings: string[] = [];
 
-        // Map fields (excluding agent fields)
+        // Map fields (including industry)
         headers.forEach((header, headerIndex) => {
           const mappedField = fieldMapping[header];
           const cellValue = row[headerIndex]?.trim() || '';
@@ -348,6 +348,43 @@ export const ImportLeadsModal: React.FC<ImportLeadsModalProps> = ({
                   'low': 'P3', 'cold': 'P3', 'future': 'P3'
                 };
                 leadData.status = statusMap[cellValue.toLowerCase()] || cellValue;
+                break;
+              case 'industry':
+                // Normalize industry values
+                const industryMap: Record<string, string> = {
+                  'tech': 'technology',
+                  'it': 'technology',
+                  'software': 'technology',
+                  'medical': 'healthcare',
+                  'health': 'healthcare',
+                  'banking': 'finance',
+                  'financial': 'finance',
+                  'retail': 'retail',
+                  'e-commerce': 'retail',
+                  'manufacturing': 'manufacturing',
+                  'education': 'education',
+                  'real estate': 'real-estate',
+                  'realestate': 'real-estate',
+                  'consulting': 'consulting',
+                  'media': 'media',
+                  'entertainment': 'media',
+                  'transport': 'transportation',
+                  'logistics': 'transportation',
+                  'energy': 'energy',
+                  'utilities': 'energy',
+                  'agriculture': 'agriculture',
+                  'farming': 'agriculture',
+                  'construction': 'construction',
+                  'hospitality': 'hospitality',
+                  'tourism': 'hospitality',
+                  'legal': 'legal',
+                  'law': 'legal',
+                  'nonprofit': 'nonprofit',
+                  'non-profit': 'nonprofit',
+                  'government': 'government',
+                  'gov': 'government',
+                };
+                leadData.industry = industryMap[cellValue.toLowerCase()] || cellValue.toLowerCase();
                 break;
               default:
                 leadData[mappedField] = cellValue;
@@ -423,7 +460,7 @@ export const ImportLeadsModal: React.FC<ImportLeadsModalProps> = ({
       // Import leads with current user as agent
       await importLeadsMutation.mutateAsync({ 
         leads: validationResults.validLeads,
-        currentUserId: profile.id, // Pass current user ID
+        currentUserId: profile.id,
         skipValidationErrors: true
       });
       
@@ -459,7 +496,7 @@ export const ImportLeadsModal: React.FC<ImportLeadsModalProps> = ({
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <h3 className="font-semibold text-blue-800 mb-2">📋 Import Tips for Best Results:</h3>
                 <ul className="text-sm text-blue-700 space-y-1">
-                  <li>• Include columns like: Client Name, Company, Email, Phone, Deal Value</li>
+                  <li>• Include columns like: Client Name, Company, Email, Phone, Deal Value, Industry</li>
                   <li>• Use clear column headers (our system will auto-detect them!)</li>
                   <li>• Replace "NULL" values with empty cells or actual data</li>
                   <li>• <strong>All leads will be automatically assigned to you ({profile?.full_name || 'Current User'})</strong></li>

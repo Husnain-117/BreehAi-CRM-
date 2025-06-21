@@ -2,6 +2,7 @@ import React, { Fragment } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { Lead } from '../../types';
+import { INDUSTRY_OPTIONS } from '../../types/leadSchema';
 
 interface LeadDrawerProps {
   lead: Lead | null;
@@ -80,6 +81,12 @@ export const LeadDrawer: React.FC<LeadDrawerProps> = ({ lead, isOpen, onClose })
                           <h3 className="font-medium text-gray-900">Lead Status & Value</h3>
                           <p><strong>Status:</strong> {lead.status_bucket}</p>
                           <p><strong>Deal Value:</strong> ${lead.deal_value?.toLocaleString() || '0.00'}</p>
+                          {/* ADD INDUSTRY FIELD */}
+                          <p><strong>Industry:</strong> {
+                            lead.industry 
+                              ? INDUSTRY_OPTIONS.find(opt => opt.value === lead.industry)?.label || lead.industry
+                              : 'N/A'
+                          }</p>
                           <p><strong>Tags:</strong> {lead.tags?.join(', ') || 'None'}</p>
                         </div>
                         <div>
@@ -94,6 +101,16 @@ export const LeadDrawer: React.FC<LeadDrawerProps> = ({ lead, isOpen, onClose })
                           <p><strong>Progress Details:</strong> {lead.progress_details || 'N/A'}</p>
                           <p><strong>Next Step:</strong> {lead.next_step || 'N/A'}</p>
                         </div>
+                        
+                        {/* Notes Section */}
+                        {lead.notes && (
+                          <div>
+                            <h3 className="font-medium text-gray-900">Notes</h3>
+                            <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
+                              {lead.notes}
+                            </p>
+                          </div>
+                        )}
                         
                         {/* TODO: Activity Log Section */}
                         <div>
@@ -112,4 +129,4 @@ export const LeadDrawer: React.FC<LeadDrawerProps> = ({ lead, isOpen, onClose })
       </Dialog>
     </Transition.Root>
   );
-}; 
+};

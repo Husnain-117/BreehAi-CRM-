@@ -1,4 +1,3 @@
-// src/components/leads/LeadsStats.tsx - Role-Based Lead Statistics Dashboard (Fixed)
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabaseClient';
@@ -160,10 +159,8 @@ export const LeadsStats: React.FC = () => {
 
       // Apply role-based filtering
       if (isAgent) {
-        // Agents can only see their own leads
         query = query.eq('agent_id', profile.id);
       } else if (isManager) {
-        // Managers can see their own leads + their team's leads
         const { data: teamMembers } = await supabase
           .from('users')
           .select('id')
@@ -176,7 +173,6 @@ export const LeadsStats: React.FC = () => {
           query = query.eq('agent_id', profile.id);
         }
       }
-      // Super admins see all leads (no additional filter)
 
       const { data, error } = await query;
       if (error) throw error;
@@ -194,13 +190,11 @@ export const LeadsStats: React.FC = () => {
         .select('*')
         .order('full_name');
 
-      // Apply role-based filtering for users list
       if (isAgent) {
         query = query.eq('id', profile.id);
       } else if (isManager) {
         query = query.or(`manager_id.eq.${profile.id},id.eq.${profile.id}`);
       }
-      // Super admins see all users (no additional filter)
 
       const { data, error } = await query;
       if (error) throw error;
@@ -208,6 +202,20 @@ export const LeadsStats: React.FC = () => {
     },
     enabled: !!profile?.id
   });
+
+  // Assign leads to stages based on status_bucket or pipeline_stage_id (same as PipelineManagement)
+  const assignLeadToStage = (lead: LeadWithRelations): string => {
+    if (lead.pipeline_stage_id) {
+      return lead.pipeline_stage_id;
+    }
+    
+    switch (lead.status_bucket) {
+      case 'P1': return pipelineStages[0]?.id || 'new-lead';
+      case 'P2': return pipelineStages[1]?.id || 'qualified';
+      case 'P3': return pipelineStages[5]?.id || 'closed-won';
+      default: return pipelineStages[0]?.id || 'new-lead';
+    }
+  };
 
   // Calculate comprehensive stats
   const statsData = useMemo(() => {
@@ -217,16 +225,15 @@ export const LeadsStats: React.FC = () => {
       const userLeads = leadsData.filter(lead => lead.agent_id === user.id);
       const totalValue = userLeads.reduce((sum, lead) => sum + (lead.deal_value || 0), 0);
       
-      // Calculate conversion rate based on status buckets
       const closedWonLeads = userLeads.filter(lead => lead.status_bucket === 'P3');
       const qualifiedLeads = userLeads.filter(lead => 
         lead.status_bucket === 'P1' || lead.status_bucket === 'P2' || lead.status_bucket === 'P3'
       );
       const conversionRate = qualifiedLeads.length > 0 ? (closedWonLeads.length / qualifiedLeads.length) * 100 : 0;
 
-      // Create stage breakdown using actual pipeline stages
+      // Create stage breakdown using actual pipeline stages and assignLeadToStage logic
       const stageBreakdown = pipelineStages.map(stage => {
-        const stageLeads = userLeads.filter(lead => lead.pipeline_stage_id === stage.id);
+        const stageLeads = userLeads.filter(lead => assignLeadToStage(lead) === stage.id);
         const stageValue = stageLeads.reduce((sum, lead) => sum + (lead.deal_value || 0), 0);
 
         return {
@@ -255,7 +262,6 @@ export const LeadsStats: React.FC = () => {
         };
       });
 
-      // Add unassigned leads (no status bucket)
       const unassignedLeads = userLeads.filter(lead => !lead.status_bucket);
       if (unassignedLeads.length > 0) {
         statusBucketBreakdown.push({
@@ -266,7 +272,7 @@ export const LeadsStats: React.FC = () => {
         });
       }
 
-      // Calculate industry breakdown from client data
+      // Calculate industry breakdown
       const industryMap = new Map<string, { count: number; value: number }>();
       userLeads.forEach(lead => {
         const industry = lead.clients?.industry || lead.industry || 'Unknown';
@@ -441,7 +447,6 @@ export const LeadsStats: React.FC = () => {
                  `Complete overview of all leads across the organization`}
               </p>
               
-              {/* Role Badge */}
               <div className="mt-3">
                 <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-white bg-opacity-20 text-white border border-white border-opacity-30">
                   {isAgent && '👤 Agent View'}
@@ -451,7 +456,6 @@ export const LeadsStats: React.FC = () => {
               </div>
             </div>
             
-            {/* Only show view mode toggle for managers and admins */}
             {!isAgent && (
               <div className="flex space-x-4">
                 <button
@@ -482,7 +486,6 @@ export const LeadsStats: React.FC = () => {
         </div>
       </div>
 
-      {/* Role-based content messages */}
       {isAgent && (
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
           <div className="flex items-center">
@@ -527,7 +530,6 @@ export const LeadsStats: React.FC = () => {
         </div>
       )}
 
-      {/* Overall Statistics */}
       {overallStats && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-6 text-white shadow-xl">
@@ -586,7 +588,6 @@ export const LeadsStats: React.FC = () => {
         </div>
       )}
 
-      {/* Pipeline Overview */}
       {viewMode === 'overview' && overallStats && (
         <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
           <div className="bg-gradient-to-r from-gray-50 to-blue-50 px-6 py-4 border-b border-gray-200">
@@ -632,7 +633,6 @@ export const LeadsStats: React.FC = () => {
               ))}
             </div>
 
-            {/* Status Bucket Breakdown */}
             <div className="border-t border-gray-200 pt-6">
               <h4 className="text-lg font-semibold text-gray-900 mb-4">Status Bucket Distribution</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -669,12 +669,10 @@ export const LeadsStats: React.FC = () => {
         </div>
       )}
 
-      {/* User-by-User Breakdown - Only for managers and admins, or simplified for agents */}
       {(viewMode === 'detailed' && !isAgent) && (
         <div className="space-y-6">
           {statsData.map((userStats) => (
             <div key={userStats.userId} className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
-              {/* User Header */}
               <div 
                 className="bg-gradient-to-r from-indigo-50 to-blue-50 px-6 py-4 border-b border-gray-200 cursor-pointer hover:from-indigo-100 hover:to-blue-100 transition-colors"
                 onClick={() => toggleUserExpansion(userStats.userId)}
@@ -723,10 +721,8 @@ export const LeadsStats: React.FC = () => {
                 </div>
               </div>
 
-              {/* Expanded User Details */}
               {expandedUsers.has(userStats.userId) && (
                 <div className="p-6">
-                  {/* Pipeline Stages */}
                   <div className="mb-6">
                     <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                       <FunnelIcon className="h-5 w-5 mr-2 text-indigo-600" />
@@ -785,7 +781,6 @@ export const LeadsStats: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Status Bucket Breakdown */}
                   <div className="mb-6">
                     <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                       <TagIcon className="h-5 w-5 mr-2 text-purple-600" />
@@ -837,9 +832,7 @@ export const LeadsStats: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Industry Breakdown and Recent Activity */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Industry Breakdown */}
                     {userStats.topIndustries.length > 0 && (
                       <div className="bg-gray-50 rounded-xl p-4">
                         <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
@@ -869,7 +862,6 @@ export const LeadsStats: React.FC = () => {
                       </div>
                     )}
 
-                    {/* Recent Activity & Summary */}
                     <div className="bg-gray-50 rounded-xl p-4">
                       <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
                         <CalendarDaysIcon className="h-4 w-4 mr-2" />
@@ -915,7 +907,6 @@ export const LeadsStats: React.FC = () => {
         </div>
       )}
 
-      {/* Agent Personal Stats - Simplified view for agents */}
       {isAgent && statsData.length > 0 && (
         <div className="space-y-6">
           <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
@@ -926,7 +917,6 @@ export const LeadsStats: React.FC = () => {
               </h3>
             </div>
             <div className="p-6">
-              {/* Personal Pipeline Stages */}
               <div className="mb-6">
                 <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                   <FunnelIcon className="h-5 w-5 mr-2 text-indigo-600" />
@@ -985,7 +975,6 @@ export const LeadsStats: React.FC = () => {
                 </div>
               </div>
 
-              {/* Personal Status Buckets */}
               <div className="mb-6">
                 <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                   <TagIcon className="h-5 w-5 mr-2 text-purple-600" />
@@ -1037,7 +1026,6 @@ export const LeadsStats: React.FC = () => {
                 </div>
               </div>
 
-              {/* Personal Industry Breakdown & Activity */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {statsData[0]?.topIndustries.length > 0 && (
                   <div className="bg-gray-50 rounded-xl p-4">
@@ -1068,7 +1056,6 @@ export const LeadsStats: React.FC = () => {
                   </div>
                 )}
 
-                {/* Personal Activity Summary */}
                 <div className="bg-gray-50 rounded-xl p-4">
                   <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
                     <CalendarDaysIcon className="h-4 w-4 mr-2" />
@@ -1112,7 +1099,6 @@ export const LeadsStats: React.FC = () => {
         </div>
       )}
 
-      {/* No Data Message */}
       {!leadsLoading && !usersLoading && !stagesLoading && (!statsData.length || !overallStats) && (
         <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
           <div className="p-12 text-center">

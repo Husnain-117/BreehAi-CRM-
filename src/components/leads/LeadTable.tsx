@@ -1,5 +1,6 @@
-// src/components/leads/LeadTable.tsx
+// src/components/leads/LeadTable.tsx - Complete Updated Version with Portal Fix
 import React, { useMemo, useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   flexRender,
   getCoreRowModel,
@@ -23,7 +24,18 @@ import {
   CalendarDaysIcon, 
   BellAlertIcon, 
   TrashIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  FunnelIcon,
+  MagnifyingGlassIcon,
+  XMarkIcon,
+  EllipsisHorizontalIcon,
+  PhoneIcon,
+  EnvelopeIcon,
+  UserIcon,
+  BuildingOfficeIcon,
+  TagIcon,
+  CurrencyDollarIcon,
+  StarIcon
 } from '@heroicons/react/20/solid';
 import Fuse from 'fuse.js';
 import { Button } from '@/components/ui/button';
@@ -41,63 +53,446 @@ interface LeadTableProps {
   onBulkDelete?: (selectedLeads: Lead[]) => void;
 }
 
-interface BulkActionsBarProps {
-  selectedRowCount: number;
+// Premium Action Menu Component - PORTAL VERSION (Guaranteed to work)
+const PremiumActionsMenu: React.FC<{ 
+  lead: Lead; 
+  onViewDetails: () => void;
+  onScheduleFollowUp: () => void;
+  onScheduleMeeting: () => void;
+}> = ({ lead, onViewDetails, onScheduleFollowUp, onScheduleMeeting }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [buttonPosition, setButtonPosition] = useState<{x: number, y: number}>({x: 0, y: 0});
+  const buttonRef = React.useRef<HTMLButtonElement>(null);
+
+  const handleAction = (action: () => void) => {
+    action();
+    setIsOpen(false);
+  };
+
+  const handleButtonClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setButtonPosition({
+        x: rect.right - 256, // 256px = w-64 width of menu
+        y: rect.bottom + 4
+      });
+    }
+    
+    setIsOpen(!isOpen);
+  };
+
+  // Close menu when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isOpen) {
+        setIsOpen(false);
+      }
+    };
+
+    const handleScroll = () => {
+      if (isOpen) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('click', handleClickOutside);
+      document.addEventListener('scroll', handleScroll, true);
+      return () => {
+        document.removeEventListener('click', handleClickOutside);
+        document.removeEventListener('scroll', handleScroll, true);
+      };
+    }
+  }, [isOpen]);
+
+  return (
+    <>
+      <button
+        ref={buttonRef}
+        onClick={handleButtonClick}
+        className="p-2 rounded-lg hover:bg-gray-100 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50"
+        aria-label="Lead actions"
+      >
+        <EllipsisHorizontalIcon className="h-5 w-5 text-gray-600" />
+      </button>
+
+      {isOpen && (
+        <>
+          {/* Render directly to document.body to escape any overflow constraints */}
+          {createPortal(
+            <>
+              {/* Full screen backdrop */}
+              <div 
+                className="fixed inset-0 z-[9998]"
+                onClick={() => setIsOpen(false)}
+                style={{ backgroundColor: 'transparent' }}
+              />
+              
+              {/* Menu positioned absolutely */}
+              <div 
+                className="fixed z-[9999] w-64 bg-white rounded-xl shadow-2xl border border-gray-200 py-2"
+                style={{
+                  left: `${buttonPosition.x}px`,
+                  top: `${buttonPosition.y}px`,
+                  maxHeight: '400px',
+                  overflowY: 'auto'
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Lead Info Header */}
+                <div className="px-4 py-3 border-b border-gray-100">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center">
+                      <span className="text-white font-semibold text-sm">
+                        {lead.clients?.client_name?.charAt(0)?.toUpperCase() || 'L'}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-900 truncate">
+                        {lead.clients?.client_name || 'Unknown Client'}
+                      </p>
+                      <p className="text-sm text-gray-500 truncate">
+                        {lead.clients?.company || 'No Company'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quick Actions */}
+                <div className="px-2 py-2">
+                  <button
+                    onClick={() => handleAction(onViewDetails)}
+                    className="w-full flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 rounded-lg transition-colors duration-150"
+                  >
+                    <UserIcon className="h-4 w-4 mr-3 text-gray-400" />
+                    View Full Details
+                  </button>
+                  
+                  <button
+                    onClick={() => handleAction(onScheduleFollowUp)}
+                    className="w-full flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 rounded-lg transition-colors duration-150"
+                  >
+                    <BellAlertIcon className="h-4 w-4 mr-3 text-gray-400" />
+                    Schedule Follow-up
+                  </button>
+                  
+                  <button
+                    onClick={() => handleAction(onScheduleMeeting)}
+                    className="w-full flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-colors duration-150"
+                  >
+                    <CalendarDaysIcon className="h-4 w-4 mr-3 text-gray-400" />
+                    Schedule Meeting
+                  </button>
+
+                  {/* Quick Contact */}
+                  <div className="border-t border-gray-100 mt-2 pt-2">
+                    <div className="flex space-x-1">
+                      {lead.phone && (
+                        <a
+                          href={`tel:${lead.phone}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="flex-1 flex items-center justify-center px-2 py-2 text-xs text-gray-600 hover:bg-green-50 hover:text-green-600 rounded-lg transition-colors duration-150"
+                          title="Call"
+                        >
+                          <PhoneIcon className="h-4 w-4" />
+                        </a>
+                      )}
+                      {lead.email && (
+                        <a
+                          href={`mailto:${lead.email}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="flex-1 flex items-center justify-center px-2 py-2 text-xs text-gray-600 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-150"
+                          title="Email"
+                        >
+                          <EnvelopeIcon className="h-4 w-4" />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>,
+            document.body
+          )}
+        </>
+      )}
+    </>
+  );
+};
+
+// Premium Lead Row Component
+const PremiumLeadRow: React.FC<{
+  lead: Lead;
+  onRowClick: (lead: Lead) => void;
+  onScheduleFollowUp: (lead: Lead) => void;
+  onScheduleMeeting: (lead: Lead) => void;
+  isSelected: boolean;
+  onToggleSelect: () => void;
+}> = ({ lead, onRowClick, onScheduleFollowUp, onScheduleMeeting, isSelected, onToggleSelect }) => {
+  
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'P1': return 'bg-red-100 text-red-800 border-red-200';
+      case 'P2': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'P3': return 'bg-green-100 text-green-800 border-green-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getIndustryColor = (industry: string) => {
+    const colorMap: Record<string, string> = {
+      'technology': 'bg-blue-100 text-blue-800',
+      'healthcare': 'bg-green-100 text-green-800',
+      'finance': 'bg-yellow-100 text-yellow-800',
+      'retail': 'bg-purple-100 text-purple-800',
+      'manufacturing': 'bg-gray-100 text-gray-800',
+      'education': 'bg-indigo-100 text-indigo-800',
+      'real-estate': 'bg-orange-100 text-orange-800',
+      'consulting': 'bg-teal-100 text-teal-800',
+      'media': 'bg-pink-100 text-pink-800',
+      'transportation': 'bg-cyan-100 text-cyan-800',
+      'energy': 'bg-emerald-100 text-emerald-800',
+      'agriculture': 'bg-lime-100 text-lime-800',
+      'construction': 'bg-amber-100 text-amber-800',
+      'hospitality': 'bg-rose-100 text-rose-800',
+      'legal': 'bg-violet-100 text-violet-800',
+      'nonprofit': 'bg-slate-100 text-slate-800',
+      'government': 'bg-stone-100 text-stone-800',
+    };
+    return colorMap[industry] || 'bg-slate-100 text-slate-800';
+  };
+
+  const formatCurrency = (value: number | null) => {
+    if (!value) return '$0';
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
+
+  return (
+    <tr 
+      className={`group hover:bg-blue-50 transition-all duration-200 cursor-pointer border-b border-gray-100 ${
+        isSelected ? 'bg-indigo-50 border-indigo-200' : ''
+      }`}
+      onClick={() => onRowClick(lead)}
+    >
+      {/* Selection */}
+      <td className="px-6 py-4">
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={onToggleSelect}
+          onClick={(e) => e.stopPropagation()}
+          className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+        />
+      </td>
+
+      {/* Client Info */}
+      <td className="px-6 py-4">
+        <div className="flex items-center space-x-4">
+          <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+            <span className="text-white font-bold text-lg">
+              {lead.clients?.client_name?.charAt(0)?.toUpperCase() || 'L'}
+            </span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center space-x-2">
+              <p className="font-semibold text-gray-900 truncate">
+                {lead.clients?.client_name || 'Unknown Client'}
+              </p>
+              {lead.lead_score && lead.lead_score > 50 && (
+                <StarIcon className="h-4 w-4 text-yellow-500" />
+              )}
+            </div>
+            <div className="flex items-center space-x-4 mt-1">
+              <div className="flex items-center text-sm text-gray-600">
+                <BuildingOfficeIcon className="h-4 w-4 mr-1" />
+                {lead.clients?.company || 'No Company'}
+              </div>
+              {lead.industry && (
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getIndustryColor(lead.industry)}`}>
+                  {lead.industry.charAt(0).toUpperCase() + lead.industry.slice(1)}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      </td>
+
+      {/* Contact Info */}
+      <td className="px-6 py-4">
+        <div className="space-y-1">
+          <div className="flex items-center text-sm text-gray-900">
+            <UserIcon className="h-4 w-4 mr-2 text-gray-400" />
+            {lead.contact_person || 'No Contact'}
+          </div>
+          <div className="flex items-center text-sm text-gray-600">
+            <EnvelopeIcon className="h-4 w-4 mr-2 text-gray-400" />
+            {lead.email ? (
+              <a href={`mailto:${lead.email}`} className="hover:text-indigo-600" onClick={(e) => e.stopPropagation()}>
+                {lead.email}
+              </a>
+            ) : 'No Email'}
+          </div>
+          <div className="flex items-center text-sm text-gray-600">
+            <PhoneIcon className="h-4 w-4 mr-2 text-gray-400" />
+            {lead.phone ? (
+              <a href={`tel:${lead.phone}`} className="hover:text-indigo-600" onClick={(e) => e.stopPropagation()}>
+                {lead.phone}
+              </a>
+            ) : 'No Phone'}
+          </div>
+        </div>
+      </td>
+
+      {/* Status & Priority */}
+      <td className="px-6 py-4">
+        <div className="space-y-2">
+          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(lead.status_bucket)}`}>
+            {lead.status_bucket}
+          </span>
+          {lead.qualification_status && (
+            <div className="text-xs text-gray-500 capitalize">
+              {lead.qualification_status.replace('_', ' ')}
+            </div>
+          )}
+        </div>
+      </td>
+
+      {/* Deal Value & Score */}
+      <td className="px-6 py-4 text-right">
+        <div className="space-y-1">
+          <div className="flex items-center justify-end text-lg font-bold text-gray-900">
+            <CurrencyDollarIcon className="h-4 w-4 mr-1 text-gray-400" />
+            {formatCurrency(lead.deal_value)}
+          </div>
+          {lead.lead_score !== undefined && (
+            <div className="text-xs text-gray-500">
+              Score: {lead.lead_score}
+            </div>
+          )}
+        </div>
+      </td>
+
+      {/* Assigned Agent */}
+      <td className="px-6 py-4">
+        <div className="flex items-center space-x-2">
+          <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+            <span className="text-xs font-medium text-gray-600">
+              {lead.users?.full_name?.charAt(0)?.toUpperCase() || '?'}
+            </span>
+          </div>
+          <span className="text-sm text-gray-900">
+            {lead.users?.full_name || 'Unassigned'}
+          </span>
+        </div>
+      </td>
+
+      {/* Tags */}
+      <td className="px-6 py-4">
+        <div className="flex flex-wrap gap-1">
+          {lead.tags && lead.tags.length > 0 ? (
+            lead.tags.slice(0, 2).map((tag, index) => {
+              const hue = (tag.charCodeAt(0) || 65) % 360;
+              return (
+                <span 
+                  key={index}
+                  className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                  style={{ 
+                    backgroundColor: `hsl(${hue}, 70%, 85%)`, 
+                    color: `hsl(${hue}, 70%, 25%)` 
+                  }}
+                >
+                  <TagIcon className="h-3 w-3 mr-1" />
+                  {tag}
+                </span>
+              );
+            })
+          ) : (
+            <span className="text-xs text-gray-400">No tags</span>
+          )}
+          {lead.tags && lead.tags.length > 2 && (
+            <span className="text-xs text-gray-400">+{lead.tags.length - 2} more</span>
+          )}
+        </div>
+      </td>
+
+      {/* Actions */}
+      <td className="px-6 py-4 relative">
+        <PremiumActionsMenu
+          lead={lead}
+          onViewDetails={() => onRowClick(lead)}
+          onScheduleFollowUp={() => onScheduleFollowUp(lead)}
+          onScheduleMeeting={() => onScheduleMeeting(lead)}
+        />
+      </td>
+    </tr>
+  );
+};
+
+// Premium Bulk Actions Bar
+const PremiumBulkActionsBar: React.FC<{
+  selectedCount: number;
   onClearSelection: () => void;
   onBulkScheduleFollowUps: () => void;
   onBulkScheduleMeetings: () => void;
   onBulkDelete: () => void;
-}
-
-const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
-  selectedRowCount,
-  onClearSelection,
-  onBulkScheduleFollowUps,
-  onBulkScheduleMeetings,
-  onBulkDelete,
-}) => {
+}> = ({ selectedCount, onClearSelection, onBulkScheduleFollowUps, onBulkScheduleMeetings, onBulkDelete }) => {
   return (
-    <div className="flex items-center justify-between p-3 bg-muted/70 rounded-lg shadow-md w-full sm:w-auto">
-      <p className="text-sm font-medium text-foreground mr-4">
-        {selectedRowCount} lead{selectedRowCount > 1 ? 's' : ''} selected
-      </p>
-      <div className="flex items-center space-x-2">
-        <Button 
-          variant="outline"
-          size="sm"
-          onClick={onBulkScheduleFollowUps} 
-          aria-label="Schedule follow-ups for selected leads"
-        >
-          <BellAlertIcon className="h-4 w-4 mr-1.5" />
-          Schedule Follow-up
-        </Button>
-        <Button 
-          variant="outline"
-          size="sm"
-          onClick={onBulkScheduleMeetings} 
-          aria-label="Schedule meetings for selected leads"
-        >
-          <CalendarDaysIcon className="h-4 w-4 mr-1.5" />
-          Schedule Meeting
-        </Button>
-        <Button 
-          variant="destructive"
-          size="sm"
-          onClick={onBulkDelete}
-          aria-label="Delete selected leads"
-        >
-          <TrashIcon className="h-4 w-4 mr-1.5" />
-          Delete ({selectedRowCount})
-        </Button>
-        <Button 
-          variant="ghost"
-          size="sm"
-          onClick={onClearSelection}
-          className="text-muted-foreground hover:text-foreground"
-          aria-label="Clear selection"
-        >
-          Clear Selection
-        </Button>
+    <div className="sticky top-0 z-10 bg-gradient-to-r from-indigo-600 to-purple-600 shadow-xl rounded-lg mx-6 mt-4 mb-4">
+      <div className="flex items-center justify-between px-6 py-4">
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+              <span className="text-white font-bold text-sm">{selectedCount}</span>
+            </div>
+            <span className="text-white font-medium">
+              {selectedCount} lead{selectedCount > 1 ? 's' : ''} selected
+            </span>
+          </div>
+        </div>
+        
+        <div className="flex items-center space-x-3">
+          <Button
+            onClick={onBulkScheduleFollowUps}
+            className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white border-white border-opacity-30"
+            size="sm"
+          >
+            <BellAlertIcon className="h-4 w-4 mr-2" />
+            Follow-ups
+          </Button>
+          
+          <Button
+            onClick={onBulkScheduleMeetings}
+            className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white border-white border-opacity-30"
+            size="sm"
+          >
+            <CalendarDaysIcon className="h-4 w-4 mr-2" />
+            Meetings
+          </Button>
+          
+          <Button
+            onClick={onBulkDelete}
+            className="bg-red-500 hover:bg-red-600 text-white"
+            size="sm"
+          >
+            <TrashIcon className="h-4 w-4 mr-2" />
+            Delete
+          </Button>
+          
+          <Button
+            onClick={onClearSelection}
+            className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white border-white border-opacity-30"
+            size="sm"
+          >
+            <XMarkIcon className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -114,26 +509,34 @@ export const LeadTable: React.FC<LeadTableProps> = ({
   const { data: leadsResponse, isLoading: isLoadingLeads, error: leadsError } = useLeadsQuery({});
   const allLeads = useMemo(() => leadsResponse?.leads || [], [leadsResponse]);
 
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState('');
-  const [pagination, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize: 10,
-  });
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
-
-  // Bulk delete state and mutation
-  const bulkDeleteMutation = useBulkDeleteLeadsMutation();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [leadsToDelete, setLeadsToDelete] = useState<Lead[]>([]);
 
-  const handleBulkDelete = async (selectedLeads: Lead[]) => {
+  const bulkDeleteMutation = useBulkDeleteLeadsMutation();
+
+  const fuzzySearch = useMemo(() => {
+    if (!allLeads.length) return () => [];
+    const fuse = new Fuse(allLeads, {
+      keys: ['clients.client_name', 'clients.company', 'contact_person', 'email', 'phone', 'industry', 'tags'],
+      threshold: 0.3,
+    });
+    return (query: string) => query ? fuse.search(query).map(result => result.item) : allLeads;
+  }, [allLeads]);
+
+  const filteredData = useMemo(() => {
+    return globalFilter ? fuzzySearch(globalFilter) : allLeads;
+  }, [allLeads, globalFilter, fuzzySearch]);
+
+  const selectedLeads = filteredData.filter((_, index) => rowSelection[index]);
+  const selectedCount = selectedLeads.length;
+
+  const handleBulkDelete = async () => {
     if (selectedLeads.length === 0) {
       toast.error('No leads selected for deletion');
       return;
     }
-
     setLeadsToDelete(selectedLeads);
     setShowDeleteConfirm(true);
   };
@@ -144,242 +547,188 @@ export const LeadTable: React.FC<LeadTableProps> = ({
       await bulkDeleteMutation.mutateAsync(leadIds);
       
       toast.success(`Successfully deleted ${leadsToDelete.length} leads`);
-      table.resetRowSelection(); // Clear selection after deletion
+      setRowSelection({});
       setShowDeleteConfirm(false);
       setLeadsToDelete([]);
     } catch (error) {
       console.error('Bulk delete failed:', error);
-      // Error toast is handled by the mutation
     }
   };
 
-  const fuzzySearch = useMemo(() => {
-    if (!allLeads.length) return () => [];
-    const fuse = new Fuse(allLeads, {
-      keys: ['clients.client_name', 'clients.contact_email', 'lead_source', 'status_bucket', 'tags', 'industry'],
-      threshold: 0.3,
-    });
-    return (query: string) => query ? fuse.search(query).map(result => result.item) : allLeads;
-  }, [allLeads]);
-
-  const filteredData = useMemo(() => {
-    return globalFilter ? fuzzySearch(globalFilter) : allLeads;
-  }, [allLeads, globalFilter, fuzzySearch]);
-  
-  const { data: agentsData, isLoading: isLoadingAgents, error: agentsError } = useUsersQuery({ role: 'agent' });
-  const updateAgentMutation = useUpdateLeadAgentMutation();
-
-  const columns = useMemo(() => getColumns(
-    onRowClick, 
-    allLeads, 
-    onScheduleFollowUp, 
-    onScheduleMeeting,
-    agentsData || [],
-    updateAgentMutation
-  ), [onRowClick, allLeads, onScheduleFollowUp, onScheduleMeeting, agentsData, updateAgentMutation]);
-
-  const table = useReactTable({
-    data: filteredData,
-    columns,
-    state: {
-      sorting,
-      columnFilters,
-      globalFilter,
-      pagination,
-      rowSelection,
-    },
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    onGlobalFilterChange: setGlobalFilter,
-    onPaginationChange: setPagination,
-    onRowSelectionChange: setRowSelection,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    enableRowSelection: true, 
-    meta: {},
-    debugTable: false,
-    debugHeaders: false,
-    debugColumns: false,
-  });
-
-  useEffect(() => {
-    if (!onBulkScheduleFollowUps || !onBulkScheduleMeetings) {
-      table.setOptions(prev => ({ ...prev, enableRowSelection: false }));
-    }
-  }, [onBulkScheduleFollowUps, onBulkScheduleMeetings, table]);
-
-  const selectedLeads = table.getSelectedRowModel().flatRows.map(row => row.original);
-
-  if (isLoadingLeads || isLoadingAgents) {
+  if (isLoadingLeads) {
     return (
-      <div className="flex justify-center items-center h-96">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-indigo-500"></div>
-        <span className="ml-4 text-lg text-gray-600">Loading leads data...</span>
+      <div className="flex items-center justify-center h-96 bg-gradient-to-br from-indigo-50 to-purple-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-indigo-500 border-t-transparent mx-auto mb-4"></div>
+          <span className="text-lg font-medium text-gray-600">Loading your leads...</span>
+        </div>
       </div>
     );
   }
 
-  if (leadsError || agentsError) {
+  if (leadsError) {
     return (
-      <div className="p-4 text-center text-red-600 bg-red-50 rounded-md">
-        Error loading data: {leadsError?.message || agentsError?.message}
+      <div className="p-8 text-center text-red-600 bg-red-50 border border-red-200">
+        <ExclamationTriangleIcon className="h-12 w-12 mx-auto mb-4 text-red-500" />
+        <h3 className="text-lg font-semibold mb-2">Error Loading Leads</h3>
+        <p>{leadsError.message}</p>
       </div>
     );
   }
 
   if (!allLeads.length) {
-    return <div className="p-6 text-center text-muted-foreground">No leads found.</div>;
+    return (
+      <div className="p-12 text-center bg-gradient-to-br from-gray-50 to-blue-50">
+        <UserIcon className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+        <h3 className="text-xl font-semibold text-gray-900 mb-2">No leads found</h3>
+        <p className="text-gray-600">Get started by adding your first lead or importing leads from a file.</p>
+      </div>
+    );
   }
 
   return (
-    <div className="flex flex-col gap-4 p-4">
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-        <input
-          type="text"
-          value={globalFilter}
-          onChange={(e) => setGlobalFilter(e.target.value)}
-          placeholder="Search all leads..."
-          className="px-4 py-2 border border-input bg-background text-foreground rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring sm:max-w-xs w-full"
-        />
-        {table.getSelectedRowModel().flatRows.length > 0 && onBulkScheduleFollowUps && onBulkScheduleMeetings && (
-          <BulkActionsBar
-            selectedRowCount={table.getSelectedRowModel().flatRows.length}
-            onClearSelection={() => table.resetRowSelection()}
-            onBulkScheduleFollowUps={() => onBulkScheduleFollowUps(selectedLeads)}
-            onBulkScheduleMeetings={() => onBulkScheduleMeetings(selectedLeads)}
-            onBulkDelete={() => handleBulkDelete(selectedLeads)}
+    <div className="w-full bg-white">
+      {/* Premium Search Bar */}
+      <div className="px-6 py-4 border-b border-gray-200">
+        <div className="relative max-w-md">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+          </div>
+          <input
+            type="text"
+            value={globalFilter}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            placeholder="Search leads by name, company, email, or any field..."
+            className="block w-full pl-10 pr-4 py-3 text-sm border border-gray-300 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:ring-1 transition-all duration-200"
           />
-        )}
+          {globalFilter && (
+            <button
+              onClick={() => setGlobalFilter('')}
+              className="absolute inset-y-0 right-0 pr-3 flex items-center"
+            >
+              <XMarkIcon className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+            </button>
+          )}
+        </div>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-border">
-        <table className="min-w-full divide-y divide-border bg-card">
-          <thead className="bg-muted/50">
-            {table.getHeaderGroups().map(headerGroup => (
-              <tr key={headerGroup.id}>
-                {headerGroup.headers.map(header => (
-                  <th
-                    key={header.id}
-                    colSpan={header.colSpan}
-                    scope="col"
-                    className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider group"
-                  >
-                    {header.isPlaceholder ? null : (
-                      <div
-                        {...{
-                          className: header.column.getCanSort()
-                            ? 'flex items-center cursor-pointer select-none'
-                            : 'flex items-center',
-                          onClick: header.column.getToggleSortingHandler(),
-                        }}
-                      >
-                        {flexRender(header.column.columnDef.header, header.getContext())}
-                        {{
-                          asc: <ChevronUpIcon className="h-4 w-4 ml-1 text-foreground" />,
-                          desc: <ChevronDownIcon className="h-4 w-4 ml-1 text-foreground" />,
-                        }[header.column.getIsSorted() as string] ?? (header.column.getCanSort() ? <ChevronUpDownIcon className="h-4 w-4 ml-1 text-muted-foreground/50" /> : null)}
-                      </div>
-                    )}
-                  </th>
-                ))}
-              </tr>
-            ))}
+      {/* Bulk Actions */}
+      {selectedCount > 0 && onBulkScheduleFollowUps && onBulkScheduleMeetings && (
+        <PremiumBulkActionsBar
+          selectedCount={selectedCount}
+          onClearSelection={() => setRowSelection({})}
+          onBulkScheduleFollowUps={() => onBulkScheduleFollowUps(selectedLeads)}
+          onBulkScheduleMeetings={() => onBulkScheduleMeetings(selectedLeads)}
+          onBulkDelete={handleBulkDelete}
+        />
+      )}
+
+      {/* Premium Table - Full Width */}
+      <div className="w-full overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gradient-to-r from-gray-50 to-blue-50">
+            <tr>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                <input
+                  type="checkbox"
+                  checked={selectedCount === filteredData.length && filteredData.length > 0}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      const newSelection: RowSelectionState = {};
+                      filteredData.forEach((_, index) => {
+                        newSelection[index] = true;
+                      });
+                      setRowSelection(newSelection);
+                    } else {
+                      setRowSelection({});
+                    }
+                  }}
+                  className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                />
+              </th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                Client Information
+              </th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                Contact Details
+              </th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                Status
+              </th>
+              <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                Deal Value
+              </th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                Assigned Agent
+              </th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                Tags
+              </th>
+              <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                Actions
+              </th>
+            </tr>
           </thead>
-          <tbody className="divide-y divide-border bg-card">
-            {table.getRowModel().rows.map(row => (
-              <tr 
-                key={row.id} 
-                className="hover:bg-muted/50 transition-colors duration-150"
-              >
-                {row.getVisibleCells().map(cell => (
-                  <td 
-                    key={cell.id} 
-                    className="px-4 py-3 whitespace-nowrap text-sm text-foreground"
-                  >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
-              </tr>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {filteredData.map((lead, index) => (
+              <PremiumLeadRow
+                key={lead.id}
+                lead={lead}
+                onRowClick={onRowClick}
+                onScheduleFollowUp={onScheduleFollowUp}
+                onScheduleMeeting={onScheduleMeeting}
+                isSelected={!!rowSelection[index]}
+                onToggleSelect={() => {
+                  setRowSelection(prev => ({
+                    ...prev,
+                    [index]: !prev[index]
+                  }));
+                }}
+              />
             ))}
           </tbody>
         </table>
       </div>
 
-      {table.getPageCount() > 1 && (
-        <div className="flex items-center justify-between pt-4 border-t border-border mt-4">
-          <div className="text-sm text-muted-foreground">
-            Showing {table.getRowModel().rows.length} of {table.getPrePaginationRowModel().rows.length} leads
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => table.setPageIndex(0)}
-              disabled={!table.getCanPreviousPage()}
-            >
-              First
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-            >
-              <ChevronLeftIcon className="h-4 w-4" />
-              Previous
-            </Button>
-            <span className="text-sm text-muted-foreground">
-              Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-            >
-              Next
-              <ChevronRightIcon className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-              disabled={!table.getCanNextPage()}
-            >
-              Last
-            </Button>
-            <select
-              value={table.getState().pagination.pageSize}
-              onChange={e => {
-                table.setPageSize(Number(e.target.value))
-              }}
-              className="p-2 border border-input bg-background text-foreground rounded-md text-sm focus:ring-ring focus:border-ring"
-            >
-              {[10, 20, 30, 40, 50].map(pageSize => (
-                <option key={pageSize} value={pageSize}>
-                  Show {pageSize}
-                </option>
-              ))}
-            </select>
+      {/* Pagination */}
+      {filteredData.length > 20 && (
+        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-700">
+              Showing <span className="font-medium">{Math.min(filteredData.length, 20)}</span> of{' '}
+              <span className="font-medium">{filteredData.length}</span> results
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button variant="outline" size="sm" disabled>
+                <ChevronLeftIcon className="h-4 w-4" />
+                Previous
+              </Button>
+              <Button variant="outline" size="sm" disabled>
+                Next
+                <ChevronRightIcon className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Confirmation Modal */}
+      {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
-            <div className="flex items-center mb-4">
-              <ExclamationTriangleIcon className="h-8 w-8 text-red-500 mr-3" />
-              <h3 className="text-lg font-semibold text-gray-900">Confirm Bulk Delete</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4">
+            <div className="flex items-center mb-6">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mr-4">
+                <ExclamationTriangleIcon className="h-6 w-6 text-red-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900">Confirm Deletion</h3>
             </div>
-            <p className="text-gray-600 mb-6">
-              Are you sure you want to delete <strong>{leadsToDelete.length}</strong> selected leads? 
-              This will also delete all related follow-ups and meetings. This action cannot be undone.
+            
+            <p className="text-gray-600 mb-8">
+              Are you sure you want to delete <strong>{leadsToDelete.length}</strong> selected lead{leadsToDelete.length > 1 ? 's' : ''}? 
+              This will also remove all related activities and cannot be undone.
             </p>
-            <div className="flex justify-end space-x-3">
+            
+            <div className="flex justify-end space-x-4">
               <Button
                 variant="outline"
                 onClick={() => {
@@ -391,9 +740,9 @@ export const LeadTable: React.FC<LeadTableProps> = ({
                 Cancel
               </Button>
               <Button
-                variant="destructive"
                 onClick={confirmBulkDelete}
                 disabled={bulkDeleteMutation.isLoading}
+                className="bg-red-600 hover:bg-red-700 text-white"
               >
                 {bulkDeleteMutation.isLoading ? 'Deleting...' : 'Delete All'}
               </Button>

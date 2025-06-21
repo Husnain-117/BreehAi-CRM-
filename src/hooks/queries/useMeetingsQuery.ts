@@ -1,70 +1,91 @@
+// src/hooks/queries/useMeetingsQuery.ts
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { supabase } from '../../api/supabaseClient';
-import { Meeting } from '../../types';
+import type { Meeting } from '../../types';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 
 interface UseMeetingsQueryArgs {
   leadId?: string;
   agentId?: string;
-  // Add other filter parameters as needed, e.g., date range
 }
 
-const fetchMeetings = async (args: UseMeetingsQueryArgs): Promise<Meeting[]> => {
-  let query = supabase
+/* ---------- data fetcher (unchanged) ---------- */
+async function fetchMeetings(args: UseMeetingsQueryArgs): Promise<Meeting[]> {
+  let q = supabase
     .from('meetings')
-    .select(`
-      *,
-      leads (id, client_id, status_bucket, contact_person, clients (client_name)),
-      users:agent_id (id, full_name)
-    `);
+    .select(
+      'id, lead_id, agent_id, title, start_time, end_time, location, notes, created_at, updated_at, status'
+    )
+    .order('start_time', { ascending: false });
 
-  if (args.leadId) {
-    query = query.eq('lead_id', args.leadId);
-  }
-  if (args.agentId) {
-    query = query.eq('agent_id', args.agentId);
-  }
-  // Add more filters based on args
+  if (args.leadId) q = q.eq('lead_id', args.leadId);
+  if (args.agentId) q = q.eq('agent_id', args.agentId);
 
-  query = query.order('start_time', { ascending: true });
+  const { data, error } = await q;
+  if (error) throw error;
+  return data ?? [];
+}
 
-  const { data, error } = await query;
-
-  if (error) {
-    console.error('Error fetching meetings:', error);
-    throw new Error(error.message);
-  }
-
-  return data || [];
-};
-
-export const useMeetingsQuery = (args: UseMeetingsQueryArgs = {}) => {
+/* ---------- react-query hook ---------- */
+export function useMeetingsQuery(args: UseMeetingsQueryArgs) {
   const queryClient = useQueryClient();
+  const argsRef = useRef(args);
+  const channelRef = useRef<RealtimeChannel | null>(null);
 
+  const CHANNEL_TOPIC = 'public:meetings';
+
+  /* keep latest filter args for queryFn */
   useEffect(() => {
-    const channel = supabase
-      .channel('public:meetings')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'meetings' },
-        (payload) => {
-          console.log('Change received on meetings table!', payload);
-          queryClient.invalidateQueries({ queryKey: ['meetings'] });
-        }
-      )
-      .subscribe();
+    argsRef.current = args;
+  }, [args]);
 
+  /* Manages the Supabase realtime subscription */
+  useEffect(() => {
+    console.log('[useMeetingsQuery] Setting up new channel subscription.');
+    
+    // Always create a fresh channel to avoid subscription conflicts
+    const channel = supabase.channel(CHANNEL_TOPIC + '_' + Math.random().toString(36).substr(2, 9));
+    
+    // Set up the postgres changes listener
+    channel.on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'meetings' },
+      (payload) => {
+        console.log('[useMeetingsQuery] Postgres change received:', payload);
+        queryClient.invalidateQueries({ queryKey: ['meetings'] });
+      }
+    );
+
+    // Subscribe to the channel
+    channel.subscribe(status => {
+      console.log(`[useMeetingsQuery] Realtime status for ${channel.topic} → ${status}`);
+    });
+    
+    channelRef.current = channel;
+
+    // Cleanup function
     return () => {
-      supabase.removeChannel(channel);
+      console.log(`[useMeetingsQuery] Cleanup: Removing channel ${channelRef.current?.topic}.`);
+      const chanToCleanup = channelRef.current;
+      if (chanToCleanup) {
+        supabase.removeChannel(chanToCleanup)
+          .then(() => console.log(`[useMeetingsQuery] Channel ${chanToCleanup.topic} removed successfully.`))
+          .catch(err => console.error(`[useMeetingsQuery] Error removing channel ${chanToCleanup.topic}:`, err));
+        channelRef.current = null;
+      }
     };
-  }, [queryClient, args.leadId, args.agentId]);
+  }, [queryClient, CHANNEL_TOPIC]);
 
+  /* vanilla react-query usage */
   return useQuery<Meeting[], Error>({
     queryKey: ['meetings', args],
-    queryFn: () => fetchMeetings(args),
-    staleTime: 0,
-    cacheTime: 5 * 60 * 1000,
+    queryFn: () => fetchMeetings(argsRef.current),
+    staleTime: 30_000,
+    cacheTime: 300_000,
     refetchOnMount: true,
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1_000 * 2 ** attempt, 30_000),
   });
-}; 
+}

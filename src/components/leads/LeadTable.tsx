@@ -1,4 +1,4 @@
-// src/components/leads/LeadTable.tsx - Complete Updated Version with Portal Fix
+// src/components/leads/LeadTable.tsx - Complete Updated Version with Working Pagination
 import React, { useMemo, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import {
@@ -513,6 +513,10 @@ export const LeadTable: React.FC<LeadTableProps> = ({
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [leadsToDelete, setLeadsToDelete] = useState<Lead[]>([]);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pageSize, setPageSize] = useState(20);
 
   const bulkDeleteMutation = useBulkDeleteLeadsMutation();
 
@@ -529,8 +533,32 @@ export const LeadTable: React.FC<LeadTableProps> = ({
     return globalFilter ? fuzzySearch(globalFilter) : allLeads;
   }, [allLeads, globalFilter, fuzzySearch]);
 
-  const selectedLeads = filteredData.filter((_, index) => rowSelection[index]);
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredData.length / pageSize);
+  const startIndex = currentPage * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, filteredData.length);
+  const paginatedData = filteredData.slice(startIndex, endIndex);
+
+  // Update row selection to work with paginated data
+  const selectedLeads = Object.keys(rowSelection)
+    .filter(key => rowSelection[key])
+    .map(key => {
+      const globalIndex = parseInt(key);
+      return filteredData[globalIndex];
+    })
+    .filter(Boolean);
+  
   const selectedCount = selectedLeads.length;
+
+  // Reset pagination when filter changes
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [globalFilter]);
+
+  // Reset selection when changing pages
+  useEffect(() => {
+    setRowSelection({});
+  }, [currentPage]);
 
   const handleBulkDelete = async () => {
     if (selectedLeads.length === 0) {
@@ -554,6 +582,17 @@ export const LeadTable: React.FC<LeadTableProps> = ({
       console.error('Bulk delete failed:', error);
     }
   };
+
+  const handlePreviousPage = () => {
+    setCurrentPage(prev => Math.max(0, prev - 1));
+  };
+
+  const handleNextPage = () => {
+    setCurrentPage(prev => Math.min(totalPages - 1, prev + 1));
+  };
+
+  const canGoPrevious = currentPage > 0;
+  const canGoNext = currentPage < totalPages - 1;
 
   if (isLoadingLeads) {
     return (
@@ -590,25 +629,45 @@ export const LeadTable: React.FC<LeadTableProps> = ({
     <div className="w-full bg-white">
       {/* Premium Search Bar */}
       <div className="px-6 py-4 border-b border-gray-200">
-        <div className="relative max-w-md">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+        <div className="flex justify-between items-center">
+          <div className="relative max-w-md">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+            </div>
+            <input
+              type="text"
+              value={globalFilter}
+              onChange={(e) => setGlobalFilter(e.target.value)}
+              placeholder="Search leads by name, company, email, or any field..."
+              className="block w-full pl-10 pr-4 py-3 text-sm border border-gray-300 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:ring-1 transition-all duration-200"
+            />
+            {globalFilter && (
+              <button
+                onClick={() => setGlobalFilter('')}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center"
+              >
+                <XMarkIcon className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+              </button>
+            )}
           </div>
-          <input
-            type="text"
-            value={globalFilter}
-            onChange={(e) => setGlobalFilter(e.target.value)}
-            placeholder="Search leads by name, company, email, or any field..."
-            className="block w-full pl-10 pr-4 py-3 text-sm border border-gray-300 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:ring-1 transition-all duration-200"
-          />
-          {globalFilter && (
-            <button
-              onClick={() => setGlobalFilter('')}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center"
+          
+          {/* Page size selector */}
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-gray-600">Rows per page:</span>
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setCurrentPage(0);
+              }}
+              className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:border-indigo-500 focus:ring-indigo-500"
             >
-              <XMarkIcon className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-            </button>
-          )}
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -631,16 +690,25 @@ export const LeadTable: React.FC<LeadTableProps> = ({
               <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                 <input
                   type="checkbox"
-                  checked={selectedCount === filteredData.length && filteredData.length > 0}
+                  checked={paginatedData.length > 0 && paginatedData.every((_, index) => {
+                    const globalIndex = startIndex + index;
+                    return rowSelection[globalIndex];
+                  })}
                   onChange={(e) => {
                     if (e.target.checked) {
-                      const newSelection: RowSelectionState = {};
-                      filteredData.forEach((_, index) => {
-                        newSelection[index] = true;
+                      const newSelection = { ...rowSelection };
+                      paginatedData.forEach((_, index) => {
+                        const globalIndex = startIndex + index;
+                        newSelection[globalIndex] = true;
                       });
                       setRowSelection(newSelection);
                     } else {
-                      setRowSelection({});
+                      const newSelection = { ...rowSelection };
+                      paginatedData.forEach((_, index) => {
+                        const globalIndex = startIndex + index;
+                        delete newSelection[globalIndex];
+                      });
+                      setRowSelection(newSelection);
                     }
                   }}
                   className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
@@ -670,47 +738,105 @@ export const LeadTable: React.FC<LeadTableProps> = ({
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {filteredData.map((lead, index) => (
-              <PremiumLeadRow
-                key={lead.id}
-                lead={lead}
-                onRowClick={onRowClick}
-                onScheduleFollowUp={onScheduleFollowUp}
-                onScheduleMeeting={onScheduleMeeting}
-                isSelected={!!rowSelection[index]}
-                onToggleSelect={() => {
-                  setRowSelection(prev => ({
-                    ...prev,
-                    [index]: !prev[index]
-                  }));
-                }}
-              />
-            ))}
+            {paginatedData.map((lead, index) => {
+              const globalIndex = startIndex + index;
+              return (
+                <PremiumLeadRow
+                  key={lead.id}
+                  lead={lead}
+                  onRowClick={onRowClick}
+                  onScheduleFollowUp={onScheduleFollowUp}
+                  onScheduleMeeting={onScheduleMeeting}
+                  isSelected={!!rowSelection[globalIndex]}
+                  onToggleSelect={() => {
+                    setRowSelection(prev => ({
+                      ...prev,
+                      [globalIndex]: !prev[globalIndex]
+                    }));
+                  }}
+                />
+              );
+            })}
           </tbody>
         </table>
       </div>
 
-      {/* Pagination */}
-      {filteredData.length > 20 && (
-        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-700">
-              Showing <span className="font-medium">{Math.min(filteredData.length, 20)}</span> of{' '}
-              <span className="font-medium">{filteredData.length}</span> results
+      {/* Enhanced Pagination */}
+      <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-gray-700">
+            Showing <span className="font-medium">{startIndex + 1}</span> to{' '}
+            <span className="font-medium">{endIndex}</span> of{' '}
+            <span className="font-medium">{filteredData.length}</span> results
+            {globalFilter && (
+              <span className="text-gray-500">
+                {' '}(filtered from {allLeads.length} total leads)
+              </span>
+            )}
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handlePreviousPage}
+              disabled={!canGoPrevious}
+              className="flex items-center"
+            >
+              <ChevronLeftIcon className="h-4 w-4 mr-1" />
+              Previous
+            </Button>
+            
+            {/* Page numbers */}
+            <div className="flex items-center space-x-1">
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum;
+                if (totalPages <= 5) {
+                  pageNum = i;
+                } else if (currentPage < 3) {
+                  pageNum = i;
+                } else if (currentPage > totalPages - 4) {
+                  pageNum = totalPages - 5 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+                
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => setCurrentPage(pageNum)}
+                    className={`px-3 py-1 text-sm rounded-md ${
+                      currentPage === pageNum
+                        ? 'bg-indigo-600 text-white'
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    {pageNum + 1}
+                  </button>
+                );
+              })}
             </div>
-            <div className="flex items-center space-x-2">
-              <Button variant="outline" size="sm" disabled>
-                <ChevronLeftIcon className="h-4 w-4" />
-                Previous
-              </Button>
-              <Button variant="outline" size="sm" disabled>
-                Next
-                <ChevronRightIcon className="h-4 w-4" />
-              </Button>
-            </div>
+            
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleNextPage}
+              disabled={!canGoNext}
+              className="flex items-center"
+            >
+              Next
+              <ChevronRightIcon className="h-4 w-4 ml-1" />
+            </Button>
           </div>
         </div>
-      )}
+        
+        {/* Additional pagination info */}
+        {totalPages > 1 && (
+          <div className="mt-3 text-xs text-gray-500 text-center">
+            Page {currentPage + 1} of {totalPages}
+          </div>
+        )}
+      </div>
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (

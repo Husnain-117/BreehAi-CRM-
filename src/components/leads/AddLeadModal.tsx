@@ -16,49 +16,83 @@ const addNewLead = async (formData: LeadFormData, currentUserId: string) => {
   try {
     let clientId: string | null = null;
 
-    // 1. Use UPSERT to handle client creation more reliably (prevents race conditions)
-    console.log('[addNewLead] Upserting client with name:', formData.clientName);
-    const clientToUpsert = {
-      client_name: formData.clientName,
-      company: formData.companyName,
-      company_size: formData.companySize === undefined ? null : formData.companySize,
-      industry: formData.industry === '' ? null : formData.industry,
-    };
-
-    const { data: clientData, error: clientError } = await supabase
+    // 1. First, try to find existing client by name
+    console.log('[addNewLead] Checking for existing client with name:', formData.clientName);
+    const { data: existingClient, error: findError } = await supabase
       .from('clients')
-      .upsert(clientToUpsert, { 
-        onConflict: 'client_name',
-        ignoreDuplicates: false 
-      })
       .select('id')
-      .single();
+      .eq('client_name', formData.clientName)
+      .maybeSingle(); // Use maybeSingle() to avoid error when no rows found
 
-    if (clientError) {
-      console.error('[addNewLead] Error upserting client:', clientError);
-      // If upsert fails, try to get existing client by name as fallback
-      const { data: existingClient, error: fetchError } = await supabase
-        .from('clients')
-        .select('id')
-        .eq('client_name', formData.clientName)
-        .single();
-        
-      if (fetchError || !existingClient) {
-        console.error('[addNewLead] Error fetching existing client:', fetchError);
-        throw new Error('Failed to create or find client.');
-      }
-      
+    if (findError) {
+      console.error('[addNewLead] Error finding existing client:', {
+        message: findError.message,
+        details: findError.details,
+        hint: findError.hint,
+        code: findError.code
+      });
+      throw new Error(`Failed to search for existing client: ${findError.message}`);
+    }
+
+    if (existingClient) {
+      // Client already exists, use its ID
       clientId = existingClient.id;
-      console.log('[addNewLead] Found existing client with ID (fallback):', clientId);
+      console.log('[addNewLead] Found existing client with ID:', clientId);
     } else {
-      clientId = clientData.id;
-      console.log('[addNewLead] Client upserted successfully with ID:', clientId);
+      // Client doesn't exist, create a new one
+      console.log('[addNewLead] Creating new client with name:', formData.clientName);
+      const clientToInsert = {
+        client_name: formData.clientName,
+        company: formData.companyName,
+        company_size: formData.companySize === undefined ? null : formData.companySize,
+        industry: formData.industry === '' ? null : formData.industry,
+      };
+
+      const { data: newClient, error: createError } = await supabase
+        .from('clients')
+        .insert(clientToInsert)
+        .select('id')
+        .single();
+
+      if (createError) {
+        console.error('[addNewLead] Error creating new client:', {
+          message: createError.message,
+          details: createError.details,
+          hint: createError.hint,
+          code: createError.code
+        });
+        
+        // If creation failed due to duplicate, try to find the client again
+        // (in case another process created it between our check and insert)
+        if (createError.code === '23505') { // Unique constraint violation
+          console.log('[addNewLead] Duplicate client detected, searching again...');
+          const { data: retryClient, error: retryError } = await supabase
+            .from('clients')
+            .select('id')
+            .eq('client_name', formData.clientName)
+            .single();
+            
+          if (retryError || !retryClient) {
+            console.error('[addNewLead] Error in retry search:', retryError);
+            throw new Error('Failed to create or find client after duplicate error.');
+          }
+          
+          clientId = retryClient.id;
+          console.log('[addNewLead] Found client on retry with ID:', clientId);
+        } else {
+          throw new Error(`Failed to create client: ${createError.message}`);
+        }
+      } else {
+        clientId = newClient.id;
+        console.log('[addNewLead] New client created with ID:', clientId);
+      }
     }
 
     if (!clientId) {
       throw new Error('Could not obtain a client ID for the lead.');
     }
 
+    // 2. Now create the lead
     const leadInsertData: { [key: string]: any } = {
       client_id: clientId,
       agent_id: currentUserId, // Automatically assign to current user

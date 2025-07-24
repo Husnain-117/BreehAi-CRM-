@@ -297,3 +297,185 @@ export interface NotificationPreferences {
 export interface NotificationSettings {
   [key: string]: NotificationPreferences;
 }
+
+// Todo System Types
+export type TodoStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled';
+export type TodoPriority = 'low' | 'medium' | 'high' | 'urgent';
+
+export interface Todo {
+  id: string;
+  user_id: string;
+  title: string;
+  description?: string | null;
+  status: TodoStatus;
+  priority: TodoPriority;
+  due_date?: string | null;
+  category?: string | null;
+  tags: string[];
+  order_position: number;
+  assigned_by?: string | null;
+  is_team_task: boolean;
+  completed_at?: string | null;
+  created_at: string;
+  updated_at: string;
+  
+  // Joined data
+  users?: Pick<UserProfile, 'id' | 'full_name' | 'email'>;
+  assigned_by_user?: Pick<UserProfile, 'id' | 'full_name' | 'email'>;
+  comments?: TodoComment[];
+  attachments?: TodoAttachment[];
+  comments_count?: number;
+  attachments_count?: number;
+}
+
+export interface TodoComment {
+  id: string;
+  todo_id: string;
+  user_id: string;
+  comment: string;
+  created_at: string;
+  
+  // Joined data
+  users?: Pick<UserProfile, 'id' | 'full_name' | 'email'>;
+}
+
+export interface TodoAttachment {
+  id: string;
+  todo_id: string;
+  filename: string;
+  file_url: string;
+  file_size?: number | null;
+  uploaded_by: string;
+  created_at: string;
+  
+  // Joined data
+  uploaded_by_user?: Pick<UserProfile, 'id' | 'full_name' | 'email'>;
+}
+
+// Create/Update interfaces
+export interface CreateTodoData {
+  title: string;
+  description?: string;
+  priority?: TodoPriority;
+  due_date?: string;
+  category?: string;
+  tags?: string[];
+  user_id?: string; // For managers/admins assigning to others
+  is_team_task?: boolean;
+}
+
+export interface UpdateTodoData {
+  title?: string;
+  description?: string;
+  status?: TodoStatus;
+  priority?: TodoPriority;
+  due_date?: string;
+  category?: string;
+  tags?: string[];
+  order_position?: number;
+}
+
+export interface CreateTodoCommentData {
+  todo_id: string;
+  comment: string;
+}
+
+export interface TodoFilters {
+  status?: TodoStatus[];
+  priority?: TodoPriority[];
+  category?: string[];
+  tags?: string[];
+  assigned_by?: string[];
+  user_id?: string[];
+  due_date_from?: string;
+  due_date_to?: string;
+  search?: string;
+  is_overdue?: boolean;
+  is_team_task?: boolean;
+}
+
+export interface TodoSortOptions {
+  field: 'created_at' | 'updated_at' | 'due_date' | 'priority' | 'title' | 'order_position';
+  direction: 'asc' | 'desc';
+}
+
+// Permission and access control
+export interface TodoPermissions {
+  canView: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
+  canAssign: boolean;
+  canComment: boolean;
+  canAttach: boolean;
+}
+
+// Analytics and stats
+export interface TodoStats {
+  total: number;
+  pending: number;
+  in_progress: number;
+  completed: number;
+  cancelled: number;
+  overdue: number;
+  due_today: number;
+  due_this_week: number;
+  completion_rate: number;
+}
+
+export interface TeamTodoStats extends TodoStats {
+  by_user: Record<string, TodoStats>;
+  by_priority: Record<TodoPriority, number>;
+  by_category: Record<string, number>;
+}
+
+// Drag and drop
+export interface TodoDragItem {
+  id: string;
+  index: number;
+  status: TodoStatus;
+}
+
+// Real-time collaboration
+export interface TodoActivity {
+  id: string;
+  todo_id: string;
+  user_id: string;
+  action: 'created' | 'updated' | 'completed' | 'commented' | 'attached' | 'assigned';
+  details: Record<string, any>;
+  created_at: string;
+  
+  // Joined data
+  users?: Pick<UserProfile, 'id' | 'full_name' | 'email'>;
+}
+
+// Bulk operations
+export interface BulkTodoOperation {
+  action: 'update_status' | 'update_priority' | 'delete' | 'assign' | 'add_tags' | 'remove_tags';
+  todo_ids: string[];
+  data?: Record<string, any>;
+}
+
+// Templates and recurring todos
+export interface TodoTemplate {
+  id: string;
+  name: string;
+  title: string;
+  description?: string;
+  priority: TodoPriority;
+  category?: string;
+  tags: string[];
+  created_by: string;
+  is_public: boolean;
+  created_at: string;
+}
+
+export interface RecurringTodo {
+  id: string;
+  template_id: string;
+  user_id: string;
+  frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  interval_value: number;
+  next_due_date: string;
+  is_active: boolean;
+  created_at: string;
+}

@@ -46,7 +46,8 @@ const SuperAdminLayout: React.FC = () => {
   const activeNavLinkClasses = 'bg-primary/10 text-primary rounded-lg font-semibold';
   const inactiveNavLinkClasses = 'text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-lg';
 
-  const adminNavLinks = [
+  // Super Admin Navigation Links
+  const superAdminNavLinks = [
     { to: '/dashboard', label: 'Dashboard', icon: null }, // Add generic dashboard icon if desired
     { to: '/leads', label: 'Leads Overview', icon: null }, // Add generic leads icon
     { to: '/admin/users', label: 'User Management', icon: UsersIcon },
@@ -57,6 +58,7 @@ const SuperAdminLayout: React.FC = () => {
     // Add other general links like Follow-ups, Meetings if super admin needs them at top level
     { to: '/follow-ups', label: 'All Follow-Ups', icon: null },
     { to: '/meetings', label: 'All Meetings', icon: null },
+    { to: '/todos', label: 'To-Do List', icon: null },
   ];
 
   return (
@@ -113,7 +115,7 @@ const SuperAdminLayout: React.FC = () => {
                     <ul role="list" className="flex flex-1 flex-col gap-y-7">
                       <li>
                         <ul role="list" className="-mx-2 space-y-1">
-                          {adminNavLinks.map(link => (
+                          {superAdminNavLinks.map(link => (
                             <li key={link.to}>
                               <NavLink to={link.to} className={commonNavLinkClasses} activeClassName={activeNavLinkClasses} inactiveClassName={inactiveNavLinkClasses}>
                                 {link.icon && <link.icon />}
@@ -158,7 +160,7 @@ const SuperAdminLayout: React.FC = () => {
             <ul role="list" className="flex flex-1 flex-col gap-y-7">
               <li>
                 <ul role="list" className="-mx-2 space-y-1.5">
-                  {adminNavLinks.map(link => (
+                  {superAdminNavLinks.map(link => (
                     <li key={link.to}>
                       <NavLink to={link.to} className={commonNavLinkClasses} activeClassName={activeNavLinkClasses} inactiveClassName={inactiveNavLinkClasses}>
                         {link.icon && <link.icon />}

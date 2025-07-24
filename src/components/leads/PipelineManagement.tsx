@@ -4,6 +4,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { supabase } from '../../lib/supabaseClient';
 import { Lead, PipelineStage } from '../../types';
+import { useAuth } from '../../contexts/AuthContext';
+import { useUsersQuery } from '../../hooks/queries/useUsersQuery';
 import { 
   CurrencyDollarIcon,
   CalendarDaysIcon,
@@ -107,15 +109,25 @@ const DEFAULT_STAGES: PipelineStage[] = [
 
 export const PipelineManagement: React.FC<PipelineManagementProps> = ({ onLeadClick }) => {
   const queryClient = useQueryClient();
+  const { profile } = useAuth();
+  
+  // Check if user is super admin
+  const isSuperAdmin = profile?.role === 'super_admin';
   
   // State for filtering and pagination
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPriority, setSelectedPriority] = useState<string>('');
   const [selectedAgent, setSelectedAgent] = useState<string>('');
+  const [selectedManager, setSelectedManager] = useState<string>(''); // New manager filter
   const [minDealValue, setMinDealValue] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState<Record<string, number>>({});
   const [leadsPerPage] = useState(10); // Reduced from showing all leads
   const [filtersExpanded, setFiltersExpanded] = useState(false);
+
+  // Fetch users data for filters
+  const { data: allUsers = [] } = useUsersQuery({});
+  const { data: managers = [] } = useUsersQuery({ role: 'manager' });
+  const { data: agents = [] } = useUsersQuery({ role: 'agent' });
 
   // Fetch pipeline stages with fallback to defaults
   const { data: stages = DEFAULT_STAGES, isLoading: stagesLoading } = useQuery({
@@ -225,8 +237,22 @@ export const PipelineManagement: React.FC<PipelineManagementProps> = ({ onLeadCl
       const matchesPriority = !selectedPriority || lead.status_bucket === selectedPriority;
       const matchesAgent = !selectedAgent || lead.agent_id === selectedAgent;
       const matchesDealValue = (lead.deal_value || 0) >= minDealValue;
+      
+      // Manager filter - show manager's own leads AND their team members' leads
+      const matchesManager = !selectedManager || (() => {
+        if (!lead.agent_id) return false;
+        
+        // Check if the lead belongs to the selected manager directly
+        if (lead.agent_id === selectedManager) {
+          return true;
+        }
+        
+        // Check if the lead belongs to an agent who reports to the selected manager
+        const leadAgent = allUsers.find(user => user.id === lead.agent_id);
+        return leadAgent?.manager_id === selectedManager;
+      })();
 
-      return matchesSearch && matchesPriority && matchesAgent && matchesDealValue;
+      return matchesSearch && matchesPriority && matchesAgent && matchesDealValue && matchesManager;
     });
   };
 
@@ -250,7 +276,7 @@ export const PipelineManagement: React.FC<PipelineManagementProps> = ({ onLeadCl
         filteredCount: filteredLeads.length
       };
     });
-  }, [stages, leadsData, searchTerm, selectedPriority, selectedAgent, minDealValue]);
+  }, [stages, leadsData, searchTerm, selectedPriority, selectedAgent, selectedManager, minDealValue, allUsers]);
 
   // Get paginated leads for a specific stage
   const getPaginatedLeads = (column: PipelineColumn): Lead[] => {
@@ -385,9 +411,19 @@ export const PipelineManagement: React.FC<PipelineManagementProps> = ({ onLeadCl
     setSearchTerm('');
     setSelectedPriority('');
     setSelectedAgent('');
+    setSelectedManager('');
     setMinDealValue(0);
     setCurrentPage({});
   };
+
+  // Count active filters
+  const activeFiltersCount = [
+    searchTerm, 
+    selectedPriority, 
+    selectedAgent, 
+    selectedManager, 
+    minDealValue > 0 ? minDealValue.toString() : ''
+  ].filter(Boolean).length;
 
   if (stagesLoading || leadsLoading) {
     return (
@@ -411,6 +447,11 @@ export const PipelineManagement: React.FC<PipelineManagementProps> = ({ onLeadCl
                 <h3 className="text-lg font-semibold text-white">Sales Pipeline</h3>
                 <p className="text-blue-100 text-sm">
                   {leadsData.length} total leads • {pipelineColumns.reduce((sum, col) => sum + col.filteredCount, 0)} filtered
+                  {selectedManager && (
+                    <span className="ml-2">
+                      • Manager: {managers.find(m => m.id === selectedManager)?.full_name}
+                    </span>
+                  )}
                 </p>
               </div>
               <div className="flex items-center space-x-2">
@@ -420,6 +461,11 @@ export const PipelineManagement: React.FC<PipelineManagementProps> = ({ onLeadCl
                 >
                   <FunnelIcon className="h-4 w-4 mr-1" />
                   Filters
+                  {activeFiltersCount > 0 && (
+                    <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-white bg-opacity-30 text-white">
+                      {activeFiltersCount}
+                    </span>
+                  )}
                 </button>
                 <Button size="sm" className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white border-white border-opacity-30">
                   <PlusIcon className="h-4 w-4 mr-1" />
@@ -432,7 +478,7 @@ export const PipelineManagement: React.FC<PipelineManagementProps> = ({ onLeadCl
           {/* Expandable Filters */}
           {filtersExpanded && (
             <div className="bg-gray-50 border-b border-gray-200 p-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-${isSuperAdmin ? '5' : '4'} gap-4`}>
                 {/* Search */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
@@ -463,6 +509,25 @@ export const PipelineManagement: React.FC<PipelineManagementProps> = ({ onLeadCl
                   </select>
                 </div>
 
+                {/* Manager Filter - Only visible to Super Admins */}
+                {isSuperAdmin && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Manager</label>
+                    <select
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                      value={selectedManager}
+                      onChange={(e) => setSelectedManager(e.target.value)}
+                    >
+                      <option value="">All Managers</option>
+                      {managers.map(manager => (
+                        <option key={manager.id} value={manager.id}>
+                          {manager.full_name || manager.email}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
                 {/* Agent Filter */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Agent</label>
@@ -472,7 +537,11 @@ export const PipelineManagement: React.FC<PipelineManagementProps> = ({ onLeadCl
                     onChange={(e) => setSelectedAgent(e.target.value)}
                   >
                     <option value="">All Agents</option>
-                    {/* You can populate this with actual agents */}
+                    {agents.map(agent => (
+                      <option key={agent.id} value={agent.id}>
+                        {agent.full_name || agent.email}
+                      </option>
+                    ))}
                   </select>
                 </div>
 

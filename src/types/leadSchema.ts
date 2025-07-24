@@ -34,12 +34,18 @@ export const leadSchema = z.object({
   contactPerson: z.string().optional(),
   email: z.string().email('Invalid email address').min(1, 'Email is required'),
   phone: z.string().min(1, 'Phone Number is required'),
-  dealValue: z.coerce.number({
-    invalid_type_error: "Deal value must be a number",
-  }).positive('Deal value must be positive').optional().or(z.literal('')),
-  companySize: z.coerce.number({
-    invalid_type_error: "Company size must be a number",
-  }).int('Company size must be an integer').positive('Company size must be positive').optional().or(z.literal('')),
+  dealValue: z.preprocess(
+    (val) => (val === "" ? undefined : val),
+    z.coerce.number({
+      invalid_type_error: "Deal value must be a number",
+    }).positive('Deal value must be positive').optional()
+  ),
+  companySize: z.preprocess(
+    (val) => (val === "" ? undefined : val),
+    z.coerce.number({
+      invalid_type_error: "Company size must be a number",
+    }).int('Company size must be an integer').positive('Company size must be positive').optional()
+  ),
   // ADD THIS NEW FIELD
   industry: industrySchema.optional().or(z.literal('')),
   tags: z.string().optional(),

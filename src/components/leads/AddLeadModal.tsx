@@ -14,23 +14,47 @@ import { useAuth } from '../../contexts/AuthContext'; // Import useAuth to get c
 
 // Helper function to safely convert form values to database types
 const safeNumber = (value: any): number | null => {
+  console.log('[safeNumber] Input value:', value, 'Type:', typeof value);
+  
   if (value === undefined || value === '' || value === null) {
+    console.log('[safeNumber] Returning null for empty/undefined value');
     return null;
   }
+  
   const num = Number(value);
-  return isNaN(num) ? null : num;
+  const result = isNaN(num) ? null : num;
+  console.log('[safeNumber] Converted to:', result, 'Type:', typeof result);
+  return result;
+};
+
+// Helper function to clean form data before database operations
+const cleanFormData = (formData: LeadFormData) => {
+  console.log('[cleanFormData] Input data:', JSON.stringify(formData, null, 2));
+  
+  const cleaned = {
+    ...formData,
+    // Ensure numeric fields are properly handled
+    dealValue: formData.dealValue === '' ? undefined : formData.dealValue,
+    companySize: formData.companySize === '' ? undefined : formData.companySize,
+  };
+  
+  console.log('[cleanFormData] Cleaned data:', JSON.stringify(cleaned, null, 2));
+  return cleaned;
 };
 
 const addNewLead = async (formData: LeadFormData, currentUserId: string) => {
   try {
+    // Clean the form data first
+    const cleanedFormData = cleanFormData(formData);
+    
     let clientId: string | null = null;
 
     // 1. First, try to find existing client by name
-    console.log('[addNewLead] Checking for existing client with name:', formData.clientName);
+    console.log('[addNewLead] Checking for existing client with name:', cleanedFormData.clientName);
     const { data: existingClient, error: findError } = await supabase
       .from('clients')
       .select('id')
-      .eq('client_name', formData.clientName)
+      .eq('client_name', cleanedFormData.clientName)
       .maybeSingle(); // Use maybeSingle() to avoid error when no rows found
 
     if (findError) {
@@ -49,13 +73,28 @@ const addNewLead = async (formData: LeadFormData, currentUserId: string) => {
       console.log('[addNewLead] Found existing client with ID:', clientId);
     } else {
       // Client doesn't exist, create a new one
-      console.log('[addNewLead] Creating new client with name:', formData.clientName);
+      console.log('[addNewLead] Creating new client with name:', cleanedFormData.clientName);
+      console.log('[addNewLead] Raw form data:', JSON.stringify(cleanedFormData, null, 2));
+      
+      // Only include the exact fields we want, with explicit type conversion
       const clientToInsert = {
-        client_name: formData.clientName,
-        company: formData.companyName,
-        company_size: safeNumber(formData.companySize),
-        industry: formData.industry === '' ? null : formData.industry,
+        client_name: cleanedFormData.clientName,
+        company: cleanedFormData.companyName,
+        company_size: safeNumber(cleanedFormData.companySize),
+        industry: cleanedFormData.industry === '' ? null : cleanedFormData.industry,
+        expected_value: null, // Explicitly set to null since we don't collect this in the form
       };
+
+      console.log('[addNewLead] Client data being inserted:', JSON.stringify(clientToInsert, null, 2));
+      console.log('[addNewLead] Type check - company_size:', typeof clientToInsert.company_size, clientToInsert.company_size);
+      console.log('[addNewLead] Type check - expected_value:', typeof clientToInsert.expected_value, clientToInsert.expected_value);
+      
+      // Double-check that no field contains an empty string that should be null
+      Object.entries(clientToInsert).forEach(([key, value]) => {
+        if (value === '') {
+          console.warn(`[addNewLead] WARNING: Field ${key} contains empty string, this might cause database errors`);
+        }
+      });
 
       const { data: newClient, error: createError } = await supabase
         .from('clients')
@@ -78,7 +117,7 @@ const addNewLead = async (formData: LeadFormData, currentUserId: string) => {
           const { data: retryClient, error: retryError } = await supabase
             .from('clients')
             .select('id')
-            .eq('client_name', formData.clientName)
+            .eq('client_name', cleanedFormData.clientName)
             .single();
             
           if (retryError || !retryClient) {
@@ -105,16 +144,16 @@ const addNewLead = async (formData: LeadFormData, currentUserId: string) => {
     const leadInsertData: { [key: string]: any } = {
       client_id: clientId,
       agent_id: currentUserId, // Automatically assign to current user
-      status_bucket: formData.status,
-      lead_source: formData.leadSource,
-      contact_person: formData.contactPerson,
-      email: formData.email,
-      phone: formData.phone,
-      deal_value: safeNumber(formData.dealValue),
-      industry: formData.industry === '' ? null : formData.industry,
-      notes: formData.notes === '' ? null : formData.notes,
-      tags: formData.tags && formData.tags.trim() !== '' 
-            ? formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag !== '') 
+      status_bucket: cleanedFormData.status,
+      lead_source: cleanedFormData.leadSource,
+      contact_person: cleanedFormData.contactPerson,
+      email: cleanedFormData.email,
+      phone: cleanedFormData.phone,
+      deal_value: safeNumber(cleanedFormData.dealValue),
+      industry: cleanedFormData.industry === '' ? null : cleanedFormData.industry,
+      notes: cleanedFormData.notes === '' ? null : cleanedFormData.notes,
+      tags: cleanedFormData.tags && cleanedFormData.tags.trim() !== '' 
+            ? cleanedFormData.tags.split(',').map(tag => tag.trim()).filter(tag => tag !== '') 
             : null,
     };
 

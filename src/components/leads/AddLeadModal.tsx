@@ -16,44 +16,43 @@ const addNewLead = async (formData: LeadFormData, currentUserId: string) => {
   try {
     let clientId: string | null = null;
 
-    // 1. Check for existing client by client_name
-    const { data: existingClients, error: fetchClientError } = await supabase
+    // 1. Use UPSERT to handle client creation more reliably (prevents race conditions)
+    console.log('[addNewLead] Upserting client with name:', formData.clientName);
+    const clientToUpsert = {
+      client_name: formData.clientName,
+      company: formData.companyName,
+      company_size: formData.companySize === undefined ? null : formData.companySize,
+      industry: formData.industry === '' ? null : formData.industry,
+    };
+
+    const { data: clientData, error: clientError } = await supabase
       .from('clients')
+      .upsert(clientToUpsert, { 
+        onConflict: 'client_name',
+        ignoreDuplicates: false 
+      })
       .select('id')
-      .eq('client_name', formData.clientName);
+      .single();
 
-    if (fetchClientError) {
-      console.error('[addNewLead] Error fetching client by name:', fetchClientError);
-      throw new Error('Failed to check for existing client.');
-    }
-
-    if (existingClients && existingClients.length > 0) {
-      clientId = existingClients[0].id;
-      console.log('[addNewLead] Found existing client with ID (by name):', clientId);
-    } else {
-      console.log('[addNewLead] No existing client found with this name. Creating new client...');
-      const { data: newClient, error: createClientError } = await supabase
+    if (clientError) {
+      console.error('[addNewLead] Error upserting client:', clientError);
+      // If upsert fails, try to get existing client by name as fallback
+      const { data: existingClient, error: fetchError } = await supabase
         .from('clients')
-        .insert({
-          client_name: formData.clientName,
-          company: formData.companyName,
-          company_size: formData.companySize === undefined ? null : formData.companySize,
-          // Add industry to clients table if you want company-level categorization
-          industry: formData.industry === '' ? null : formData.industry,
-        })
         .select('id')
+        .eq('client_name', formData.clientName)
         .single();
-
-      if (createClientError) {
-        console.error('[addNewLead] Error creating new client:', createClientError);
-        throw new Error('Failed to create new client.');
+        
+      if (fetchError || !existingClient) {
+        console.error('[addNewLead] Error fetching existing client:', fetchError);
+        throw new Error('Failed to create or find client.');
       }
-      if (newClient) {
-        clientId = newClient.id;
-        console.log('[addNewLead] Created new client with ID:', clientId);
-      } else {
-        throw new Error('Failed to create client and retrieve ID.')
-      }
+      
+      clientId = existingClient.id;
+      console.log('[addNewLead] Found existing client with ID (fallback):', clientId);
+    } else {
+      clientId = clientData.id;
+      console.log('[addNewLead] Client upserted successfully with ID:', clientId);
     }
 
     if (!clientId) {

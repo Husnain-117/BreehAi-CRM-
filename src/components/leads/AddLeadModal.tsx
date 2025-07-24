@@ -12,6 +12,15 @@ import { useAuth } from '../../contexts/AuthContext'; // Import useAuth to get c
 
 // Remove the fetchUsersList function since we don't need it anymore
 
+// Helper function to safely convert form values to database types
+const safeNumber = (value: any): number | null => {
+  if (value === undefined || value === '' || value === null) {
+    return null;
+  }
+  const num = Number(value);
+  return isNaN(num) ? null : num;
+};
+
 const addNewLead = async (formData: LeadFormData, currentUserId: string) => {
   try {
     let clientId: string | null = null;
@@ -44,7 +53,7 @@ const addNewLead = async (formData: LeadFormData, currentUserId: string) => {
       const clientToInsert = {
         client_name: formData.clientName,
         company: formData.companyName,
-        company_size: formData.companySize === undefined ? null : formData.companySize,
+        company_size: safeNumber(formData.companySize),
         industry: formData.industry === '' ? null : formData.industry,
       };
 
@@ -101,7 +110,7 @@ const addNewLead = async (formData: LeadFormData, currentUserId: string) => {
       contact_person: formData.contactPerson,
       email: formData.email,
       phone: formData.phone,
-      deal_value: formData.dealValue === undefined ? null : formData.dealValue,
+      deal_value: safeNumber(formData.dealValue),
       industry: formData.industry === '' ? null : formData.industry,
       notes: formData.notes === '' ? null : formData.notes,
       tags: formData.tags && formData.tags.trim() !== '' 

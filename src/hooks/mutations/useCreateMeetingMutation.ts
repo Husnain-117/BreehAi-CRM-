@@ -3,6 +3,7 @@ import { supabase } from '../../api/supabaseClient';
 import { Meeting } from '../../types'; // Assuming Meeting type exists or will be created
 import { PostgrestError } from '@supabase/supabase-js'; // Import PostgrestError
 import { toast } from 'react-hot-toast'; // Import toast for notifications
+import { notificationScheduler } from '../../services/notificationScheduler';
 
 // Interface for the data needed to create a new meeting
 export interface NewMeetingData {
@@ -47,9 +48,22 @@ export const useCreateMeetingMutation = () => {
       return data as Meeting;
     },
     {
-      onSuccess: (data, variables) => {
+      onSuccess: async (data, variables) => {
         console.log('Meeting created successfully:', data);
         toast.success('Meeting scheduled successfully');
+        
+        // Schedule notifications for the new meeting
+        try {
+          await notificationScheduler.scheduleMeetingNotifications(
+            data.id,
+            data.start_time,
+            data.agent_id,
+            data.title
+          );
+          console.log('Meeting notifications scheduled successfully');
+        } catch (error) {
+          console.error('Error scheduling meeting notifications:', error);
+        }
         
         // More aggressive cache invalidation strategy
         queryClient.invalidateQueries({ queryKey: ['meetings'] });

@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import AppLayout from './components/layouts/AppLayout'; // Import AppLayout
 import ProtectedRoute from './components/common/ProtectedRoute'; // Import ProtectedRoute
 import PublicLayout from './components/layouts/PublicLayout'; // Import PublicLayout
 import { Toaster } from 'react-hot-toast'; // Import Toaster
+import { notificationScheduler } from './services/notificationScheduler';
 
 // Import Page Components
 import LoginPage from './pages/LoginPage';
@@ -17,9 +18,41 @@ import AdminSettingsPage from './pages/admin/AdminSettingsPage';
 import TeamProgressPage from './pages/admin/TeamProgressPage'; // Import the new page
 import DailyReportPage from './pages/DailyReportPage'; // Import the new Daily Report page
 import AttendancePage from './pages/AttendancePage'; // Added AttendancePage import
+import NotificationSettingsPage from './pages/NotificationSettingsPage'; // Import NotificationSettingsPage
 import NotFoundPage from './pages/NotFoundPage';
 
 function App() {
+  useEffect(() => {
+    // Initialize notification system
+    const initializeNotifications = async () => {
+      // Register service worker for browser notifications
+      if ('serviceWorker' in navigator && 'Notification' in window) {
+        try {
+          const registration = await navigator.serviceWorker.register('/sw.js');
+          console.log('Service Worker registered successfully:', registration.scope);
+          
+          // Start the notification scheduler
+          notificationScheduler.start();
+          
+          // Check for overdue notifications every 30 minutes
+          setInterval(() => {
+            notificationScheduler.createOverdueNotifications();
+          }, 30 * 60 * 1000);
+          
+        } catch (error) {
+          console.error('Service Worker registration failed:', error);
+        }
+      }
+    };
+
+    initializeNotifications();
+
+    // Cleanup function
+    return () => {
+      notificationScheduler.stop();
+    };
+  }, []);
+
   return (
     <Router>
       <Toaster 
@@ -69,6 +102,7 @@ function App() {
             <Route path="/meetings" element={<MeetingsPage />} />
             <Route path="/daily-report" element={<DailyReportPage />} />
             <Route path="/attendance" element={<AttendancePage />} /> {/* Added AttendancePage route */}
+            <Route path="/notifications" element={<NotificationSettingsPage />} /> {/* Added NotificationSettingsPage route */}
             
             {/* Admin specific routes nested further under ProtectedRoute with specific roles */}
             <Route path="admin" element={<ProtectedRoute allowedRoles={['super_admin']} />}>

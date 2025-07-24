@@ -238,3 +238,62 @@ export interface Attendance {
   updated_at: string;
   users?: Pick<UserProfile, 'full_name' | 'email'> | null;
 }
+
+// Notification system types
+export type NotificationType = 
+  | 'follow_up_reminder' 
+  | 'meeting_reminder' 
+  | 'overdue_follow_up' 
+  | 'upcoming_meeting' 
+  | 'lead_update' 
+  | 'system_alert';
+
+export type DeliveryMethod = 'in_app' | 'email' | 'browser_push' | 'sound';
+
+export type SoundType = 'success' | 'error' | 'info';
+
+export interface Notification {
+  id: string;
+  user_id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  entity_type?: 'follow_up' | 'meeting' | 'lead' | 'system';
+  entity_id?: string;
+  is_read: boolean;
+  notification_date: string;
+  scheduled_for?: string;
+  delivery_method: DeliveryMethod[];
+  metadata: {
+    sound_type?: SoundType;
+    due_date?: string;
+    start_time?: string;
+    client_name?: string;
+    title?: string;
+    location?: string;
+    notes?: string;
+    days_overdue?: number;
+    [key: string]: any;
+  };
+  created_at: string;
+  updated_at: string;
+}
+
+export interface NotificationPreferences {
+  id: string;
+  user_id: string;
+  notification_type: NotificationType;
+  enabled: boolean;
+  reminder_minutes: number[];
+  delivery_methods: DeliveryMethod[];
+  email_enabled: boolean;
+  browser_push_enabled: boolean;
+  sound_enabled: boolean;
+  sound_type: SoundType;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface NotificationSettings {
+  [key: string]: NotificationPreferences;
+}

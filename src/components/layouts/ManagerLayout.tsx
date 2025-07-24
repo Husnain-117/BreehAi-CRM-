@@ -4,6 +4,7 @@ import { Outlet, Link } from 'react-router-dom';
 import NavLink from '../common/NavLink';
 import { useAuth } from '../../contexts/AuthContext';
 import { Menu, Transition } from '@headlessui/react';
+import NotificationBell from '../notifications/NotificationBell';
 
 // Re-using Icons from AgentLayout or a shared Icon component file
 const MenuIcon = ({ className = 'w-6 h-6' }) => (
@@ -177,6 +178,15 @@ const ManagerLayout: React.FC = () => {
           </button>
           <div className="flex-1 text-lg font-semibold leading-6 text-foreground">
             Manager Hub
+          </div>
+          {/* Notification Bell */}
+          <NotificationBell />
+        </header>
+
+        {/* Desktop header for notifications */}
+        <header className="hidden lg:block sticky top-0 z-30 h-16 border-b border-border bg-card shadow-sm">
+          <div className="flex h-full items-center justify-end px-6">
+            <NotificationBell />
           </div>
         </header>
 

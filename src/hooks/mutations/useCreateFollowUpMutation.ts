@@ -3,6 +3,7 @@ import { supabase } from '../../api/supabaseClient';
 import { FollowUp } from '../../types'; // Assuming FollowUp type might need creation or adjustment
 import { PostgrestError } from '@supabase/supabase-js'; // Import PostgrestError
 import { toast } from 'react-hot-toast'; // Assuming react-hot-toast
+import { notificationScheduler } from '../../services/notificationScheduler';
 
 // Type for the data needed to create a new follow-up
 // This should align with the form data and exclude DB-generated fields
@@ -36,7 +37,10 @@ export const useCreateFollowUpMutation = () => {
       const { data, error } = await supabase
         .from('follow_ups') // Target the 'follow_ups' table
         .insert(dataToInsert)
-        .select()
+        .select(`
+          *,
+          leads!inner(name)
+        `)
         .single(); // Assuming you want the created record back
 
       if (error) {
@@ -50,8 +54,23 @@ export const useCreateFollowUpMutation = () => {
       return data as FollowUp;
     },
     {
-      onSuccess: (data) => {
+      onSuccess: async (data) => {
         toast.success('Follow-up created successfully!');
+        
+        // Schedule notifications for the new follow-up
+        try {
+          const leadName = (data.leads as any)?.name || 'Unknown Lead';
+          await notificationScheduler.scheduleFollowUpNotifications(
+            data.id,
+            data.due_date,
+            data.agent_id,
+            leadName
+          );
+          console.log('Follow-up notifications scheduled successfully');
+        } catch (error) {
+          console.error('Error scheduling follow-up notifications:', error);
+        }
+        
         // Invalidate queries to refetch follow-ups list
         queryClient.invalidateQueries({ queryKey: ['follow_ups'] }); 
         // Potentially invalidate queries related to the specific lead or agent

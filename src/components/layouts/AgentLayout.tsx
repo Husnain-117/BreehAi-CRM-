@@ -4,6 +4,7 @@ import { Outlet, Link } from 'react-router-dom';
 import NavLink from '../common/NavLink';
 import { useAuth } from '../../contexts/AuthContext';
 import { Menu, Transition } from '@headlessui/react'; // For potential dropdowns
+import NotificationBell from '../notifications/NotificationBell';
 
 // Placeholder Icons - Consider using a library like Lucide React or Heroicons
 const MenuIcon = ({ className = 'w-6 h-6' }) => (
@@ -171,7 +172,15 @@ const AgentLayout: React.FC = () => {
             {/* Dynamic Page Title Can Go Here - For now, a placeholder or app name */}
             Agent Portal
           </div>
-          {/* Optional: Mobile User Profile Dropdown or Actions */}
+          {/* Notification Bell */}
+          <NotificationBell />
+        </header>
+
+        {/* Desktop header for notifications */}
+        <header className="hidden lg:block sticky top-0 z-30 h-16 border-b border-border bg-card shadow-sm">
+          <div className="flex h-full items-center justify-end px-6">
+            <NotificationBell />
+          </div>
         </header>
 
         <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8 bg-background overflow-y-auto">

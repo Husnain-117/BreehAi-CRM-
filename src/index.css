@@ -4,51 +4,49 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%;
-    --foreground: 220 13% 23%;
-    --card: 0 0% 100%;
-    --card-foreground: 220 13% 23%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 220 13% 23%;
-    --primary: 217 91% 60%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 172 61% 50%;
-    --secondary-foreground: 172 30% 20%;
-    --muted: 220 20% 92%;
-    --muted-foreground: 220 10% 45%;
-    --accent: 190 70% 55%;
-    --accent-foreground: 190 30% 20%;
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 220 15% 88%;
-    --input: 220 15% 94%; /* Used for input backgrounds or borders */
-    --ring: 217 91% 70%; /* For focus rings */
-    --radius: 0.75rem; /* Slightly larger radius for modern look */
+    --background: 226 65% 97%; /* #F3F5FA Light lavender-blue background */
+    --foreground: 223 47% 20%; /* #1e1b4b Deep indigo text */
+    --card: 0 0% 100%; /* Crisp white cards */
+    --card-foreground: 223 47% 20%; /* Deep indigo text */
+    --popover: 0 0% 100%; /* White */
+    --popover-foreground: 223 47% 20%;
+    --primary: 243 100% 68%; /* #5D5BFF Vibrant primary purple */
+    --primary-foreground: 0 0% 100%; /* White text on primary */
+    --secondary: 271 76% 67%; /* #A160F5 Vibrant pink-purple */
+    --secondary-foreground: 0 0% 100%; /* White text on secondary */
+    --muted: 226 50% 93%; /* Lighter gray-purple for muted backgrounds */
+    --muted-foreground: 225 15% 45%; /* Medium gray-purple for muted text */
+    --accent: 250 85% 95%; /* Super light purple accent */
+    --accent-foreground: 243 100% 68%; /* Vibrant primary purple text on accent */
+    --destructive: 350 89% 60%; /* Bright red */
+    --destructive-foreground: 0 0% 100%; /* White text on red */
+    --border: 226 30% 88%; /* Soft lilac borders */
+    --input: 226 30% 92%; /* Lilac gray inputs */
+    --ring: 243 100% 68%; /* Violet focus outline */
+    --radius: 1rem; /* Extra rounded corners to match the BREEH AI screenshot */
   }
 
   .dark {
-    /* Define dark theme variables here if needed in the future */
-    /* For example:
-    --background: 220 13% 18%;
-    --foreground: 210 40% 90%;
-    --card: 220 13% 22%;
-    --card-foreground: 210 40% 90%;
-    --popover: 220 13% 18%;
-    --popover-foreground: 210 40% 90%;
-    --primary: 217 91% 65%;
-    --primary-foreground: 220 13% 10%;
-    --secondary: 172 61% 55%;
-    --secondary-foreground: 172 25% 15%;
-    --muted: 220 15% 30%;
-    --muted-foreground: 220 10% 65%;
-    --accent: 190 70% 60%;
-    --accent-foreground: 190 25% 15%;
-    --destructive: 0 65% 55%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 220 15% 35%;
-    --input: 220 15% 30%;
-    --ring: 217 91% 60%;
-    */
+    /* Updated dark theme variables */
+    --background: 223 47% 12%; /* Very dark indigo */
+    --foreground: 226 65% 97%; /* Light lavender text */
+    --card: 223 47% 15%; /* Dark indigo cards */
+    --card-foreground: 226 65% 97%;
+    --popover: 223 47% 15%;
+    --popover-foreground: 226 65% 97%;
+    --primary: 243 100% 68%; /* Vibrant primary purple */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 271 76% 67%; /* Vibrant pink-purple */
+    --secondary-foreground: 0 0% 100%;
+    --muted: 223 30% 25%;
+    --muted-foreground: 226 30% 70%;
+    --accent: 250 85% 20%;
+    --accent-foreground: 243 100% 68%;
+    --destructive: 350 89% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 223 30% 30%;
+    --input: 223 30% 25%;
+    --ring: 243 100% 68%;
   }
 }
 

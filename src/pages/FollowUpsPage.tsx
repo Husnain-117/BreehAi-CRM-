@@ -19,25 +19,25 @@ import { useDeleteFollowUpMutation } from '../hooks/mutations/useDeleteFollowUpM
 
 // --- Modern SVG Icons ---
 const CalendarIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
   </svg>
 );
 
 const UserIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
   </svg>
 );
 
 const LeadIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
   </svg>
 );
 
 const FilterIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.707A1 1 0 013 7V4z" />
   </svg>
 );
@@ -74,7 +74,7 @@ const TrashIcon = () => (
 );
 
 const SearchIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
   </svg>
 );
@@ -335,24 +335,24 @@ const FollowUpsPage: React.FC = () => {
   const activeFiltersCount = [searchTerm, selectedAgent, selectedLead, selectedStatus, dateFrom, dateTo].filter(Boolean).length;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Modern Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
+      <div className="bg-card shadow-sm border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
             <div className="flex-1 min-w-0">
-              <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
+              <h1 className="text-2xl font-bold text-foreground sm:text-3xl">
                 Follow-Up Management
               </h1>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-sm text-muted-foreground">
                 Manage and track your sales follow-ups efficiently
               </p>
               {totalFollowUps > 0 && (
-                <div className="mt-2 flex items-center text-sm text-gray-600">
+                <div className="mt-2 flex items-center text-sm text-muted-foreground">
                   <span className="font-medium">{totalFollowUps}</span>
                   <span className="ml-1">follow-ups found</span>
                   {activeFiltersCount > 0 && (
-                    <span className="ml-2 text-indigo-600">
+                    <span className="ml-2 text-primary">
                       ({activeFiltersCount} filter{activeFiltersCount > 1 ? 's' : ''} active)
                     </span>
                   )}
@@ -362,7 +362,7 @@ const FollowUpsPage: React.FC = () => {
             <div className="mt-4 lg:mt-0 lg:ml-6">
               <button
                 onClick={() => setCreateModalOpen(true)}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring transition-colors duration-200"
               >
                 <PlusIcon />
                 Create Follow-Up
@@ -374,9 +374,9 @@ const FollowUpsPage: React.FC = () => {
 
       {/* Enhanced Search and Filters */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div className="bg-card rounded-lg shadow-sm border border-border">
           {/* Search Bar */}
-          <div className="p-4 border-b border-gray-200">
+          <div className="p-4 border-b border-border">
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <SearchIcon />
@@ -384,7 +384,7 @@ const FollowUpsPage: React.FC = () => {
               <input
                 type="text"
                 placeholder="Search follow-ups by lead name, contact person, or notes..."
-                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                className="block w-full pl-10 pr-3 py-3 border border-input rounded-lg leading-5 bg-background placeholder-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring focus:border-ring text-sm"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -392,16 +392,16 @@ const FollowUpsPage: React.FC = () => {
           </div>
 
           {/* Filter Toggle */}
-          <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
+          <div className="px-4 py-3 bg-muted border-b border-border">
             <div className="flex items-center justify-between">
               <button
                 onClick={() => setFiltersExpanded(!filtersExpanded)}
-                className="flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600 transition-colors duration-200"
+                className="flex items-center text-sm font-medium text-foreground hover:text-primary transition-colors duration-200"
               >
                 <FilterIcon />
                 <span className="ml-2">Filters</span>
                 {activeFiltersCount > 0 && (
-                  <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                  <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/20 text-primary">
                     {activeFiltersCount}
                   </span>
                 )}
@@ -417,7 +417,7 @@ const FollowUpsPage: React.FC = () => {
               {activeFiltersCount > 0 && (
                 <button
                   onClick={clearAllFilters}
-                  className="text-sm text-gray-500 hover:text-red-600 transition-colors duration-200"
+                  className="text-sm text-muted-foreground hover:text-destructive transition-colors duration-200"
                 >
                   Clear all filters
                 </button>
@@ -540,19 +540,19 @@ const FollowUpsPage: React.FC = () => {
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-4 border-indigo-600 border-t-transparent mx-auto mb-4"></div>
-              <p className="text-sm text-gray-600">Loading follow-ups...</p>
+              <div className="animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent mx-auto mb-4"></div>
+              <p className="text-sm text-muted-foreground">Loading follow-ups...</p>
             </div>
           </div>
         ) : processedFollowUps.length === 0 ? (
           <div className="text-center py-12">
-            <div className="mx-auto h-12 w-12 text-gray-400">
+            <div className="mx-auto h-12 w-12 text-muted-foreground">
               <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
               </svg>
             </div>
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No follow-ups found</h3>
-            <p className="mt-1 text-sm text-gray-500">
+            <h3 className="mt-2 text-sm font-medium text-foreground">No follow-ups found</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
               {followUpsData && followUpsData.length > 0 
                 ? 'Try adjusting your search or filters.' 
                 : 'Get started by creating your first follow-up.'}
@@ -578,7 +578,7 @@ const FollowUpsPage: React.FC = () => {
                 return (
                   <div
                     key={followUp.id}
-                    className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200 overflow-hidden"
+                    className="bg-card rounded-lg shadow-sm border border-border hover:shadow-md transition-shadow duration-200 overflow-hidden"
                   >
                     {/* Card Header */}
                     <div className="p-4 pb-3">
@@ -598,7 +598,7 @@ const FollowUpsPage: React.FC = () => {
                       </div>
 
                       {/* Lead Name */}
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
+                      <h3 className="text-lg font-semibold text-foreground mb-2 flex items-center">
                         <LeadIcon />
                         <span className="ml-2 truncate">
                           {followUp.leads?.clients?.client_name || 
@@ -610,7 +610,7 @@ const FollowUpsPage: React.FC = () => {
 
                       {/* Details */}
                       <div className="space-y-2">
-                        <div className="flex items-center text-sm text-gray-600">
+                        <div className="flex items-center text-sm text-muted-foreground">
                           <UserIcon />
                           <span className="ml-2 font-medium">Agent:</span>
                           <span className="ml-1 truncate">
@@ -618,7 +618,7 @@ const FollowUpsPage: React.FC = () => {
                           </span>
                         </div>
                         
-                        <div className="flex items-center text-sm text-gray-600">
+                        <div className="flex items-center text-sm text-muted-foreground">
                           <CalendarIcon />
                           <span className="ml-2 font-medium">Due:</span>
                           <span className="ml-1">
@@ -634,8 +634,8 @@ const FollowUpsPage: React.FC = () => {
 
                       {/* Notes Preview */}
                       {followUp.notes && (
-                        <div className="mt-3 pt-3 border-t border-gray-100">
-                          <p className="text-sm text-gray-600 line-clamp-2">
+                        <div className="mt-3 pt-3 border-t border-border">
+                          <p className="text-sm text-muted-foreground line-clamp-2">
                             <span className="font-medium">Notes:</span> {followUp.notes}
                           </p>
                         </div>
@@ -643,11 +643,11 @@ const FollowUpsPage: React.FC = () => {
                     </div>
 
                     {/* Actions */}
-                    <div className="px-4 py-3 bg-gray-50 border-t border-gray-100">
+                    <div className="px-4 py-3 bg-muted border-t border-border">
                       <div className="flex flex-wrap gap-2">
                         <button
                           onClick={() => handleOpenViewDetailsModal(followUp)}
-                          className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
+                          className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-foreground bg-background border border-input rounded-md hover:bg-muted focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring transition-colors duration-200"
                         >
                           <EyeIcon />
                           View

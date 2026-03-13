@@ -400,31 +400,31 @@ const DashboardPage: React.FC = () => {
         </div>
         
         {/* Date Filter Inputs */}
-        <div className="bg-white p-4 shadow rounded-lg flex gap-4 items-center">
+        <div className="bg-card p-4 shadow rounded-xl border border-border flex gap-4 items-center">
           <div>
-            <label htmlFor="startDate" className="block text-sm font-medium text-gray-700">Start Date:</label>
+            <label htmlFor="startDate" className="block text-sm font-medium text-foreground">Start Date:</label>
             <input 
               type="date" 
               id="startDate" 
               value={startDate} 
               onChange={(e) => setStartDate(e.target.value)} 
-              className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              className="mt-1 block w-full p-2 bg-background border border-input rounded-md shadow-sm focus:ring-ring focus:border-ring text-foreground sm:text-sm transition-colors"
             />
           </div>
       <div>
-            <label htmlFor="endDate" className="block text-sm font-medium text-gray-700">End Date:</label>
+            <label htmlFor="endDate" className="block text-sm font-medium text-foreground">End Date:</label>
             <input 
               type="date" 
               id="endDate" 
               value={endDate} 
               onChange={(e) => setEndDate(e.target.value)} 
-              className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              className="mt-1 block w-full p-2 bg-background border border-input rounded-md shadow-sm focus:ring-ring focus:border-ring text-foreground sm:text-sm transition-colors"
             />
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white p-4 shadow rounded-lg h-96">
+          <div className="bg-card p-4 shadow rounded-xl border border-border h-96">
             <h2 className="text-xl font-semibold text-center text-foreground mb-4">Follow-Up Status</h2>
             <div style={{ height: '350px' }}> 
               <Pie 
@@ -433,7 +433,7 @@ const DashboardPage: React.FC = () => {
               />
             </div>
           </div>
-          <div className="bg-white p-4 shadow rounded-lg h-96">
+          <div className="bg-card p-4 shadow rounded-xl border border-border h-96">
             <h2 className="text-xl font-semibold text-center text-foreground mb-4">Leads by Priority</h2>
             <div style={{ height: '350px' }}> 
               <Pie 
@@ -442,7 +442,7 @@ const DashboardPage: React.FC = () => {
               />
             </div>
           </div>
-          <div className="bg-white p-4 shadow rounded-lg h-96">
+          <div className="bg-card p-4 shadow rounded-xl border border-border h-96">
             <h2 className="text-xl font-semibold text-center text-foreground mb-4">New Leads (Last 6 Months)</h2>
             <div style={{ height: '350px' }}> 
               <Line 
@@ -451,7 +451,7 @@ const DashboardPage: React.FC = () => {
               />
             </div>
           </div>
-          <div className="bg-white p-4 shadow rounded-lg h-96">
+          <div className="bg-card p-4 shadow rounded-xl border border-border h-96">
             <h2 className="text-xl font-semibold text-center text-foreground mb-4">Meeting Status</h2>
             <div style={{ height: '350px' }}> 
               <Pie 
@@ -460,7 +460,7 @@ const DashboardPage: React.FC = () => {
               />
             </div>
           </div>
-          <div className="bg-white p-4 shadow rounded-lg h-96">
+          <div className="bg-card p-4 shadow rounded-xl border border-border h-96">
             <h2 className="text-xl font-semibold text-center text-foreground mb-4">Lead Sources</h2>
             <div style={{ height: '350px' }}> 
               <Pie 

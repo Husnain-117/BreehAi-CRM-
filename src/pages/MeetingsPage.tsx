@@ -167,25 +167,25 @@ const MeetingsPage: React.FC = () => {
   }, [searchTerm, selectedAgent, selectedLead, selectedStatus, dateFrom, dateTo, sortBy]);
 
   return (
-    <div className="p-4 sm:p-6 bg-gray-100 min-h-screen flex flex-col">
+    <div className="p-4 sm:p-6 bg-background min-h-screen flex flex-col">
       {isFetchingMeetings && (
-        <div className="p-4 text-center text-gray-600">Loading meetings...</div>
+        <div className="p-4 text-center text-muted-foreground">Loading meetings...</div>
       )}
       <div className="flex-grow">
         <div className="mb-6">
           <div className="flex flex-col md:flex-row justify-between items-center mb-4">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-4 md:mb-0">Scheduled Meetings</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-4 md:mb-0">Scheduled Meetings</h1>
             <div className="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-3 w-full md:w-auto">
               <input
                 type="text"
                 placeholder="Search meetings..."
-                className="px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-full sm:w-auto"
+                className="px-4 py-2 border border-input bg-background rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring w-full sm:w-auto text-foreground placeholder:text-muted-foreground"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
               <button
                 onClick={() => setCreateModalOpen(true)}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 transition duration-150 w-full sm:w-auto whitespace-nowrap"
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg shadow-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-opacity-50 transition duration-150 w-full sm:w-auto whitespace-nowrap"
               >
                 + Create New Meeting
               </button>

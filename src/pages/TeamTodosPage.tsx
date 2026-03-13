@@ -94,13 +94,16 @@ const TeamTodosPage: React.FC = () => {
     const now = new Date();
 
     todos.forEach(todo => {
-      stats[todo.status as keyof typeof stats]++;
-      
       if (todo.due_date && new Date(todo.due_date) < now && todo.status !== 'completed') {
         stats.overdue++;
       }
 
-      if (todo.users) {
+      const statusKey = todo.status as keyof typeof stats;
+      if (typeof stats[statusKey] === 'number') {
+        (stats[statusKey] as number)++;
+      }
+
+      if (todo.users && todo.users.full_name) {
         stats.by_member[todo.users.full_name] = (stats.by_member[todo.users.full_name] || 0) + 1;
       }
     });
@@ -111,9 +114,9 @@ const TeamTodosPage: React.FC = () => {
   if (profile?.role !== 'manager') {
     return (
       <div className="text-center py-12">
-        <UsersIcon className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Access Denied</h3>
-        <p className="text-gray-500">Only managers can access team todos.</p>
+        <UsersIcon className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+        <h3 className="text-lg font-medium text-foreground mb-2">Access Denied</h3>
+        <p className="text-muted-foreground">Only managers can access team todos.</p>
       </div>
     );
   }
@@ -121,11 +124,11 @@ const TeamTodosPage: React.FC = () => {
   if (error) {
     return (
       <div className="text-center py-12">
-        <div className="text-red-600 mb-4">
+        <div className="text-destructive mb-4">
           <ChartBarIcon className="h-12 w-12 mx-auto" />
         </div>
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Failed to load team todos</h3>
-        <p className="text-gray-500">{(error as Error).message}</p>
+        <h3 className="text-lg font-medium text-foreground mb-2">Failed to load team todos</h3>
+        <p className="text-muted-foreground">{(error as Error).message}</p>
       </div>
     );
   }
@@ -135,15 +138,15 @@ const TeamTodosPage: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Team Todos</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-2xl font-bold text-foreground">Team Todos</h1>
+          <p className="text-muted-foreground mt-1">
             Manage and assign tasks to your team members
           </p>
         </div>
         
         <button
           onClick={() => setShowCreateForm(true)}
-          className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          className="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring transition-colors"
         >
           <PlusIcon className="h-4 w-4 mr-2" />
           Assign Todo
@@ -151,18 +154,18 @@ const TeamTodosPage: React.FC = () => {
       </div>
 
       {/* Team Member Filter */}
-      <div className="bg-white p-4 rounded-lg border border-gray-200">
+      <div className="bg-card p-4 rounded-lg border border-border">
         <div className="flex items-center space-x-4">
-          <label className="text-sm font-medium text-gray-700">Filter by Team Member:</label>
+          <label className="text-sm font-medium text-foreground">Filter by Team Member:</label>
           <select
             value={selectedTeamMember}
             onChange={(e) => setSelectedTeamMember(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+            className="px-3 py-2 border bg-background text-foreground border-input rounded-lg focus:ring-ring focus:border-ring transition-colors"
           >
             <option value="all">All Team Members ({teamMembers.length})</option>
             {teamMembers.map(member => (
               <option key={member.id} value={member.id}>
-                {member.full_name} ({teamStats.by_member[member.full_name] || 0} todos)
+                {member.full_name} ({teamStats.by_member[member.full_name as string] || 0} todos)
               </option>
             ))}
           </select>
@@ -171,58 +174,58 @@ const TeamTodosPage: React.FC = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-6 rounded-lg border border-gray-200">
+        <div className="bg-card p-6 rounded-lg border border-border">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                <ChartBarIcon className="h-5 w-5 text-blue-600" />
+              <div className="w-8 h-8 bg-primary/20 rounded-lg flex items-center justify-center">
+                <ChartBarIcon className="h-5 w-5 text-primary" />
               </div>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total</p>
-              <p className="text-2xl font-bold text-gray-900">{teamStats.total}</p>
+              <p className="text-sm font-medium text-muted-foreground">Total</p>
+              <p className="text-2xl font-bold text-foreground">{teamStats.total}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg border border-gray-200">
+        <div className="bg-card p-6 rounded-lg border border-border">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
-                <div className="w-3 h-3 bg-yellow-600 rounded-full"></div>
+              <div className="w-8 h-8 bg-secondary/20 rounded-lg flex items-center justify-center">
+                <div className="w-3 h-3 bg-secondary rounded-full"></div>
               </div>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Pending</p>
-              <p className="text-2xl font-bold text-gray-900">{teamStats.pending}</p>
+              <p className="text-sm font-medium text-muted-foreground">Pending</p>
+              <p className="text-2xl font-bold text-foreground">{teamStats.pending}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg border border-gray-200">
+        <div className="bg-card p-6 rounded-lg border border-border">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                <div className="w-3 h-3 bg-green-600 rounded-full"></div>
+              <div className="w-8 h-8 bg-primary/20 rounded-lg flex items-center justify-center">
+                <div className="w-3 h-3 bg-primary rounded-full"></div>
               </div>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Completed</p>
-              <p className="text-2xl font-bold text-gray-900">{teamStats.completed}</p>
+              <p className="text-sm font-medium text-muted-foreground">Completed</p>
+              <p className="text-2xl font-bold text-foreground">{teamStats.completed}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg border border-gray-200">
+        <div className="bg-card p-6 rounded-lg border border-border">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
-                <div className="w-3 h-3 bg-red-600 rounded-full"></div>
+              <div className="w-8 h-8 bg-destructive/20 rounded-lg flex items-center justify-center">
+                <div className="w-3 h-3 bg-destructive rounded-full"></div>
               </div>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Overdue</p>
-              <p className="text-2xl font-bold text-gray-900">{teamStats.overdue}</p>
+              <p className="text-sm font-medium text-muted-foreground">Overdue</p>
+              <p className="text-2xl font-bold text-foreground">{teamStats.overdue}</p>
             </div>
           </div>
         </div>
@@ -230,13 +233,13 @@ const TeamTodosPage: React.FC = () => {
 
       {/* Team Member Performance */}
       {Object.keys(teamStats.by_member).length > 0 && (
-        <div className="bg-white p-6 rounded-lg border border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Team Performance</h3>
+        <div className="bg-card p-6 rounded-lg border border-border">
+          <h3 className="text-lg font-medium text-foreground mb-4">Team Performance</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {Object.entries(teamStats.by_member).map(([memberName, count]) => (
-              <div key={memberName} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <span className="text-sm font-medium text-gray-900">{memberName}</span>
-                <span className="text-sm text-gray-600">{count} todos</span>
+              <div key={memberName} className="flex items-center justify-between p-3 bg-background border border-border rounded-lg">
+                <span className="text-sm font-medium text-foreground">{memberName}</span>
+                <span className="text-sm text-muted-foreground">{count} todos</span>
               </div>
             ))}
           </div>

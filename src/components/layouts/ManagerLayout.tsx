@@ -3,7 +3,7 @@ import React, { useState, Fragment } from 'react';
 import { Outlet, Link } from 'react-router-dom';
 import NavLink from '../common/NavLink';
 import { useAuth } from '../../contexts/AuthContext';
-import { Menu, Transition } from '@headlessui/react';
+import { Transition } from '@headlessui/react';
 import NotificationBell from '../notifications/NotificationBell';
 
 // Re-using Icons from AgentLayout or a shared Icon component file
@@ -93,8 +93,8 @@ const ManagerLayout: React.FC = () => {
                 </Transition.Child>
                 <aside className="flex grow flex-col gap-y-5 overflow-y-auto bg-card px-6 pb-4 w-full">
                   <div className="flex h-16 shrink-0 items-center mt-4">
-                    <Link to="/dashboard" className="font-display text-2xl font-semibold text-primary">
-                      Manager Hub
+                    <Link to="/dashboard" className="font-display text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
+                      Breeh AI
                     </Link>
                   </div>
                   <nav className="flex flex-1 flex-col">
@@ -134,9 +134,9 @@ const ManagerLayout: React.FC = () => {
       {/* Static Sidebar for Desktop */}
       <aside className="hidden lg:fixed lg:inset-y-0 lg:z-40 lg:flex lg:w-72 lg:flex-col">
         <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-border bg-card px-6 pb-4">
-          <div className="flex h-16 shrink-0 items-center mt-4">
-            <Link to="/dashboard" className="font-display text-3xl font-bold text-primary hover:opacity-80 transition-opacity">
-              CRM Manager
+          <div className="flex h-16 shrink-0 items-center mt-4 border-b border-border pb-4">
+            <Link to="/dashboard" className="font-display text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary hover:opacity-80 transition-opacity">
+              Breeh AI
             </Link>
           </div>
           <nav className="flex flex-1 flex-col">

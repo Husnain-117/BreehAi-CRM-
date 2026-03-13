@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import AppLayout from './components/layouts/AppLayout'; // Import AppLayout
 import ProtectedRoute from './components/common/ProtectedRoute'; // Import ProtectedRoute
@@ -64,23 +64,24 @@ function App() {
           className: '',
           duration: 5000,
           style: {
-            background: '#333', // Darker background for better contrast with default white text
-            color: '#fff',
+            background: 'hsl(var(--card))', // Darker background for better contrast with default white text
+            color: 'hsl(var(--card-foreground))',
             fontSize: '15px',
+            border: '1px solid hsl(var(--border))'
           },
           // Default options for specific types
           success: {
             duration: 3000,
             iconTheme: {
-              primary: '#4CAF50', // Green icon
-              secondary: '#fff',   // White checkmark
+              primary: 'hsl(var(--primary))', // Green icon
+              secondary: 'hsl(var(--primary-foreground))',   // White checkmark
             },
           },
           error: {
             duration: 5000,
             iconTheme: {
-              primary: '#F44336', // Red icon
-              secondary: '#fff',   // White X
+              primary: 'hsl(var(--destructive))', // Red icon
+              secondary: 'hsl(var(--destructive-foreground))',   // White X
             },
           },
         }}

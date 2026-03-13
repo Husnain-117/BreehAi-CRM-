@@ -2,34 +2,42 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 
-const TrendtialLogo = () => (
-  <div className="flex items-center justify-center mb-8">
-    <svg width="48" height="48" viewBox="0 0 200 200" className="mr-3">
-      <defs>
-        <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" style={{ stopColor: 'rgb(220, 38, 38)', stopOpacity: 1 }} />
-          <stop offset="100%" style={{ stopColor: 'rgb(239, 68, 68)', stopOpacity: 1 }} />
-        </linearGradient>
-      </defs>
-      <rect width="200" height="200" rx="30" fill="url(#grad1)" />
-      <text x="25" y="140" fontFamily="Arial, sans-serif" fontSize="100" fontWeight="bold" fill="white">tr.</text>
-    </svg>
-    <span className="text-4xl font-bold text-foreground">Trendtial</span>
-  </div>
-);
-
 const PublicLayout: React.FC = () => {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background text-foreground p-4">
-      <TrendtialLogo />
-      <main className="w-full max-w-md">
-        <div className="bg-card shadow-2xl rounded-xl p-8 sm:p-10">
+    <div className="min-h-screen flex bg-background text-foreground">
+      {/* Left side: Image/Brand area */}
+      <div className="hidden lg:flex lg:w-1/2 relative bg-primary/10 overflow-hidden items-center justify-center">
+        {/* Image with gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/90 to-secondary/90 mix-blend-multiply z-10" />
+        <img
+          src="https://images.unsplash.com/photo-1557804506-669a67965ba0?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80"
+          alt="CRM Background"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+
+        <div className="relative z-20 text-center text-white px-12">
+          <h1 className="text-5xl font-bold tracking-tight mb-6">Breeh AI CRM</h1>
+          <p className="text-xl opacity-90 font-medium leading-relaxed max-w-lg mx-auto">
+            Empower your team, streamline your workflows, and accelerate your sales pipeline.
+          </p>
+        </div>
+      </div>
+
+      {/* Right side: Auth Form */}
+      <main className="w-full lg:w-1/2 flex flex-col justify-center p-8 sm:p-12 md:p-16 lg:p-24 overflow-y-auto">
+        <div className="w-full max-w-md mx-auto">
+          {/* Mobile Logo */}
+          <div className="flex lg:hidden items-center justify-center mb-10">
+            <span className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">Breeh AI CRM</span>
+          </div>
+
           <Outlet />
+
+          <footer className="mt-12 text-center text-sm text-muted-foreground">
+            &copy; {new Date().getFullYear()} Breeh AI CRM. All rights reserved.
+          </footer>
         </div>
       </main>
-      <footer className="mt-8 text-center text-sm text-muted-foreground">
-        &copy; {new Date().getFullYear()} Trendtial CRM. All rights reserved.
-      </footer>
     </div>
   );
 };

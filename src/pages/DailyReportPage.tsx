@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../api/supabaseClient';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { DailyReport, TeamType, UserProfile } from '../types';
+import { DailyReport, TeamType } from '../types';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
@@ -41,9 +41,9 @@ const coldEmailMetricsSchema = z.object({
 });
 
 const dailyReportFormSchema = z.discriminatedUnion("team_type", [
-  z.object({ ...baseReportSchema, team_type: z.literal('telesales'), ...telesalesMetricsSchema.shape }),
-  z.object({ ...baseReportSchema, team_type: z.literal('linkedin'), ...linkedInMetricsSchema.shape }),
-  z.object({ ...baseReportSchema, team_type: z.literal('cold_email'), ...coldEmailMetricsSchema.shape }),
+  z.object({ ...baseReportSchema, team_type: z.literal('telesales'), ...telesalesMetricsSchema.shape, emails_sent: z.number().optional(), comments_done: z.number().optional(), content_posted: z.boolean().optional() }),
+  z.object({ ...baseReportSchema, team_type: z.literal('linkedin'), ...linkedInMetricsSchema.shape, emails_sent: z.number().optional() }),
+  z.object({ ...baseReportSchema, team_type: z.literal('cold_email'), ...coldEmailMetricsSchema.shape, outreach_count: z.number().optional(), comments_done: z.number().optional(), content_posted: z.boolean().optional() }),
 ]);
 
 type DailyReportFormData = z.infer<typeof dailyReportFormSchema>;
@@ -82,7 +82,7 @@ const DailyReportPage: React.FC = () => {
     { enabled: (isManagerViewer || isSuperAdminViewer) && !authLoading && !!profile }
   );
 
-  const { register, handleSubmit, control, watch, formState: { errors }, reset, setValue } = useForm<DailyReportFormData>({
+  const { handleSubmit, control, watch, formState: { errors }, reset, setValue } = useForm<DailyReportFormData>({
     resolver: zodResolver(dailyReportFormSchema),
     defaultValues: {
       report_date: new Date().toISOString().split('T')[0],
@@ -119,7 +119,6 @@ const DailyReportPage: React.FC = () => {
       toast.success('Daily report submitted successfully!');
       reset();
       setSelectedTeamType('');
-      setValue('team_type', undefined);
       queryClient.invalidateQueries(['daily_reports']);
     },
     onError: (error: Error) => {
@@ -141,11 +140,11 @@ const DailyReportPage: React.FC = () => {
       agent_id: profile.id,
       manager_id: profile.manager_id,
       report_date: formData.report_date,
-      team_type: formData.team_type,
+      team_type: (formData.team_type ? formData.team_type : 'telesales') as "telesales" | "linkedin" | "cold_email",
       ...(formData.team_type === 'telesales' && { outreach_count: formData.outreach_count, responses_count: formData.responses_count }),
       ...(formData.team_type === 'linkedin' && { outreach_count: formData.outreach_count, responses_count: formData.responses_count, comments_done: formData.comments_done, content_posted: formData.content_posted }),
       ...(formData.team_type === 'cold_email' && { emails_sent: formData.emails_sent, responses_count: formData.responses_count }),
-    };
+    } as any;
 
     mutation.mutate(reportToSave);
   };
@@ -176,35 +175,35 @@ const DailyReportPage: React.FC = () => {
 
     return (
       <div className="container mx-auto p-4 sm:p-6">
-        <div className="w-full bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-          <div className="border-b pb-4">
-            <h2 className="text-3xl font-bold text-gray-800">
+        <div className="w-full bg-card text-card-foreground rounded-xl shadow-lg p-6 border border-border">
+          <div className="border-b border-border pb-4">
+            <h2 className="text-3xl font-bold text-foreground">
               {isManagerViewer ? "Your Team's Daily Reports" : "All Daily Reports"}
             </h2>
           </div>
           <div className="pt-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <div className="space-y-2">
-                <label className="flex items-center text-sm font-medium text-gray-600">
+                <label className="flex items-center text-sm font-medium text-muted-foreground">
                   <CalendarDays className="w-4 h-4 mr-2" />
                   From
                 </label>
                 <DatePicker date={dateFrom} setDate={setDateFrom} />
               </div>
               <div className="space-y-2">
-                <label className="flex items-center text-sm font-medium text-gray-600">
+                <label className="flex items-center text-sm font-medium text-muted-foreground">
                   <CalendarDays className="w-4 h-4 mr-2" />
                   To
                 </label>
                 <DatePicker date={dateTo} setDate={setDateTo} />
               </div>
               <div className="space-y-2">
-                <label className="flex items-center text-sm font-medium text-gray-600">
+                <label className="flex items-center text-sm font-medium text-muted-foreground">
                   <User className="w-4 h-4 mr-2" />
                   Agent
                 </label>
                 <Select value={selectedAgentId} onValueChange={setSelectedAgentId}>
-                  <SelectTrigger className="w-full border-gray-300 rounded-lg">
+                  <SelectTrigger className="w-full border-input bg-background rounded-lg text-foreground focus:ring-ring focus:border-ring">
                     <SelectValue placeholder="All Agents" />
                   </SelectTrigger>
                   <SelectContent>
@@ -217,12 +216,12 @@ const DailyReportPage: React.FC = () => {
               </div>
               {isSuperAdminViewer && (
                 <div className="space-y-2">
-                  <label className="flex items-center text-sm font-medium text-gray-600">
+                  <label className="flex items-center text-sm font-medium text-muted-foreground">
                     <Users className="w-4 h-4 mr-2" />
                     Manager
                   </label>
                   <Select value={selectedManagerId} onValueChange={setSelectedManagerId}>
-                    <SelectTrigger className="w-full border-gray-300 rounded-lg">
+                    <SelectTrigger className="w-full border-input bg-background rounded-lg text-foreground focus:ring-ring focus:border-ring">
                       <SelectValue placeholder="All Managers" />
                     </SelectTrigger>
                     <SelectContent>
@@ -235,12 +234,12 @@ const DailyReportPage: React.FC = () => {
                 </div>
               )}
               <div className="space-y-2">
-                <label className="flex items-center text-sm font-medium text-gray-600">
+                <label className="flex items-center text-sm font-medium text-muted-foreground">
                   <ListFilter className="w-4 h-4 mr-2" />
                   Team
                 </label>
                 <Select value={filterTeamType} onValueChange={setFilterTeamType as any}>
-                  <SelectTrigger className="w-full border-gray-300 rounded-lg">
+                  <SelectTrigger className="w-full border-input bg-background rounded-lg text-foreground focus:ring-ring focus:border-ring">
                     <SelectValue placeholder="All Teams" />
                   </SelectTrigger>
                   <SelectContent>
@@ -263,10 +262,10 @@ const DailyReportPage: React.FC = () => {
     if (!profile.manager_id) {
       return (
         <div className="container mx-auto p-4 sm:p-6 max-w-2xl">
-          <div className="w-full bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-            <h2 className="text-3xl font-bold text-center text-gray-800">Submit Daily Report</h2>
+          <div className="w-full bg-card text-card-foreground rounded-xl shadow-lg p-6 border border-border">
+            <h2 className="text-3xl font-bold text-center text-foreground">Submit Daily Report</h2>
             <div className="text-center mt-6">
-              <p className="text-red-600 bg-red-50 p-4 rounded-lg">
+              <p className="text-destructive-foreground bg-destructive/10 p-4 rounded-lg">
                 Your profile is missing a manager assignment. Please contact an administrator to be assigned to a manager before submitting reports.
               </p>
             </div>
@@ -277,12 +276,12 @@ const DailyReportPage: React.FC = () => {
 
     return (
       <div className="container mx-auto p-4 sm:p-6 max-w-2xl">
-        <div className="w-full bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-          <h2 className="text-3xl font-bold text-center text-gray-800">Submit Daily Report</h2>
+        <div className="w-full bg-card text-card-foreground rounded-xl shadow-lg p-6 border border-border">
+          <h2 className="text-3xl font-bold text-center text-foreground">Submit Daily Report</h2>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 mt-6">
             <div className="space-y-4">
               <div className="space-y-2">
-                <label htmlFor="report_date" className="text-sm font-medium text-gray-600">Report Date</label>
+                <label htmlFor="report_date" className="text-sm font-medium text-muted-foreground">Report Date</label>
                 <Controller
                   name="report_date"
                   control={control}
@@ -291,15 +290,15 @@ const DailyReportPage: React.FC = () => {
                       type="date"
                       id="report_date"
                       {...field}
-                      className={errors.report_date ? 'border-red-500' : 'border-gray-300'}
+                      className={`bg-background text-foreground ${errors.report_date ? 'border-destructive' : 'border-input focus:border-ring focus:ring-ring'}`}
                     />
                   )}
                 />
-                {errors.report_date && <p className="text-sm text-red-600">{errors.report_date.message}</p>}
+                {errors.report_date && <p className="text-sm text-destructive">{errors.report_date.message}</p>}
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="team_type" className="text-sm font-medium text-gray-600">Team Type</label>
+                <label htmlFor="team_type" className="text-sm font-medium text-muted-foreground">Team Type</label>
                 <Controller
                   name="team_type"
                   control={control}
@@ -311,7 +310,7 @@ const DailyReportPage: React.FC = () => {
                         setSelectedTeamType(value as TeamType);
                       }}
                     >
-                      <SelectTrigger id="team_type" className={errors.team_type ? 'border-red-500' : 'border-gray-300'}>
+                      <SelectTrigger id="team_type" className={`bg-background text-foreground ${errors.team_type ? 'border-destructive' : 'border-input focus:border-ring focus:ring-ring'}`}>
                         <SelectValue placeholder="Select Team Type" />
                       </SelectTrigger>
                       <SelectContent>
@@ -322,13 +321,13 @@ const DailyReportPage: React.FC = () => {
                     </Select>
                   )}
                 />
-                {errors.team_type && <p className="text-sm text-red-600">{errors.team_type.message}</p>}
+                {errors.team_type && <p className="text-sm text-destructive">{errors.team_type.message}</p>}
               </div>
 
               {selectedTeamType === 'telesales' && (
                 <>
                   <div className="space-y-2">
-                    <label htmlFor="outreach_count_ts" className="text-sm font-medium text-gray-600">Total People Outreached</label>
+                    <label htmlFor="outreach_count_ts" className="text-sm font-medium text-muted-foreground">Total People Outreached</label>
                     <Controller
                       name="outreach_count"
                       control={control}
@@ -338,14 +337,14 @@ const DailyReportPage: React.FC = () => {
                           id="outreach_count_ts"
                           {...field}
                           onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)}
-                          className={errors.outreach_count ? 'border-red-500' : 'border-gray-300'}
+                          className={`bg-background text-foreground ${errors.outreach_count ? 'border-destructive' : 'border-input focus:border-ring focus:ring-ring'}`}
                         />
                       )}
                     />
-                    {errors.outreach_count && <p className="text-sm text-red-600">{errors.outreach_count.message}</p>}
+                    {errors.outreach_count && <p className="text-sm text-destructive">{errors.outreach_count.message}</p>}
                   </div>
                   <div className="space-y-2">
-                    <label htmlFor="responses_count_ts" className="text-sm font-medium text-gray-600">Total Responses Gotten</label>
+                    <label htmlFor="responses_count_ts" className="text-sm font-medium text-muted-foreground">Total Responses Gotten</label>
                     <Controller
                       name="responses_count"
                       control={control}
@@ -355,11 +354,11 @@ const DailyReportPage: React.FC = () => {
                           id="responses_count_ts"
                           {...field}
                           onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)}
-                          className={errors.responses_count ? 'border-red-500' : 'border-gray-300'}
+                          className={`bg-background text-foreground ${errors.responses_count ? 'border-destructive' : 'border-input focus:border-ring focus:ring-ring'}`}
                         />
                       )}
                     />
-                    {errors.responses_count && <p className="text-sm text-red-600">{errors.responses_count.message}</p>}
+                    {errors.responses_count && <p className="text-sm text-destructive">{errors.responses_count.message}</p>}
                   </div>
                 </>
               )}
@@ -367,7 +366,7 @@ const DailyReportPage: React.FC = () => {
               {selectedTeamType === 'linkedin' && (
                 <>
                   <div className="space-y-2">
-                    <label htmlFor="outreach_count_li" className="text-sm font-medium text-gray-600">Total People Outreached</label>
+                    <label htmlFor="outreach_count_li" className="text-sm font-medium text-muted-foreground">Total People Outreached</label>
                     <Controller
                       name="outreach_count"
                       control={control}
@@ -377,14 +376,14 @@ const DailyReportPage: React.FC = () => {
                           id="outreach_count_li"
                           {...field}
                           onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)}
-                          className={errors.outreach_count ? 'border-red-500' : 'border-gray-300'}
+                          className={`bg-background text-foreground ${errors.outreach_count ? 'border-destructive' : 'border-input focus:border-ring focus:ring-ring'}`}
                         />
                       )}
                     />
-                    {errors.outreach_count && <p className="text-sm text-red-600">{errors.outreach_count.message}</p>}
+                    {errors.outreach_count && <p className="text-sm text-destructive">{errors.outreach_count.message}</p>}
                   </div>
                   <div className="space-y-2">
-                    <label htmlFor="responses_count_li" className="text-sm font-medium text-gray-600">Total Responses Gotten</label>
+                    <label htmlFor="responses_count_li" className="text-sm font-medium text-muted-foreground">Total Responses Gotten</label>
                     <Controller
                       name="responses_count"
                       control={control}
@@ -394,14 +393,14 @@ const DailyReportPage: React.FC = () => {
                           id="responses_count_li"
                           {...field}
                           onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)}
-                          className={errors.responses_count ? 'border-red-500' : 'border-gray-300'}
+                          className={`bg-background text-foreground ${errors.responses_count ? 'border-destructive' : 'border-input focus:border-ring focus:ring-ring'}`}
                         />
                       )}
                     />
-                    {errors.responses_count && <p className="text-sm text-red-600">{errors.responses_count.message}</p>}
+                    {errors.responses_count && <p className="text-sm text-destructive">{errors.responses_count.message}</p>}
                   </div>
                   <div className="space-y-2">
-                    <label htmlFor="comments_done" className="text-sm font-medium text-gray-600">Total Comments Done</label>
+                    <label htmlFor="comments_done" className="text-sm font-medium text-muted-foreground">Total Comments Done</label>
                     <Controller
                       name="comments_done"
                       control={control}
@@ -411,11 +410,11 @@ const DailyReportPage: React.FC = () => {
                           id="comments_done"
                           {...field}
                           onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)}
-                          className={errors.comments_done ? 'border-red-500' : 'border-gray-300'}
+                          className={`bg-background text-foreground ${errors.comments_done ? 'border-destructive' : 'border-input focus:border-ring focus:ring-ring'}`}
                         />
                       )}
                     />
-                    {errors.comments_done && <p className="text-sm text-red-600">{errors.comments_done.message}</p>}
+                    {errors.comments_done && <p className="text-sm text-destructive">{errors.comments_done.message}</p>}
                   </div>
                   <div className="flex items-center space-x-2">
                     <Controller
@@ -427,14 +426,14 @@ const DailyReportPage: React.FC = () => {
                           id="content_posted"
                           checked={!!field.value}
                           onChange={(e) => field.onChange(e.target.checked)}
-                          className="h-4 w-4 border-gray-300 rounded focus:ring-blue-500"
+                          className="h-4 w-4 border-input bg-background rounded text-primary focus:ring-ring"
                         />
                       )}
                     />
-                    <label htmlFor="content_posted" className="text-sm font-medium text-gray-600">
+                    <label htmlFor="content_posted" className="text-sm font-medium text-muted-foreground">
                       Content Posted?
                     </label>
-                    {errors.content_posted && <p className="text-sm text-red-600">{errors.content_posted.message}</p>}
+                    {errors.content_posted && <p className="text-sm text-destructive">{errors.content_posted.message}</p>}
                   </div>
                 </>
               )}
@@ -442,7 +441,7 @@ const DailyReportPage: React.FC = () => {
               {selectedTeamType === 'cold_email' && (
                 <>
                   <div className="space-y-2">
-                    <label htmlFor="emails_sent" className="text-sm font-medium text-gray-600">Number of Emails Sent</label>
+                    <label htmlFor="emails_sent" className="text-sm font-medium text-muted-foreground">Number of Emails Sent</label>
                     <Controller
                       name="emails_sent"
                       control={control}
@@ -452,14 +451,14 @@ const DailyReportPage: React.FC = () => {
                           id="emails_sent"
                           {...field}
                           onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)}
-                          className={errors.emails_sent ? 'border-red-500' : 'border-gray-300'}
+                          className={`bg-background text-foreground ${errors.emails_sent ? 'border-destructive' : 'border-input focus:border-ring focus:ring-ring'}`}
                         />
                       )}
                     />
-                    {errors.emails_sent && <p className="text-sm text-red-600">{errors.emails_sent.message}</p>}
+                    {errors.emails_sent && <p className="text-sm text-destructive">{errors.emails_sent.message}</p>}
                   </div>
                   <div className="space-y-2">
-                    <label htmlFor="responses_count_ce" className="text-sm font-medium text-gray-600">Number of Responses Gotten</label>
+                    <label htmlFor="responses_count_ce" className="text-sm font-medium text-muted-foreground">Number of Responses Gotten</label>
                     <Controller
                       name="responses_count"
                       control={control}
@@ -469,17 +468,17 @@ const DailyReportPage: React.FC = () => {
                           id="responses_count_ce"
                           {...field}
                           onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)}
-                          className={errors.responses_count ? 'border-red-500' : 'border-gray-300'}
+                          className={`bg-background text-foreground ${errors.responses_count ? 'border-destructive' : 'border-input focus:border-ring focus:ring-ring'}`}
                         />
                       )}
                     />
-                    {errors.responses_count && <p className="text-sm text-red-600">{errors.responses_count.message}</p>}
+                    {errors.responses_count && <p className="text-sm text-destructive">{errors.responses_count.message}</p>}
                   </div>
                 </>
               )}
             </div>
             <div className="flex justify-end">
-              <Button type="submit" onClick={handleSubmit(onSubmit)} disabled={mutation.isLoading} className="w-full sm:w-auto bg-blue-600 text-white hover:bg-blue-700">
+              <Button type="submit" onClick={handleSubmit(onSubmit)} disabled={mutation.isLoading} className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90">
                 {mutation.isLoading ? 'Submitting...' : 'Submit Report'}
               </Button>
             </div>
@@ -489,7 +488,7 @@ const DailyReportPage: React.FC = () => {
     );
   }
 
-  return <div className="flex justify-center p-6 text-gray-500">You do not have access to this page.</div>;
+  return <div className="flex justify-center p-6 text-muted-foreground">You do not have access to this page.</div>;
 };
 
 export default DailyReportPage;

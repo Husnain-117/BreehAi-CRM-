@@ -1,5 +1,5 @@
 // Service Worker for enhanced notifications
-const CACHE_NAME = 'trendtial-crm-v1';
+const CACHE_NAME = 'Breeh AI-crm-v1';
 const urlsToCache = [
   '/',
   '/static/css/main.css',

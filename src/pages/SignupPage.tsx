@@ -50,10 +50,10 @@ const SignupPage: React.FC = () => {
   };
 
   return (
-    <>
-      <div className="mb-6 text-center">
-        <h1 className="text-3xl font-bold font-display text-foreground">Create Your Account</h1>
-        <p className="text-muted-foreground">Join us and get started!</p>
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="text-left">
+        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">Create an Account</h1>
+        <p className="text-muted-foreground mt-2 text-lg">Join us and streamline your workflow today.</p>
       </div>
 
       {error && (
@@ -133,13 +133,13 @@ const SignupPage: React.FC = () => {
         </form>
       )}
 
-      <p className="mt-8 text-center text-sm text-muted-foreground">
-          Already have an account?{' '}
-        <Link to="/login" className="font-medium text-primary hover:text-primary/80 underline underline-offset-2 transition-colors">
-            Login
-          </Link>
-        </p>
-    </>
+      <p className="text-left text-sm text-muted-foreground mt-8">
+        Already have an account?{' '}
+        <Link to="/login" className="font-semibold text-primary hover:text-primary/80 transition-colors">
+          Login
+        </Link>
+      </p>
+    </div>
   );
 };
 

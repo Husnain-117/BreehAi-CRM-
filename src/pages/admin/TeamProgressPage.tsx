@@ -79,7 +79,7 @@ const TeamProgressPage: React.FC = () => {
           id="timePeriod"
           value={timePeriod}
           onChange={(e) => setTimePeriod(e.target.value as 'daily' | 'weekly' | 'all')}
-          className="p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+          className="p-2 border border-input rounded-md shadow-sm focus:ring-ring focus:border-ring bg-background text-foreground"
         >
           <option value="all">All Time</option>
           <option value="daily">Daily</option>
@@ -104,15 +104,15 @@ const TeamProgressPage: React.FC = () => {
             <p className="text-sm text-muted-foreground mb-4">Team Progress ({timePeriod})</p>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-              <div className="p-4 bg-background rounded-lg shadow">
+              <div className="p-4 bg-muted/50 rounded-lg shadow border border-border">
                 <h3 className="text-sm font-medium text-muted-foreground">New Leads</h3>
                 <p className="text-2xl font-bold">{teamLeads.length}</p>
               </div>
-              <div className="p-4 bg-background rounded-lg shadow">
+              <div className="p-4 bg-muted/50 rounded-lg shadow border border-border">
                 <h3 className="text-sm font-medium text-muted-foreground">Follow-ups Done</h3>
                 <p className="text-2xl font-bold">{teamCompletedFollowUps}</p>
               </div>
-              <div className="p-4 bg-background rounded-lg shadow">
+              <div className="p-4 bg-muted/50 rounded-lg shadow border border-border">
                 <h3 className="text-sm font-medium text-muted-foreground">Meetings Done</h3>
                 <p className="text-2xl font-bold">{teamCompletedMeetings}</p>
               </div>

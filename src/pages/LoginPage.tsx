@@ -27,10 +27,10 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6"> {/* animate-fadeIn was removed from here previously, which is good for now */}
-      <div className="text-center">
-        <h2 className="text-3xl font-semibold text-foreground">Welcome Back!</h2>
-        <p className="text-muted-foreground mt-1">Please sign in to continue.</p>
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="text-left">
+        <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">Welcome Back</h2>
+        <p className="text-muted-foreground mt-2 text-lg">Please sign in to your account.</p>
       </div>
 
       {error && (
@@ -93,12 +93,12 @@ const LoginPage: React.FC = () => {
         </Button>
         </form>
 
-      <p className="text-center text-sm text-muted-foreground">
-          Don't have an account?{' '}
-        <Link to="/signup" className="font-medium text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-ring rounded">
-            Sign up
-          </Link>
-        </p>
+      <p className="text-left text-sm text-muted-foreground mt-6">
+        Don't have an account?{' '}
+        <Link to="/signup" className="font-semibold text-primary hover:text-primary/80 transition-colors">
+          Sign up
+        </Link>
+      </p>
     </div>
   );
 };

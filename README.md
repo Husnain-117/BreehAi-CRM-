@@ -7,7 +7,7 @@ It is optimised for sales teams that need **sub-second navigation**, clear workf
 
 ## Project Repository
 
-- **GitHub:** [https://github.com/sheryarkayani/trendtialcrm](https://github.com/sheryarkayani/trendtialcrm)
+- **GitHub:** [https://github.com/sheryarkayani/Breeh AIcrm](https://github.com/sheryarkayani/Breeh AIcrm)
 
 ---
 
@@ -126,7 +126,7 @@ Refer to the `.cursor/rules/` directory for detailed governance and workflow rul
 
 ### 2. Clone & Install
 ```bash
-git clone https://github.com/sheryarkayani/trendtialcrm.git
+git clone https://github.com/sheryarkayani/Breeh AIcrm.git
 cd saleshubpro
 pnpm install
 ```

@@ -23,17 +23,17 @@ interface DailyReportsDisplayProps {
 const TeamIcons: Record<TeamType, { icon: React.ReactNode; color: string; name: string }> = {
   telesales: { 
     icon: <Phone className="h-4 w-4" />, 
-    color: 'bg-blue-100 text-blue-600',
+    color: 'bg-primary/20 text-primary',
     name: 'Telesales'
   },
   linkedin: { 
     icon: <MessageSquare className="h-4 w-4" />, 
-    color: 'bg-sky-100 text-sky-600',
+    color: 'bg-secondary/20 text-secondary',
     name: 'LinkedIn'
   },
   cold_email: { 
     icon: <Mail className="h-4 w-4" />, 
-    color: 'bg-purple-100 text-purple-600',
+    color: 'bg-accent/20 text-accent',
     name: 'Cold Email'
   },
 };
@@ -108,7 +108,7 @@ const DailyReportsDisplay: React.FC<DailyReportsDisplayProps> = ({ reports, curr
         return (
           <div className="space-y-3">
             <div className="flex items-center justify-between text-sm">
-              <span className="flex items-center text-gray-600">
+              <span className="flex items-center text-foreground">
                 <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full mr-2 ${team.color}`}>
                   {team.icon}
                 </span>
@@ -117,21 +117,21 @@ const DailyReportsDisplay: React.FC<DailyReportsDisplayProps> = ({ reports, curr
             </div>
             <div className="space-y-2">
               <div>
-                <div className="flex justify-between text-xs text-gray-500 mb-1">
+                <div className="flex justify-between text-xs text-muted-foreground mb-1">
                   <span>Outreach</span>
-                  <span className="font-medium">{telesales.outreach_count || 0}</span>
+                  <span className="font-medium text-foreground">{telesales.outreach_count || 0}</span>
                 </div>
                 <Progress value={(telesales.outreach_count || 0) / telesalesTotal * 100} className="h-2" />
               </div>
               <div>
-                <div className="flex justify-between text-xs text-gray-500 mb-1">
+                <div className="flex justify-between text-xs text-muted-foreground mb-1">
                   <span>Responses</span>
-                  <span className="font-medium">{telesales.responses_count || 0}</span>
+                  <span className="font-medium text-foreground">{telesales.responses_count || 0}</span>
                 </div>
                 <Progress 
                   value={(telesales.responses_count || 0) / telesalesTotal * 100} 
-                  className="h-2 bg-blue-100"
-                  indicatorClassName="bg-blue-500"
+                  className="h-2 bg-primary/20"
+                  indicatorClassName="bg-primary"
                 />
               </div>
             </div>
@@ -144,44 +144,44 @@ const DailyReportsDisplay: React.FC<DailyReportsDisplayProps> = ({ reports, curr
         return (
           <div className="space-y-3">
             <div className="flex items-center justify-between text-sm">
-              <span className="flex items-center text-gray-600">
+              <span className="flex items-center text-foreground">
                 <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full mr-2 ${team.color}`}>
                   {team.icon}
                 </span>
                 {team.name}
               </span>
-              <div className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${linkedin.content_posted ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+              <div className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${linkedin.content_posted ? 'bg-success/20 text-success' : 'bg-destructive/20 text-destructive'}`}>
                 {linkedin.content_posted ? 'Posted' : 'Not Posted'}
               </div>
             </div>
             <div className="space-y-2">
               <div>
-                <div className="flex justify-between text-xs text-gray-500 mb-1">
+                <div className="flex justify-between text-xs text-muted-foreground mb-1">
                   <span>Outreach</span>
-                  <span className="font-medium">{linkedin.outreach_count || 0}</span>
+                  <span className="font-medium text-foreground">{linkedin.outreach_count || 0}</span>
                 </div>
                 <Progress value={(linkedin.outreach_count || 0) / linkedinTotal * 100} className="h-2" />
               </div>
               <div>
-                <div className="flex justify-between text-xs text-gray-500 mb-1">
+                <div className="flex justify-between text-xs text-muted-foreground mb-1">
                   <span>Responses</span>
-                  <span className="font-medium">{linkedin.responses_count || 0}</span>
+                  <span className="font-medium text-foreground">{linkedin.responses_count || 0}</span>
                 </div>
                 <Progress 
                   value={(linkedin.responses_count || 0) / linkedinTotal * 100} 
-                  className="h-2 bg-blue-100"
-                  indicatorClassName="bg-blue-500"
+                  className="h-2 bg-primary/20"
+                  indicatorClassName="bg-primary"
                 />
               </div>
               <div>
-                <div className="flex justify-between text-xs text-gray-500 mb-1">
+                <div className="flex justify-between text-xs text-muted-foreground mb-1">
                   <span>Comments</span>
-                  <span className="font-medium">{linkedin.comments_done || 0}</span>
+                  <span className="font-medium text-foreground">{linkedin.comments_done || 0}</span>
                 </div>
                 <Progress 
                   value={(linkedin.comments_done || 0) / linkedinTotal * 100} 
-                  className="h-2 bg-green-100"
-                  indicatorClassName="bg-green-500"
+                  className="h-2 bg-secondary/20"
+                  indicatorClassName="bg-secondary"
                 />
               </div>
             </div>
@@ -194,7 +194,7 @@ const DailyReportsDisplay: React.FC<DailyReportsDisplayProps> = ({ reports, curr
         return (
           <div className="space-y-3">
             <div className="flex items-center justify-between text-sm">
-              <span className="flex items-center text-gray-600">
+              <span className="flex items-center text-foreground">
                 <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full mr-2 ${team.color}`}>
                   {team.icon}
                 </span>
@@ -203,25 +203,25 @@ const DailyReportsDisplay: React.FC<DailyReportsDisplayProps> = ({ reports, curr
             </div>
             <div className="space-y-2">
               <div>
-                <div className="flex justify-between text-xs text-gray-500 mb-1">
+                <div className="flex justify-between text-xs text-muted-foreground mb-1">
                   <span>Emails Sent</span>
-                  <span className="font-medium">{coldEmail.emails_sent || 0}</span>
+                  <span className="font-medium text-foreground">{coldEmail.emails_sent || 0}</span>
                 </div>
                 <Progress value={(coldEmail.emails_sent || 0) / coldEmailTotal * 100} className="h-2" />
               </div>
               <div>
-                <div className="flex justify-between text-xs text-gray-500 mb-1">
+                <div className="flex justify-between text-xs text-muted-foreground mb-1">
                   <span>Responses</span>
-                  <span className="font-medium">{coldEmail.responses_count || 0}</span>
+                  <span className="font-medium text-foreground">{coldEmail.responses_count || 0}</span>
                 </div>
                 <Progress 
                   value={(coldEmail.responses_count || 0) / coldEmailTotal * 100} 
-                  className="h-2 bg-blue-100"
-                  indicatorClassName="bg-blue-500"
+                  className="h-2 bg-primary/20"
+                  indicatorClassName="bg-primary"
                 />
               </div>
-              <div className="text-xs text-gray-500 mt-2">
-                <span className="font-medium">Response Rate: </span>
+              <div className="text-xs text-muted-foreground mt-2">
+                <span className="font-medium text-foreground">Response Rate: </span>
                 {coldEmail.emails_sent 
                   ? `${Math.round(((coldEmail.responses_count || 0) / coldEmail.emails_sent) * 100)}%` 
                   : 'N/A'}
@@ -231,7 +231,7 @@ const DailyReportsDisplay: React.FC<DailyReportsDisplayProps> = ({ reports, curr
         );
       
       default:
-        return <span className="text-red-500 text-sm">Unknown team type</span>;
+        return <span className="text-destructive text-sm">Unknown team type</span>;
     }
   };
 

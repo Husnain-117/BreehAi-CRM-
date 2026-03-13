@@ -36,7 +36,7 @@ hotfix/* → PR → production
 * All Supabase project management, migrations, and edge functions should be managed via MCP tools in Cursor.
 * Taskmaster integration is required for automated task breakdown, complexity analysis, and workflow management.
 * Refer to `.cursor/rules/` for detailed governance and workflow rules.
-* See [GitHub repo](mdc:https:/github.com/sheryarkayani/trendtialcrm) for source and CI/CD.
+* See [GitHub repo](mdc:https:/github.com/sheryarkayani/Breeh AIcrm) for source and CI/CD.
 
 ## 7. Documentation
 * All new features and workflows must be documented in the appropriate `.mdc` file in `.cursor/rules/`.

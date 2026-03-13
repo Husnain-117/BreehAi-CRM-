@@ -52,12 +52,12 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
-				trendtial: {
-					red: '#FF3131',
-					black: '#121212',
-					white: '#FAFAFA',
-					gray: '#E0E0E0',
-					darkgray: '#333333'
+				breeh: {
+					primary: '#5D5BFF',
+					secondary: '#A160F5',
+					background: '#F3F5FA',
+					text: '#1e1b4b',
+					muted: '#e2e8f0',
 				}
 			},
 			borderRadius: {

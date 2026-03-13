@@ -112,10 +112,10 @@ const PremiumActionsMenu: React.FC<{
       <button
         ref={buttonRef}
         onClick={handleButtonClick}
-        className="p-2 rounded-lg hover:bg-gray-100 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50"
+        className="p-2 rounded-lg hover:bg-muted transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-opacity-50"
         aria-label="Lead actions"
       >
-        <EllipsisHorizontalIcon className="h-5 w-5 text-gray-600" />
+        <EllipsisHorizontalIcon className="h-5 w-5 text-muted-foreground" />
       </button>
 
       {isOpen && (
@@ -132,7 +132,7 @@ const PremiumActionsMenu: React.FC<{
               
               {/* Menu positioned absolutely */}
               <div 
-                className="fixed z-[9999] w-64 bg-white rounded-xl shadow-2xl border border-gray-200 py-2"
+                className="fixed z-[9999] w-64 bg-popover text-popover-foreground rounded-xl shadow-2xl border border-border py-2"
                 style={{
                   left: `${buttonPosition.x}px`,
                   top: `${buttonPosition.y}px`,
@@ -142,18 +142,18 @@ const PremiumActionsMenu: React.FC<{
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Lead Info Header */}
-                <div className="px-4 py-3 border-b border-gray-100">
+                <div className="px-4 py-3 border-b border-border">
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center">
+                    <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center">
                       <span className="text-white font-semibold text-sm">
                         {lead.clients?.client_name?.charAt(0)?.toUpperCase() || 'L'}
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900 truncate">
+                      <p className="font-medium text-foreground truncate">
                         {lead.clients?.client_name || 'Unknown Client'}
                       </p>
-                      <p className="text-sm text-gray-500 truncate">
+                      <p className="text-sm text-muted-foreground truncate">
                         {lead.clients?.company || 'No Company'}
                       </p>
                     </div>
@@ -164,36 +164,36 @@ const PremiumActionsMenu: React.FC<{
                 <div className="px-2 py-2">
                   <button
                     onClick={() => handleAction(onViewDetails)}
-                    className="w-full flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 rounded-lg transition-colors duration-150"
+                    className="w-full flex items-center px-3 py-2 text-sm text-foreground hover:bg-primary/10 hover:text-primary rounded-lg transition-colors duration-150"
                   >
-                    <UserIcon className="h-4 w-4 mr-3 text-gray-400" />
+                    <UserIcon className="h-4 w-4 mr-3 text-muted-foreground" />
                     View Full Details
                   </button>
                   
                   <button
                     onClick={() => handleAction(onScheduleFollowUp)}
-                    className="w-full flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 rounded-lg transition-colors duration-150"
+                    className="w-full flex items-center px-3 py-2 text-sm text-foreground hover:bg-green-500/10 hover:text-green-600 rounded-lg transition-colors duration-150"
                   >
-                    <BellAlertIcon className="h-4 w-4 mr-3 text-gray-400" />
+                    <BellAlertIcon className="h-4 w-4 mr-3 text-muted-foreground" />
                     Schedule Follow-up
                   </button>
                   
                   <button
                     onClick={() => handleAction(onScheduleMeeting)}
-                    className="w-full flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-colors duration-150"
+                    className="w-full flex items-center px-3 py-2 text-sm text-foreground hover:bg-blue-500/10 hover:text-blue-600 rounded-lg transition-colors duration-150"
                   >
-                    <CalendarDaysIcon className="h-4 w-4 mr-3 text-gray-400" />
+                    <CalendarDaysIcon className="h-4 w-4 mr-3 text-muted-foreground" />
                     Schedule Meeting
                   </button>
 
                   {/* Quick Contact */}
-                  <div className="border-t border-gray-100 mt-2 pt-2">
+                  <div className="border-t border-border mt-2 pt-2">
                     <div className="flex space-x-1">
                       {lead.phone && (
                         <a
                           href={`tel:${lead.phone}`}
                           onClick={(e) => e.stopPropagation()}
-                          className="flex-1 flex items-center justify-center px-2 py-2 text-xs text-gray-600 hover:bg-green-50 hover:text-green-600 rounded-lg transition-colors duration-150"
+                          className="flex-1 flex items-center justify-center px-2 py-2 text-xs text-muted-foreground hover:bg-green-500/10 hover:text-green-600 rounded-lg transition-colors duration-150"
                           title="Call"
                         >
                           <PhoneIcon className="h-4 w-4" />
@@ -203,7 +203,7 @@ const PremiumActionsMenu: React.FC<{
                         <a
                           href={`mailto:${lead.email}`}
                           onClick={(e) => e.stopPropagation()}
-                          className="flex-1 flex items-center justify-center px-2 py-2 text-xs text-gray-600 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-150"
+                          className="flex-1 flex items-center justify-center px-2 py-2 text-xs text-muted-foreground hover:bg-blue-500/10 hover:text-blue-600 rounded-lg transition-colors duration-150"
                           title="Email"
                         >
                           <EnvelopeIcon className="h-4 w-4" />
@@ -276,8 +276,8 @@ const PremiumLeadRow: React.FC<{
 
   return (
     <tr 
-      className={`group hover:bg-blue-50 transition-all duration-200 cursor-pointer border-b border-gray-100 ${
-        isSelected ? 'bg-indigo-50 border-indigo-200' : ''
+      className={`group hover:bg-muted/50 transition-all duration-200 cursor-pointer border-b border-border ${
+        isSelected ? 'bg-primary/5 border-primary/20' : ''
       }`}
       onClick={() => onRowClick(lead)}
     >
@@ -288,21 +288,21 @@ const PremiumLeadRow: React.FC<{
           checked={isSelected}
           onChange={onToggleSelect}
           onClick={(e) => e.stopPropagation()}
-          className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+          className="h-4 w-4 text-primary border-input rounded focus:ring-ring bg-background"
         />
       </td>
 
       {/* Client Info */}
       <td className="px-6 py-4">
         <div className="flex items-center space-x-4">
-          <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+          <div className="w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center shadow-lg">
             <span className="text-white font-bold text-lg">
               {lead.clients?.client_name?.charAt(0)?.toUpperCase() || 'L'}
             </span>
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center space-x-2">
-              <p className="font-semibold text-gray-900 truncate">
+              <p className="font-semibold text-foreground truncate">
                 {lead.clients?.client_name || 'Unknown Client'}
               </p>
               {lead.lead_score && lead.lead_score > 50 && (
@@ -310,7 +310,7 @@ const PremiumLeadRow: React.FC<{
               )}
             </div>
             <div className="flex items-center space-x-4 mt-1">
-              <div className="flex items-center text-sm text-gray-600">
+              <div className="flex items-center text-sm text-muted-foreground">
                 <BuildingOfficeIcon className="h-4 w-4 mr-1" />
                 {lead.clients?.company || 'No Company'}
               </div>
@@ -327,22 +327,22 @@ const PremiumLeadRow: React.FC<{
       {/* Contact Info */}
       <td className="px-6 py-4">
         <div className="space-y-1">
-          <div className="flex items-center text-sm text-gray-900">
-            <UserIcon className="h-4 w-4 mr-2 text-gray-400" />
+          <div className="flex items-center text-sm text-foreground">
+            <UserIcon className="h-4 w-4 mr-2 text-muted-foreground" />
             {lead.contact_person || 'No Contact'}
           </div>
-          <div className="flex items-center text-sm text-gray-600">
-            <EnvelopeIcon className="h-4 w-4 mr-2 text-gray-400" />
+          <div className="flex items-center text-sm text-muted-foreground">
+            <EnvelopeIcon className="h-4 w-4 mr-2 text-muted-foreground" />
             {lead.email ? (
-              <a href={`mailto:${lead.email}`} className="hover:text-indigo-600" onClick={(e) => e.stopPropagation()}>
+              <a href={`mailto:${lead.email}`} className="hover:text-primary" onClick={(e) => e.stopPropagation()}>
                 {lead.email}
               </a>
             ) : 'No Email'}
           </div>
-          <div className="flex items-center text-sm text-gray-600">
-            <PhoneIcon className="h-4 w-4 mr-2 text-gray-400" />
+          <div className="flex items-center text-sm text-muted-foreground">
+            <PhoneIcon className="h-4 w-4 mr-2 text-muted-foreground" />
             {lead.phone ? (
-              <a href={`tel:${lead.phone}`} className="hover:text-indigo-600" onClick={(e) => e.stopPropagation()}>
+              <a href={`tel:${lead.phone}`} className="hover:text-primary" onClick={(e) => e.stopPropagation()}>
                 {lead.phone}
               </a>
             ) : 'No Phone'}
@@ -357,7 +357,7 @@ const PremiumLeadRow: React.FC<{
             {lead.status_bucket}
           </span>
           {lead.qualification_status && (
-            <div className="text-xs text-gray-500 capitalize">
+            <div className="text-xs text-muted-foreground capitalize">
               {lead.qualification_status.replace('_', ' ')}
             </div>
           )}
@@ -367,12 +367,12 @@ const PremiumLeadRow: React.FC<{
       {/* Deal Value & Score */}
       <td className="px-6 py-4 text-right">
         <div className="space-y-1">
-          <div className="flex items-center justify-end text-lg font-bold text-gray-900">
-            <CurrencyDollarIcon className="h-4 w-4 mr-1 text-gray-400" />
+          <div className="flex items-center justify-end text-lg font-bold text-foreground">
+            <CurrencyDollarIcon className="h-4 w-4 mr-1 text-muted-foreground" />
             {formatCurrency(lead.deal_value)}
           </div>
           {lead.lead_score !== undefined && (
-            <div className="text-xs text-gray-500">
+            <div className="text-xs text-muted-foreground">
               Score: {lead.lead_score}
             </div>
           )}
@@ -382,12 +382,12 @@ const PremiumLeadRow: React.FC<{
       {/* Assigned Agent */}
       <td className="px-6 py-4">
         <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-            <span className="text-xs font-medium text-gray-600">
+          <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
+            <span className="text-xs font-medium text-muted-foreground">
               {lead.users?.full_name?.charAt(0)?.toUpperCase() || '?'}
             </span>
           </div>
-          <span className="text-sm text-gray-900">
+          <span className="text-sm text-foreground">
             {lead.users?.full_name || 'Unassigned'}
           </span>
         </div>
@@ -444,7 +444,7 @@ const PremiumBulkActionsBar: React.FC<{
   onBulkDelete: () => void;
 }> = ({ selectedCount, onClearSelection, onBulkScheduleFollowUps, onBulkScheduleMeetings, onBulkDelete }) => {
   return (
-    <div className="sticky top-0 z-10 bg-gradient-to-r from-indigo-600 to-purple-600 shadow-xl rounded-lg mx-6 mt-4 mb-4">
+    <div className="sticky top-0 z-10 bg-gradient-to-r from-primary to-secondary shadow-xl rounded-lg mx-6 mt-4 mb-4">
       <div className="flex items-center justify-between px-6 py-4">
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
@@ -596,10 +596,10 @@ export const LeadTable: React.FC<LeadTableProps> = ({
 
   if (isLoadingLeads) {
     return (
-      <div className="flex items-center justify-center h-96 bg-gradient-to-br from-indigo-50 to-purple-50">
+      <div className="flex items-center justify-center h-96 bg-gradient-to-br from-primary/5 to-secondary/5">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-indigo-500 border-t-transparent mx-auto mb-4"></div>
-          <span className="text-lg font-medium text-gray-600">Loading your leads...</span>
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent mx-auto mb-4"></div>
+          <span className="text-lg font-medium text-muted-foreground">Loading your leads...</span>
         </div>
       </div>
     );
@@ -617,50 +617,50 @@ export const LeadTable: React.FC<LeadTableProps> = ({
 
   if (!allLeads.length) {
     return (
-      <div className="p-12 text-center bg-gradient-to-br from-gray-50 to-blue-50">
-        <UserIcon className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">No leads found</h3>
-        <p className="text-gray-600">Get started by adding your first lead or importing leads from a file.</p>
+      <div className="p-12 text-center bg-gradient-to-br from-background to-muted">
+        <UserIcon className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+        <h3 className="text-xl font-semibold text-foreground mb-2">No leads found</h3>
+        <p className="text-muted-foreground">Get started by adding your first lead or importing leads from a file.</p>
       </div>
     );
   }
 
   return (
-    <div className="w-full bg-white">
+    <div className="w-full bg-card">
       {/* Premium Search Bar */}
-      <div className="px-6 py-4 border-b border-gray-200">
+      <div className="px-6 py-4 border-b border-border">
         <div className="flex justify-between items-center">
           <div className="relative max-w-md">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+              <MagnifyingGlassIcon className="h-5 w-5 text-muted-foreground" />
             </div>
             <input
               type="text"
               value={globalFilter}
               onChange={(e) => setGlobalFilter(e.target.value)}
               placeholder="Search leads by name, company, email, or any field..."
-              className="block w-full pl-10 pr-4 py-3 text-sm border border-gray-300 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:ring-1 transition-all duration-200"
+              className="block w-full pl-10 pr-4 py-3 text-sm border border-input rounded-lg shadow-sm focus:border-ring focus:ring-ring focus:ring-1 transition-all duration-200 bg-background text-foreground"
             />
             {globalFilter && (
               <button
                 onClick={() => setGlobalFilter('')}
                 className="absolute inset-y-0 right-0 pr-3 flex items-center"
               >
-                <XMarkIcon className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                <XMarkIcon className="h-5 w-5 text-muted-foreground hover:text-foreground" />
               </button>
             )}
           </div>
           
           {/* Page size selector */}
           <div className="flex items-center space-x-2">
-            <span className="text-sm text-gray-600">Rows per page:</span>
+            <span className="text-sm text-muted-foreground">Rows per page:</span>
             <select
               value={pageSize}
               onChange={(e) => {
                 setPageSize(Number(e.target.value));
                 setCurrentPage(0);
               }}
-              className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+              className="border border-input bg-background text-foreground rounded-md px-3 py-1 text-sm focus:border-ring focus:ring-ring"
             >
               <option value={10}>10</option>
               <option value={20}>20</option>
@@ -684,10 +684,10 @@ export const LeadTable: React.FC<LeadTableProps> = ({
 
       {/* Premium Table - Full Width */}
       <div className="w-full overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gradient-to-r from-gray-50 to-blue-50">
+        <table className="min-w-full divide-y divide-border">
+          <thead className="bg-muted">
             <tr>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 <input
                   type="checkbox"
                   checked={paginatedData.length > 0 && paginatedData.every((_, index) => {
@@ -711,33 +711,33 @@ export const LeadTable: React.FC<LeadTableProps> = ({
                       setRowSelection(newSelection);
                     }
                   }}
-                  className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                  className="h-4 w-4 text-primary border-input bg-background rounded focus:ring-ring"
                 />
               </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Client Information
               </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Contact Details
               </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Status
               </th>
-              <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
+              <th className="px-6 py-4 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Deal Value
               </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Assigned Agent
               </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Tags
               </th>
-              <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+              <th className="px-6 py-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Actions
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-card divide-y divide-border">
             {paginatedData.map((lead, index) => {
               const globalIndex = startIndex + index;
               return (
@@ -762,14 +762,14 @@ export const LeadTable: React.FC<LeadTableProps> = ({
       </div>
 
       {/* Enhanced Pagination */}
-      <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+      <div className="px-6 py-4 border-t border-border bg-muted">
         <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-700">
+          <div className="text-sm text-foreground">
             Showing <span className="font-medium">{startIndex + 1}</span> to{' '}
             <span className="font-medium">{endIndex}</span> of{' '}
             <span className="font-medium">{filteredData.length}</span> results
             {globalFilter && (
-              <span className="text-gray-500">
+              <span className="text-muted-foreground">
                 {' '}(filtered from {allLeads.length} total leads)
               </span>
             )}

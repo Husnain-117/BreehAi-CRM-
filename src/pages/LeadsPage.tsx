@@ -221,20 +221,20 @@ const LeadsPage: React.FC = () => {
   const shouldShowActionButtons = viewMode !== 'stats';
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Main Content Area - No max-width constraint */}
       <div className="w-full">
         {/* Header Section */}
-        <div className="bg-white shadow-sm border-b border-gray-200">
+        <div className="bg-card shadow-sm border-b border-border">
           <div className="max-w-7xl mx-auto px-6 py-6">
             <Breadcrumb items={breadcrumbItems}/>
             
             <div className="flex justify-between items-center mt-4">
               <div>
-                <h1 className="text-3xl font-bold leading-9 tracking-tight text-gray-900">
+                <h1 className="text-3xl font-bold leading-9 tracking-tight text-foreground">
                   {getPageTitle()}
                 </h1>
-                <div className="after:block after:h-0.5 after:w-16 after:rounded-full after:bg-indigo-500 mt-1"></div>
+                <div className="after:block after:h-0.5 after:w-16 after:rounded-full after:bg-primary mt-1"></div>
               </div>
               
               {/* Conditionally show action buttons */}
@@ -242,7 +242,7 @@ const LeadsPage: React.FC = () => {
                 <div className="flex space-x-3">
                   <Button 
                     onClick={handleOpenAddLeadModal}
-                    className="bg-indigo-600 text-white hover:bg-indigo-700 active:bg-indigo-800"
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
                     aria-label="Add new lead"
                   >
                     <PlusCircleIcon className="h-5 w-5 mr-2" />
@@ -250,7 +250,7 @@ const LeadsPage: React.FC = () => {
                   </Button>
                   <Button 
                     onClick={handleOpenImportLeadsModal}
-                    className="bg-indigo-600 text-white hover:bg-indigo-700 active:bg-indigo-800"
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
                     aria-label="Import leads from file"
                   >
                     <UploadIcon className="h-5 w-5 mr-2" />
@@ -262,15 +262,15 @@ const LeadsPage: React.FC = () => {
 
             {/* Enhanced View Mode Selector */}
             <div className="mt-6">
-              <div className="bg-gray-100 rounded-lg border border-gray-200 p-1 inline-flex">
+              <div className="bg-muted rounded-lg border border-border p-1 inline-flex">
                 {viewModes.map((mode) => (
                   <button
                     key={mode.key}
                     onClick={() => setViewMode(mode.key)}
                     className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
                       viewMode === mode.key
-                        ? 'bg-indigo-600 text-white shadow-sm transform scale-105'
-                        : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+                        ? 'bg-primary text-primary-foreground shadow-sm transform scale-105'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
                     }`}
                     title={mode.description}
                   >
@@ -285,7 +285,7 @@ const LeadsPage: React.FC = () => {
               </div>
               
               {/* View description */}
-              <p className="text-sm text-gray-600 mt-2">
+              <p className="text-sm text-muted-foreground mt-2">
                 {viewModes.find(mode => mode.key === viewMode)?.description}
               </p>
             </div>
@@ -295,7 +295,7 @@ const LeadsPage: React.FC = () => {
         {/* Content Area - Full Width */}
         <div className="w-full">
           {/* Current View Content - No container restrictions */}
-          <div className={viewMode === 'stats' ? 'bg-gray-50' : 'bg-white'}>
+          <div className={viewMode === 'stats' ? 'bg-background' : 'bg-card'}>
             {renderCurrentView()}
           </div>
         </div>

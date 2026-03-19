@@ -1,0 +1,1720 @@
+{
+  "collection": {
+    "item": [
+      {
+        "id": "4a78adcf-4892-4066-a575-5a037fd4dd04",
+        "name": "Create User",
+        "request": {
+          "url": {
+            "path": [
+              "functions",
+              "v1",
+              "create-user"
+            ],
+            "host": [
+              "{{SUPABASE_URL}}"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{SUPABASE_ANON_KEY}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"email\": \"test.newman.{{$timestamp}}@example.com\",\n  \"password\": \"P@ssw0rd123!\",\n  \"full_name\": \"Newman Test User\",\n  \"role\": \"agent\"\n}"
+          }
+        },
+        "response": [],
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "id": "a98d5be1-fb71-41b4-95fc-0cb82e047abb",
+              "type": "text/javascript",
+              "exec": [
+                "pm.test(\"Status code is 201\", function () {",
+                "    pm.response.to.have.status(201);",
+                "});",
+                "",
+                "var jsonData = pm.response.json();",
+                "pm.test(\"Response contains userId\", function () {",
+                "    pm.expect(jsonData).to.have.property('userId');",
+                "});",
+                "",
+                "if (jsonData.userId) {",
+                "    pm.environment.set(\"CREATED_USER_ID\", jsonData.userId);",
+                "}"
+              ],
+              "_lastExecutionId": "3a15df9c-2bdf-4136-9618-55f619c5a3eb"
+            }
+          }
+        ]
+      },
+      {
+        "id": "014329b3-9481-4518-ac51-40fead94733c",
+        "name": "Reset User Password",
+        "request": {
+          "url": {
+            "path": [
+              "functions",
+              "v1",
+              "reset-user-password"
+            ],
+            "host": [
+              "{{SUPABASE_URL}}"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{SUPABASE_ANON_KEY}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"userId\": \"{{CREATED_USER_ID}}\",\n  \"newPassword\": \"NewP@ssw0rd321!\"\n}"
+          }
+        },
+        "response": [],
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "id": "f11a98b9-36e7-4b26-981d-6149b071df21",
+              "type": "text/javascript",
+              "exec": [
+                "pm.test(\"Status code is 200\", function () {",
+                "    pm.response.to.have.status(200);",
+                "});",
+                "",
+                "var jsonData = pm.response.json();",
+                "pm.test(\"Response has success message\", function () {",
+                "    pm.expect(jsonData.message).to.equal(\"User password updated successfully\");",
+                "});"
+              ],
+              "_lastExecutionId": "3fa1e847-9ff2-4741-bf1b-cf69b01f511e"
+            }
+          }
+        ]
+      }
+    ],
+    "event": [],
+    "variable": [],
+    "info": {
+      "_postman_id": "21ebd08a-e1c7-4201-930f-34b59bacd111",
+      "name": "Supabase Edge Functions Collection",
+      "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    }
+  },
+  "environment": {
+    "id": "supabase-edge-functions-test",
+    "name": "Supabase Edge Functions Test",
+    "values": [
+      {
+        "type": "any",
+        "value": "https://wndpfputlccayxajradn.supabase.co",
+        "key": "SUPABASE_URL"
+      },
+      {
+        "type": "any",
+        "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduZHBmcHV0bGNjYXl4YWpyYWRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MDU2NjAsImV4cCI6MjA4ODk4MTY2MH0.VLgw1-8OUdQzHixRBpl_iN3u-qI1Ynv_yCEy3he9Rm0",
+        "key": "SUPABASE_ANON_KEY"
+      }
+    ]
+  },
+  "globals": {
+    "id": "16ecfd32-209c-4979-887a-eb83f43ccfcf",
+    "values": []
+  },
+  "run": {
+    "stats": {
+      "iterations": {
+        "total": 1,
+        "pending": 0,
+        "failed": 0
+      },
+      "items": {
+        "total": 2,
+        "pending": 0,
+        "failed": 0
+      },
+      "scripts": {
+        "total": 2,
+        "pending": 0,
+        "failed": 0
+      },
+      "prerequests": {
+        "total": 2,
+        "pending": 0,
+        "failed": 0
+      },
+      "requests": {
+        "total": 2,
+        "pending": 0,
+        "failed": 0
+      },
+      "tests": {
+        "total": 2,
+        "pending": 0,
+        "failed": 0
+      },
+      "assertions": {
+        "total": 4,
+        "pending": 0,
+        "failed": 4
+      },
+      "testScripts": {
+        "total": 2,
+        "pending": 0,
+        "failed": 0
+      },
+      "prerequestScripts": {
+        "total": 0,
+        "pending": 0,
+        "failed": 0
+      }
+    },
+    "timings": {
+      "responseAverage": 331,
+      "responseMin": 178,
+      "responseMax": 484,
+      "responseSd": 153,
+      "dnsAverage": 0,
+      "dnsMin": 0,
+      "dnsMax": 0,
+      "dnsSd": 0,
+      "firstByteAverage": 0,
+      "firstByteMin": 0,
+      "firstByteMax": 0,
+      "firstByteSd": 0,
+      "started": 1773594520111,
+      "completed": 1773594520891
+    },
+    "executions": [
+      {
+        "cursor": {
+          "position": 0,
+          "iteration": 0,
+          "length": 2,
+          "cycles": 1,
+          "empty": false,
+          "eof": false,
+          "bof": true,
+          "cr": false,
+          "ref": "fe0ff3f9-9af1-4bd2-9706-1e85fad9359d",
+          "httpRequestId": "fa76b3a2-109b-4694-b48d-27765c1d43bc"
+        },
+        "item": {
+          "id": "4a78adcf-4892-4066-a575-5a037fd4dd04",
+          "name": "Create User",
+          "request": {
+            "url": {
+              "path": [
+                "functions",
+                "v1",
+                "create-user"
+              ],
+              "host": [
+                "{{SUPABASE_URL}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{SUPABASE_ANON_KEY}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test.newman.{{$timestamp}}@example.com\",\n  \"password\": \"P@ssw0rd123!\",\n  \"full_name\": \"Newman Test User\",\n  \"role\": \"agent\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "a98d5be1-fb71-41b4-95fc-0cb82e047abb",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Response contains userId\", function () {",
+                  "    pm.expect(jsonData).to.have.property('userId');",
+                  "});",
+                  "",
+                  "if (jsonData.userId) {",
+                  "    pm.environment.set(\"CREATED_USER_ID\", jsonData.userId);",
+                  "}"
+                ],
+                "_lastExecutionId": "3a15df9c-2bdf-4136-9618-55f619c5a3eb"
+              }
+            }
+          ]
+        },
+        "request": {
+          "url": {
+            "protocol": "https",
+            "path": [
+              "functions",
+              "v1",
+              "create-user"
+            ],
+            "host": [
+              "wndpfputlccayxajradn",
+              "supabase",
+              "co"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduZHBmcHV0bGNjYXl4YWpyYWRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MDU2NjAsImV4cCI6MjA4ODk4MTY2MH0.VLgw1-8OUdQzHixRBpl_iN3u-qI1Ynv_yCEy3he9Rm0"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/7.24.1",
+              "system": true
+            },
+            {
+              "key": "Accept",
+              "value": "*/*",
+              "system": true
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache",
+              "system": true
+            },
+            {
+              "key": "Postman-Token",
+              "value": "842bb5be-1137-4c06-8366-9945944aaa53",
+              "system": true
+            },
+            {
+              "key": "Host",
+              "value": "wndpfputlccayxajradn.supabase.co",
+              "system": true
+            },
+            {
+              "key": "Accept-Encoding",
+              "value": "gzip, deflate, br",
+              "system": true
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive",
+              "system": true
+            },
+            {
+              "key": "Content-Length",
+              "value": 135,
+              "system": true
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"email\": \"test.newman.1773594520@example.com\",\n  \"password\": \"P@ssw0rd123!\",\n  \"full_name\": \"Newman Test User\",\n  \"role\": \"agent\"\n}"
+          }
+        },
+        "response": {
+          "id": "fc2ca3ed-af70-4170-b5d5-835fcf39ced3",
+          "status": "Not Found",
+          "code": 404,
+          "header": [
+            {
+              "key": "Date",
+              "value": "Sun, 15 Mar 2026 17:08:45 GMT"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Content-Length",
+              "value": "83"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            },
+            {
+              "key": "Server",
+              "value": "cloudflare"
+            },
+            {
+              "key": "CF-Ray",
+              "value": "9dcd1f36990209e6-LHE"
+            },
+            {
+              "key": "CF-Cache-Status",
+              "value": "DYNAMIC"
+            },
+            {
+              "key": "Access-Control-Allow-Origin",
+              "value": "*"
+            },
+            {
+              "key": "Content-Encoding",
+              "value": "gzip"
+            },
+            {
+              "key": "Strict-Transport-Security",
+              "value": "max-age=31536000; includeSubDomains; preload"
+            },
+            {
+              "key": "Vary",
+              "value": "Accept-Encoding"
+            },
+            {
+              "key": "access-control-allow-headers",
+              "value": "authorization, x-client-info, apikey"
+            },
+            {
+              "key": "sb-gateway-version",
+              "value": "1"
+            },
+            {
+              "key": "sb-project-ref",
+              "value": "wndpfputlccayxajradn"
+            },
+            {
+              "key": "sb-request-id",
+              "value": "019cf278-be28-73b2-b8d9-ad697dcf40c8"
+            },
+            {
+              "key": "x-sb-edge-region",
+              "value": "ap-southeast-1"
+            },
+            {
+              "key": "x-served-by",
+              "value": "supabase-edge-runtime"
+            },
+            {
+              "key": "Set-Cookie",
+              "value": "__cf_bm=8XMUkE5H3uk4ZKLTL_P53Vk0EXxrjGp_6hsxeL21ZLQ-1773594525-1.0.1.1-QssK2giHwZ5cyS.hpDe1SiIMauskauGW06VXaHACzvBWb5aljA52PydZKy5RY0XvZDSZD4QlcmioXBxwJV9cIj6Ra2BD9lCDHbW9jdU.qic; path=/; expires=Sun, 15-Mar-26 17:38:45 GMT; domain=.supabase.co; HttpOnly; Secure; SameSite=None"
+            },
+            {
+              "key": "alt-svc",
+              "value": "h3=\":443\"; ma=86400"
+            }
+          ],
+          "stream": {
+            "type": "Buffer",
+            "data": [
+              123,
+              34,
+              99,
+              111,
+              100,
+              101,
+              34,
+              58,
+              34,
+              78,
+              79,
+              84,
+              95,
+              70,
+              79,
+              85,
+              78,
+              68,
+              34,
+              44,
+              34,
+              109,
+              101,
+              115,
+              115,
+              97,
+              103,
+              101,
+              34,
+              58,
+              34,
+              82,
+              101,
+              113,
+              117,
+              101,
+              115,
+              116,
+              101,
+              100,
+              32,
+              102,
+              117,
+              110,
+              99,
+              116,
+              105,
+              111,
+              110,
+              32,
+              119,
+              97,
+              115,
+              32,
+              110,
+              111,
+              116,
+              32,
+              102,
+              111,
+              117,
+              110,
+              100,
+              34,
+              125
+            ]
+          },
+          "cookie": [],
+          "responseTime": 484,
+          "responseSize": 65
+        },
+        "id": "4a78adcf-4892-4066-a575-5a037fd4dd04",
+        "assertions": [
+          {
+            "assertion": "Status code is 201",
+            "skipped": false,
+            "error": {
+              "name": "AssertionError",
+              "index": 0,
+              "test": "Status code is 201",
+              "message": "expected response to have status code 201 but got 404",
+              "stack": "AssertionError: expected response to have status code 201 but got 404\n   at Object.eval sandbox-script.js:1:1)"
+            }
+          },
+          {
+            "assertion": "Response contains userId",
+            "skipped": false,
+            "error": {
+              "name": "AssertionError",
+              "index": 1,
+              "test": "Response contains userId",
+              "message": "expected { Object (code, message) } to have property 'userId'",
+              "stack": "AssertionError: expected { Object (code, message) } to have property 'userId'\n   at Object.eval sandbox-script.js:2:1)"
+            }
+          }
+        ]
+      },
+      {
+        "cursor": {
+          "ref": "f5dda499-7b63-4672-b082-f17aefed191c",
+          "length": 2,
+          "cycles": 1,
+          "position": 1,
+          "iteration": 0,
+          "httpRequestId": "daca0942-6ef0-4de2-a655-e9195aedf4db"
+        },
+        "item": {
+          "id": "014329b3-9481-4518-ac51-40fead94733c",
+          "name": "Reset User Password",
+          "request": {
+            "url": {
+              "path": [
+                "functions",
+                "v1",
+                "reset-user-password"
+              ],
+              "host": [
+                "{{SUPABASE_URL}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{SUPABASE_ANON_KEY}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{CREATED_USER_ID}}\",\n  \"newPassword\": \"NewP@ssw0rd321!\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "f11a98b9-36e7-4b26-981d-6149b071df21",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Response has success message\", function () {",
+                  "    pm.expect(jsonData.message).to.equal(\"User password updated successfully\");",
+                  "});"
+                ],
+                "_lastExecutionId": "3fa1e847-9ff2-4741-bf1b-cf69b01f511e"
+              }
+            }
+          ]
+        },
+        "request": {
+          "url": {
+            "protocol": "https",
+            "path": [
+              "functions",
+              "v1",
+              "reset-user-password"
+            ],
+            "host": [
+              "wndpfputlccayxajradn",
+              "supabase",
+              "co"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduZHBmcHV0bGNjYXl4YWpyYWRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MDU2NjAsImV4cCI6MjA4ODk4MTY2MH0.VLgw1-8OUdQzHixRBpl_iN3u-qI1Ynv_yCEy3he9Rm0"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/7.24.1",
+              "system": true
+            },
+            {
+              "key": "Accept",
+              "value": "*/*",
+              "system": true
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache",
+              "system": true
+            },
+            {
+              "key": "Postman-Token",
+              "value": "171462dd-216a-4fd8-8f34-cb8ec943f99c",
+              "system": true
+            },
+            {
+              "key": "Host",
+              "value": "wndpfputlccayxajradn.supabase.co",
+              "system": true
+            },
+            {
+              "key": "Accept-Encoding",
+              "value": "gzip, deflate, br",
+              "system": true
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive",
+              "system": true
+            },
+            {
+              "key": "Content-Length",
+              "value": 73,
+              "system": true
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"userId\": \"{{CREATED_USER_ID}}\",\n  \"newPassword\": \"NewP@ssw0rd321!\"\n}"
+          }
+        },
+        "response": {
+          "id": "7e4b075b-4457-4de8-b168-e823b5072705",
+          "status": "Not Found",
+          "code": 404,
+          "header": [
+            {
+              "key": "Date",
+              "value": "Sun, 15 Mar 2026 17:08:45 GMT"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Content-Length",
+              "value": "83"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            },
+            {
+              "key": "Server",
+              "value": "cloudflare"
+            },
+            {
+              "key": "CF-Ray",
+              "value": "9dcd1f39afd309e6-LHE"
+            },
+            {
+              "key": "CF-Cache-Status",
+              "value": "DYNAMIC"
+            },
+            {
+              "key": "Access-Control-Allow-Origin",
+              "value": "*"
+            },
+            {
+              "key": "Content-Encoding",
+              "value": "gzip"
+            },
+            {
+              "key": "Strict-Transport-Security",
+              "value": "max-age=31536000; includeSubDomains; preload"
+            },
+            {
+              "key": "Vary",
+              "value": "Accept-Encoding"
+            },
+            {
+              "key": "access-control-allow-headers",
+              "value": "authorization, x-client-info, apikey"
+            },
+            {
+              "key": "sb-gateway-version",
+              "value": "1"
+            },
+            {
+              "key": "sb-project-ref",
+              "value": "wndpfputlccayxajradn"
+            },
+            {
+              "key": "sb-request-id",
+              "value": "019cf278-c02c-7c5b-a6f3-140a4931ae9e"
+            },
+            {
+              "key": "x-sb-edge-region",
+              "value": "ap-southeast-1"
+            },
+            {
+              "key": "x-served-by",
+              "value": "supabase-edge-runtime"
+            },
+            {
+              "key": "Set-Cookie",
+              "value": "__cf_bm=TlPeDmjC7NuwcskMABrWvmQlEc03ssA7WZPFpVEdBVo-1773594525-1.0.1.1-FQdOWNNpdTfKoFjZ_yY56e9jLjob2rPrFa6DSyi4Q.9W_vrBjcjVYN1Pdn6pUw8YOWvXR0qlgVEOKYZsKx11leP8AtZIVM1Xb8McyIQgfDM; path=/; expires=Sun, 15-Mar-26 17:38:45 GMT; domain=.supabase.co; HttpOnly; Secure; SameSite=None"
+            },
+            {
+              "key": "alt-svc",
+              "value": "h3=\":443\"; ma=86400"
+            }
+          ],
+          "stream": {
+            "type": "Buffer",
+            "data": [
+              123,
+              34,
+              99,
+              111,
+              100,
+              101,
+              34,
+              58,
+              34,
+              78,
+              79,
+              84,
+              95,
+              70,
+              79,
+              85,
+              78,
+              68,
+              34,
+              44,
+              34,
+              109,
+              101,
+              115,
+              115,
+              97,
+              103,
+              101,
+              34,
+              58,
+              34,
+              82,
+              101,
+              113,
+              117,
+              101,
+              115,
+              116,
+              101,
+              100,
+              32,
+              102,
+              117,
+              110,
+              99,
+              116,
+              105,
+              111,
+              110,
+              32,
+              119,
+              97,
+              115,
+              32,
+              110,
+              111,
+              116,
+              32,
+              102,
+              111,
+              117,
+              110,
+              100,
+              34,
+              125
+            ]
+          },
+          "cookie": [],
+          "responseTime": 178,
+          "responseSize": 65
+        },
+        "id": "014329b3-9481-4518-ac51-40fead94733c",
+        "assertions": [
+          {
+            "assertion": "Status code is 200",
+            "skipped": false,
+            "error": {
+              "name": "AssertionError",
+              "index": 0,
+              "test": "Status code is 200",
+              "message": "expected response to have status code 200 but got 404",
+              "stack": "AssertionError: expected response to have status code 200 but got 404\n   at Object.eval sandbox-script.js:1:2)"
+            }
+          },
+          {
+            "assertion": "Response has success message",
+            "skipped": false,
+            "error": {
+              "name": "AssertionError",
+              "index": 1,
+              "test": "Response has success message",
+              "message": "expected 'Requested function was not found' to equal 'User password updated successfully'",
+              "stack": "AssertionError: expected 'Requested function was not found' to equal 'User password updated successfully'\n   at Object.eval sandbox-script.js:2:2)"
+            }
+          }
+        ]
+      }
+    ],
+    "transfers": {
+      "responseTotal": 166
+    },
+    "failures": [
+      {
+        "error": {
+          "name": "AssertionError",
+          "index": 0,
+          "test": "Status code is 201",
+          "message": "expected response to have status code 201 but got 404",
+          "stack": "AssertionError: expected response to have status code 201 but got 404\n   at Object.eval sandbox-script.js:1:1)",
+          "checksum": "e00abfa1be46ebcd8fd1e0b13f65c261",
+          "id": "eaba0797-a552-48b2-864f-732b0d9473f3",
+          "timestamp": 1773594520664,
+          "stacktrace": [
+            {
+              "fileName": "sandbox-script.js",
+              "lineNumber": 1,
+              "functionName": "Object.eval",
+              "typeName": "Object",
+              "methodName": "eval",
+              "columnNumber": 1,
+              "native": false
+            }
+          ]
+        },
+        "at": "assertion:0 in test-script",
+        "source": {
+          "id": "4a78adcf-4892-4066-a575-5a037fd4dd04",
+          "name": "Create User",
+          "request": {
+            "url": {
+              "path": [
+                "functions",
+                "v1",
+                "create-user"
+              ],
+              "host": [
+                "{{SUPABASE_URL}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{SUPABASE_ANON_KEY}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test.newman.{{$timestamp}}@example.com\",\n  \"password\": \"P@ssw0rd123!\",\n  \"full_name\": \"Newman Test User\",\n  \"role\": \"agent\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "a98d5be1-fb71-41b4-95fc-0cb82e047abb",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Response contains userId\", function () {",
+                  "    pm.expect(jsonData).to.have.property('userId');",
+                  "});",
+                  "",
+                  "if (jsonData.userId) {",
+                  "    pm.environment.set(\"CREATED_USER_ID\", jsonData.userId);",
+                  "}"
+                ],
+                "_lastExecutionId": "3a15df9c-2bdf-4136-9618-55f619c5a3eb"
+              }
+            }
+          ]
+        },
+        "parent": {
+          "item": [
+            {
+              "id": "4a78adcf-4892-4066-a575-5a037fd4dd04",
+              "name": "Create User",
+              "request": {
+                "url": {
+                  "path": [
+                    "functions",
+                    "v1",
+                    "create-user"
+                  ],
+                  "host": [
+                    "{{SUPABASE_URL}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{SUPABASE_ANON_KEY}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"test.newman.{{$timestamp}}@example.com\",\n  \"password\": \"P@ssw0rd123!\",\n  \"full_name\": \"Newman Test User\",\n  \"role\": \"agent\"\n}"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "a98d5be1-fb71-41b4-95fc-0cb82e047abb",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code is 201\", function () {",
+                      "    pm.response.to.have.status(201);",
+                      "});",
+                      "",
+                      "var jsonData = pm.response.json();",
+                      "pm.test(\"Response contains userId\", function () {",
+                      "    pm.expect(jsonData).to.have.property('userId');",
+                      "});",
+                      "",
+                      "if (jsonData.userId) {",
+                      "    pm.environment.set(\"CREATED_USER_ID\", jsonData.userId);",
+                      "}"
+                    ],
+                    "_lastExecutionId": "3a15df9c-2bdf-4136-9618-55f619c5a3eb"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "014329b3-9481-4518-ac51-40fead94733c",
+              "name": "Reset User Password",
+              "request": {
+                "url": {
+                  "path": [
+                    "functions",
+                    "v1",
+                    "reset-user-password"
+                  ],
+                  "host": [
+                    "{{SUPABASE_URL}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{SUPABASE_ANON_KEY}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"userId\": \"{{CREATED_USER_ID}}\",\n  \"newPassword\": \"NewP@ssw0rd321!\"\n}"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "f11a98b9-36e7-4b26-981d-6149b071df21",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code is 200\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "var jsonData = pm.response.json();",
+                      "pm.test(\"Response has success message\", function () {",
+                      "    pm.expect(jsonData.message).to.equal(\"User password updated successfully\");",
+                      "});"
+                    ],
+                    "_lastExecutionId": "3fa1e847-9ff2-4741-bf1b-cf69b01f511e"
+                  }
+                }
+              ]
+            }
+          ],
+          "event": [],
+          "variable": [],
+          "info": {
+            "_postman_id": "21ebd08a-e1c7-4201-930f-34b59bacd111",
+            "name": "Supabase Edge Functions Collection",
+            "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+          }
+        },
+        "cursor": {
+          "position": 0,
+          "iteration": 0,
+          "length": 2,
+          "cycles": 1,
+          "empty": false,
+          "eof": false,
+          "bof": true,
+          "cr": false,
+          "ref": "fe0ff3f9-9af1-4bd2-9706-1e85fad9359d",
+          "httpRequestId": "fa76b3a2-109b-4694-b48d-27765c1d43bc",
+          "scriptId": "a98d5be1-fb71-41b4-95fc-0cb82e047abb",
+          "execution": "3a15df9c-2bdf-4136-9618-55f619c5a3eb"
+        }
+      },
+      {
+        "error": {
+          "name": "AssertionError",
+          "index": 1,
+          "test": "Response contains userId",
+          "message": "expected { Object (code, message) } to have property 'userId'",
+          "stack": "AssertionError: expected { Object (code, message) } to have property 'userId'\n   at Object.eval sandbox-script.js:2:1)",
+          "checksum": "4a30d5d469f88acc99b85454a508eec0",
+          "id": "a77b9db1-c38a-4cea-8981-845f2a370e4a",
+          "timestamp": 1773594520669,
+          "stacktrace": [
+            {
+              "fileName": "sandbox-script.js",
+              "lineNumber": 2,
+              "functionName": "Object.eval",
+              "typeName": "Object",
+              "methodName": "eval",
+              "columnNumber": 1,
+              "native": false
+            }
+          ]
+        },
+        "at": "assertion:1 in test-script",
+        "source": {
+          "id": "4a78adcf-4892-4066-a575-5a037fd4dd04",
+          "name": "Create User",
+          "request": {
+            "url": {
+              "path": [
+                "functions",
+                "v1",
+                "create-user"
+              ],
+              "host": [
+                "{{SUPABASE_URL}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{SUPABASE_ANON_KEY}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test.newman.{{$timestamp}}@example.com\",\n  \"password\": \"P@ssw0rd123!\",\n  \"full_name\": \"Newman Test User\",\n  \"role\": \"agent\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "a98d5be1-fb71-41b4-95fc-0cb82e047abb",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Response contains userId\", function () {",
+                  "    pm.expect(jsonData).to.have.property('userId');",
+                  "});",
+                  "",
+                  "if (jsonData.userId) {",
+                  "    pm.environment.set(\"CREATED_USER_ID\", jsonData.userId);",
+                  "}"
+                ],
+                "_lastExecutionId": "3a15df9c-2bdf-4136-9618-55f619c5a3eb"
+              }
+            }
+          ]
+        },
+        "parent": {
+          "item": [
+            {
+              "id": "4a78adcf-4892-4066-a575-5a037fd4dd04",
+              "name": "Create User",
+              "request": {
+                "url": {
+                  "path": [
+                    "functions",
+                    "v1",
+                    "create-user"
+                  ],
+                  "host": [
+                    "{{SUPABASE_URL}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{SUPABASE_ANON_KEY}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"test.newman.{{$timestamp}}@example.com\",\n  \"password\": \"P@ssw0rd123!\",\n  \"full_name\": \"Newman Test User\",\n  \"role\": \"agent\"\n}"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "a98d5be1-fb71-41b4-95fc-0cb82e047abb",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code is 201\", function () {",
+                      "    pm.response.to.have.status(201);",
+                      "});",
+                      "",
+                      "var jsonData = pm.response.json();",
+                      "pm.test(\"Response contains userId\", function () {",
+                      "    pm.expect(jsonData).to.have.property('userId');",
+                      "});",
+                      "",
+                      "if (jsonData.userId) {",
+                      "    pm.environment.set(\"CREATED_USER_ID\", jsonData.userId);",
+                      "}"
+                    ],
+                    "_lastExecutionId": "3a15df9c-2bdf-4136-9618-55f619c5a3eb"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "014329b3-9481-4518-ac51-40fead94733c",
+              "name": "Reset User Password",
+              "request": {
+                "url": {
+                  "path": [
+                    "functions",
+                    "v1",
+                    "reset-user-password"
+                  ],
+                  "host": [
+                    "{{SUPABASE_URL}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{SUPABASE_ANON_KEY}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"userId\": \"{{CREATED_USER_ID}}\",\n  \"newPassword\": \"NewP@ssw0rd321!\"\n}"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "f11a98b9-36e7-4b26-981d-6149b071df21",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code is 200\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "var jsonData = pm.response.json();",
+                      "pm.test(\"Response has success message\", function () {",
+                      "    pm.expect(jsonData.message).to.equal(\"User password updated successfully\");",
+                      "});"
+                    ],
+                    "_lastExecutionId": "3fa1e847-9ff2-4741-bf1b-cf69b01f511e"
+                  }
+                }
+              ]
+            }
+          ],
+          "event": [],
+          "variable": [],
+          "info": {
+            "_postman_id": "21ebd08a-e1c7-4201-930f-34b59bacd111",
+            "name": "Supabase Edge Functions Collection",
+            "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+          }
+        },
+        "cursor": {
+          "position": 0,
+          "iteration": 0,
+          "length": 2,
+          "cycles": 1,
+          "empty": false,
+          "eof": false,
+          "bof": true,
+          "cr": false,
+          "ref": "fe0ff3f9-9af1-4bd2-9706-1e85fad9359d",
+          "httpRequestId": "fa76b3a2-109b-4694-b48d-27765c1d43bc",
+          "scriptId": "a98d5be1-fb71-41b4-95fc-0cb82e047abb",
+          "execution": "3a15df9c-2bdf-4136-9618-55f619c5a3eb"
+        }
+      },
+      {
+        "error": {
+          "name": "AssertionError",
+          "index": 0,
+          "test": "Status code is 200",
+          "message": "expected response to have status code 200 but got 404",
+          "stack": "AssertionError: expected response to have status code 200 but got 404\n   at Object.eval sandbox-script.js:1:2)",
+          "checksum": "e3bd6eda1cb0422bfce43f4050ef2d89",
+          "id": "6b261e74-526e-49e0-9071-1efaab53f076",
+          "timestamp": 1773594520882,
+          "stacktrace": [
+            {
+              "fileName": "sandbox-script.js",
+              "lineNumber": 1,
+              "functionName": "Object.eval",
+              "typeName": "Object",
+              "methodName": "eval",
+              "columnNumber": 2,
+              "native": false
+            }
+          ]
+        },
+        "at": "assertion:0 in test-script",
+        "source": {
+          "id": "014329b3-9481-4518-ac51-40fead94733c",
+          "name": "Reset User Password",
+          "request": {
+            "url": {
+              "path": [
+                "functions",
+                "v1",
+                "reset-user-password"
+              ],
+              "host": [
+                "{{SUPABASE_URL}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{SUPABASE_ANON_KEY}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{CREATED_USER_ID}}\",\n  \"newPassword\": \"NewP@ssw0rd321!\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "f11a98b9-36e7-4b26-981d-6149b071df21",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Response has success message\", function () {",
+                  "    pm.expect(jsonData.message).to.equal(\"User password updated successfully\");",
+                  "});"
+                ],
+                "_lastExecutionId": "3fa1e847-9ff2-4741-bf1b-cf69b01f511e"
+              }
+            }
+          ]
+        },
+        "parent": {
+          "item": [
+            {
+              "id": "4a78adcf-4892-4066-a575-5a037fd4dd04",
+              "name": "Create User",
+              "request": {
+                "url": {
+                  "path": [
+                    "functions",
+                    "v1",
+                    "create-user"
+                  ],
+                  "host": [
+                    "{{SUPABASE_URL}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{SUPABASE_ANON_KEY}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"test.newman.{{$timestamp}}@example.com\",\n  \"password\": \"P@ssw0rd123!\",\n  \"full_name\": \"Newman Test User\",\n  \"role\": \"agent\"\n}"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "a98d5be1-fb71-41b4-95fc-0cb82e047abb",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code is 201\", function () {",
+                      "    pm.response.to.have.status(201);",
+                      "});",
+                      "",
+                      "var jsonData = pm.response.json();",
+                      "pm.test(\"Response contains userId\", function () {",
+                      "    pm.expect(jsonData).to.have.property('userId');",
+                      "});",
+                      "",
+                      "if (jsonData.userId) {",
+                      "    pm.environment.set(\"CREATED_USER_ID\", jsonData.userId);",
+                      "}"
+                    ],
+                    "_lastExecutionId": "3a15df9c-2bdf-4136-9618-55f619c5a3eb"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "014329b3-9481-4518-ac51-40fead94733c",
+              "name": "Reset User Password",
+              "request": {
+                "url": {
+                  "path": [
+                    "functions",
+                    "v1",
+                    "reset-user-password"
+                  ],
+                  "host": [
+                    "{{SUPABASE_URL}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{SUPABASE_ANON_KEY}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"userId\": \"{{CREATED_USER_ID}}\",\n  \"newPassword\": \"NewP@ssw0rd321!\"\n}"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "f11a98b9-36e7-4b26-981d-6149b071df21",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code is 200\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "var jsonData = pm.response.json();",
+                      "pm.test(\"Response has success message\", function () {",
+                      "    pm.expect(jsonData.message).to.equal(\"User password updated successfully\");",
+                      "});"
+                    ],
+                    "_lastExecutionId": "3fa1e847-9ff2-4741-bf1b-cf69b01f511e"
+                  }
+                }
+              ]
+            }
+          ],
+          "event": [],
+          "variable": [],
+          "info": {
+            "_postman_id": "21ebd08a-e1c7-4201-930f-34b59bacd111",
+            "name": "Supabase Edge Functions Collection",
+            "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+          }
+        },
+        "cursor": {
+          "ref": "f5dda499-7b63-4672-b082-f17aefed191c",
+          "length": 2,
+          "cycles": 1,
+          "position": 1,
+          "iteration": 0,
+          "httpRequestId": "daca0942-6ef0-4de2-a655-e9195aedf4db",
+          "scriptId": "f11a98b9-36e7-4b26-981d-6149b071df21",
+          "execution": "3fa1e847-9ff2-4741-bf1b-cf69b01f511e"
+        }
+      },
+      {
+        "error": {
+          "name": "AssertionError",
+          "index": 1,
+          "test": "Response has success message",
+          "message": "expected 'Requested function was not found' to equal 'User password updated successfully'",
+          "stack": "AssertionError: expected 'Requested function was not found' to equal 'User password updated successfully'\n   at Object.eval sandbox-script.js:2:2)",
+          "checksum": "a8616cfbadb917efe8e087fa1ff27fbf",
+          "id": "6cdabd80-9594-4c5e-8065-c40b512215e6",
+          "timestamp": 1773594520884,
+          "stacktrace": [
+            {
+              "fileName": "sandbox-script.js",
+              "lineNumber": 2,
+              "functionName": "Object.eval",
+              "typeName": "Object",
+              "methodName": "eval",
+              "columnNumber": 2,
+              "native": false
+            }
+          ]
+        },
+        "at": "assertion:1 in test-script",
+        "source": {
+          "id": "014329b3-9481-4518-ac51-40fead94733c",
+          "name": "Reset User Password",
+          "request": {
+            "url": {
+              "path": [
+                "functions",
+                "v1",
+                "reset-user-password"
+              ],
+              "host": [
+                "{{SUPABASE_URL}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{SUPABASE_ANON_KEY}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{CREATED_USER_ID}}\",\n  \"newPassword\": \"NewP@ssw0rd321!\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "f11a98b9-36e7-4b26-981d-6149b071df21",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Response has success message\", function () {",
+                  "    pm.expect(jsonData.message).to.equal(\"User password updated successfully\");",
+                  "});"
+                ],
+                "_lastExecutionId": "3fa1e847-9ff2-4741-bf1b-cf69b01f511e"
+              }
+            }
+          ]
+        },
+        "parent": {
+          "item": [
+            {
+              "id": "4a78adcf-4892-4066-a575-5a037fd4dd04",
+              "name": "Create User",
+              "request": {
+                "url": {
+                  "path": [
+                    "functions",
+                    "v1",
+                    "create-user"
+                  ],
+                  "host": [
+                    "{{SUPABASE_URL}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{SUPABASE_ANON_KEY}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"test.newman.{{$timestamp}}@example.com\",\n  \"password\": \"P@ssw0rd123!\",\n  \"full_name\": \"Newman Test User\",\n  \"role\": \"agent\"\n}"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "a98d5be1-fb71-41b4-95fc-0cb82e047abb",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code is 201\", function () {",
+                      "    pm.response.to.have.status(201);",
+                      "});",
+                      "",
+                      "var jsonData = pm.response.json();",
+                      "pm.test(\"Response contains userId\", function () {",
+                      "    pm.expect(jsonData).to.have.property('userId');",
+                      "});",
+                      "",
+                      "if (jsonData.userId) {",
+                      "    pm.environment.set(\"CREATED_USER_ID\", jsonData.userId);",
+                      "}"
+                    ],
+                    "_lastExecutionId": "3a15df9c-2bdf-4136-9618-55f619c5a3eb"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "014329b3-9481-4518-ac51-40fead94733c",
+              "name": "Reset User Password",
+              "request": {
+                "url": {
+                  "path": [
+                    "functions",
+                    "v1",
+                    "reset-user-password"
+                  ],
+                  "host": [
+                    "{{SUPABASE_URL}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{SUPABASE_ANON_KEY}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"userId\": \"{{CREATED_USER_ID}}\",\n  \"newPassword\": \"NewP@ssw0rd321!\"\n}"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "f11a98b9-36e7-4b26-981d-6149b071df21",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code is 200\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "var jsonData = pm.response.json();",
+                      "pm.test(\"Response has success message\", function () {",
+                      "    pm.expect(jsonData.message).to.equal(\"User password updated successfully\");",
+                      "});"
+                    ],
+                    "_lastExecutionId": "3fa1e847-9ff2-4741-bf1b-cf69b01f511e"
+                  }
+                }
+              ]
+            }
+          ],
+          "event": [],
+          "variable": [],
+          "info": {
+            "_postman_id": "21ebd08a-e1c7-4201-930f-34b59bacd111",
+            "name": "Supabase Edge Functions Collection",
+            "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+          }
+        },
+        "cursor": {
+          "ref": "f5dda499-7b63-4672-b082-f17aefed191c",
+          "length": 2,
+          "cycles": 1,
+          "position": 1,
+          "iteration": 0,
+          "httpRequestId": "daca0942-6ef0-4de2-a655-e9195aedf4db",
+          "scriptId": "f11a98b9-36e7-4b26-981d-6149b071df21",
+          "execution": "3fa1e847-9ff2-4741-bf1b-cf69b01f511e"
+        }
+      }
+    ],
+    "error": null
+  }
+}

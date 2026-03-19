@@ -1,0 +1,111 @@
+﻿newman
+
+BreehAI CRM - Full Auth & API Tests
+
+ΓåÆ 1. Health Check ΓÇô Supabase Reachable
+  GET https://wndpfputlccayxajradn.supabase.co/auth/v1/health [200 OK, 980B, 1188ms]
+  ΓêÜ  Supabase is reachable (status not 0)
+
+ΓåÆ 2. Sign Up ΓÇô New User (Unique Email)
+  POST https://wndpfputlccayxajradn.supabase.co/auth/v1/signup [400 Bad Request, 1.07kB, 1522ms]
+  1. Signup status is 200
+  2. Response has user object
+  3. No session yet - email confirmation required (expected)
+
+ΓåÆ 3. Login ΓÇô Wrong Password (Expect 400)
+  POST https://wndpfputlccayxajradn.supabase.co/auth/v1/token?grant_type=password [400 Bad Request, 969B, 401ms]
+  ΓêÜ  Wrong credentials returns 400
+  4. Error message present
+
+ΓåÆ 4. Login ΓÇô Create-User Edge Function (Admin Creates Agent)
+  POST https://wndpfputlccayxajradn.supabase.co/functions/v1/create-user [201 Created, 1.16kB, 5.4s]
+  ΓêÜ  Edge function responded
+  ΓêÜ  User ID returned
+
+ΓåÆ 5. Login ΓÇô Admin-Created Agent Login (Should Succeed)
+  POST https://wndpfputlccayxajradn.supabase.co/auth/v1/token?grant_type=password [200 OK, 3.1kB, 430ms]
+  ΓêÜ  Login status is 200
+  ΓêÜ  Access token returned
+  ΓêÜ  Token type is bearer
+  ΓêÜ  User email matches
+
+ΓåÆ 6. Read Own Profile from public.users
+  GET https://wndpfputlccayxajradn.supabase.co/rest/v1/users?select=id,email,full_name,role,manager_id,created_at [200 OK, 1.41kB, 397ms]
+  ΓêÜ  Profile fetch returns 200
+  ΓêÜ  Profile is an array with at least 1 user
+  ΓêÜ  Profile has email field
+  ΓêÜ  Profile has role field
+
+ΓåÆ 7. Unauthorized Access (No Token ΓåÆ Expect 401)
+  GET https://wndpfputlccayxajradn.supabase.co/rest/v1/users?select=* [200 OK, 1.45kB, 331ms]
+  5. No-token access returns 401 or empty
+
+ΓåÆ 8. Token Refresh
+  POST https://wndpfputlccayxajradn.supabase.co/auth/v1/token?grant_type=refresh_token [200 OK, 3.11kB, 346ms]
+  ΓêÜ  Token refresh returns 200
+  ΓêÜ  New access token returned
+
+ΓåÆ 9. Reset Password via Edge Function
+  POST https://wndpfputlccayxajradn.supabase.co/functions/v1/reset-user-password [200 OK, 1.6kB, 3.6s]
+  ΓêÜ  Password reset responded (200 or error)
+
+ΓåÆ 10. Login with New Password (Post-Reset)
+  POST https://wndpfputlccayxajradn.supabase.co/auth/v1/token?grant_type=password [200 OK, 3.1kB, 300ms]
+  ΓêÜ  Login with new password responded
+  ΓêÜ  New password login returns access_token
+
+ΓåÆ 11. Logout (Sign Out)
+  POST https://wndpfputlccayxajradn.supabase.co/auth/v1/logout [403 Forbidden, 1.02kB, 205ms]
+  6. Logout returns 204
+
+ΓöîΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓö¼ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓö¼ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÉ
+Γöé                         Γöé            executed Γöé              failed Γöé
+Γö£ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓö╝ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓö╝ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöñ
+Γöé              iterations Γöé                   1 Γöé                   0 Γöé
+Γö£ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓö╝ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓö╝ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöñ
+Γöé                requests Γöé                  11 Γöé                   0 Γöé
+Γö£ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓö╝ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓö╝ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöñ
+Γöé            test-scripts Γöé                  11 Γöé                   0 Γöé
+Γö£ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓö╝ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓö╝ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöñ
+Γöé      prerequest-scripts Γöé                   2 Γöé                   0 Γöé
+Γö£ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓö╝ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓö╝ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöñ
+Γöé              assertions Γöé                  23 Γöé                   6 Γöé
+Γö£ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓö┤ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓö┤ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöñ
+Γöé total run duration: 14.9s                                           Γöé
+Γö£ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöñ
+Γöé total data received: 8.15kB (approx)                                Γöé
+Γö£ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöñ
+Γöé average response time: 1293ms [min: 205ms, max: 5.4s, s.d.: 1636ms] Γöé
+ΓööΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÿ
+
+[31m  # [39m[31m failure        [39m[31m detail                                                            [39m
+[90m    [39m[90m                [39m[90m                                                                   [39m
+ 1.  AssertionError  Signup status is 200                                              
+                     expected response to have status code 200 but got 400             
+                     at assertion:0 in test-script                                     
+                     inside "2. Sign Up ΓÇô New User (Unique Email)"                     
+[90m    [39m[90m                [39m[90m                                                                   [39m
+ 2.  AssertionError  Response has user object                                          
+                     expected { code: 400, ΓÇª(2) } to have property 'user'              
+                     at assertion:1 in test-script                                     
+                     inside "2. Sign Up ΓÇô New User (Unique Email)"                     
+[90m    [39m[90m                [39m[90m                                                                   [39m
+ 3.  AssertionError  No session yet - email confirmation required (expected)           
+                     expected undefined to be null                                     
+                     at assertion:2 in test-script                                     
+                     inside "2. Sign Up ΓÇô New User (Unique Email)"                     
+[90m    [39m[90m                [39m[90m                                                                   [39m
+ 4.  AssertionError  Error message present                                             
+                     expected { code: 400, ΓÇª(2) } to have property 'error_description' 
+                     at assertion:1 in test-script                                     
+                     inside "3. Login ΓÇô Wrong Password (Expect 400)"                   
+[90m    [39m[90m                [39m[90m                                                                   [39m
+ 5.  AssertionError  No-token access returns 401 or empty                              
+                     expected [ { ΓÇª(7) }, { ΓÇª(7) } ] to have a length of +0 but got 2  
+                     at assertion:0 in test-script                                     
+                     inside "7. Unauthorized Access (No Token ΓåÆ Expect 401)"           
+[90m    [39m[90m                [39m[90m                                                                   [39m
+ 6.  AssertionError  Logout returns 204                                                
+                     expected response to have status code 204 but got 403             
+                     at assertion:0 in test-script                                     
+                     inside "11. Logout (Sign Out)"                                    

@@ -1,0 +1,18 @@
+{
+  "id": "supabase-edge-functions-test",
+  "name": "Supabase Edge Functions Test",
+  "values": [
+    {
+      "key": "SUPABASE_URL",
+      "value": "https://wndpfputlccayxajradn.supabase.co",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "SUPABASE_ANON_KEY",
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduZHBmcHV0bGNjYXl4YWpyYWRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MDU2NjAsImV4cCI6MjA4ODk4MTY2MH0.VLgw1-8OUdQzHixRBpl_iN3u-qI1Ynv_yCEy3he9Rm0",
+      "type": "default",
+      "enabled": true
+    }
+  ]
+}

@@ -57,6 +57,8 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.4",
     "lovable-tagger": "^1.0.1",
+    "newman": "^4.6.1",
+    "newman-reporter-html": "^1.0.5",
     "postcss": "^8.4.31",
     "react-dropzone": "^14.3.8",
     "supabase": "^2.22.12",

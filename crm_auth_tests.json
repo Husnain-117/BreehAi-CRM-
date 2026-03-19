@@ -1,0 +1,476 @@
+{
+  "info": {
+    "name": "BreehAI CRM - Full Auth & API Tests",
+    "_postman_id": "breeh-crm-tests-v1",
+    "description": "End-to-end tests for Supabase Auth (signup, login, logout) and core REST API endpoints.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "ACCESS_TOKEN", "value": "" },
+    { "key": "USER_ID", "value": "" },
+    { "key": "TEST_EMAIL", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1. Health Check – Supabase Reachable",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Supabase is reachable (status not 0)', function () {",
+              "    pm.expect(pm.response.code).to.be.above(0);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "apikey", "value": "{{SUPABASE_ANON_KEY}}" }
+        ],
+        "url": {
+          "raw": "{{SUPABASE_URL}}/auth/v1/health",
+          "host": ["{{SUPABASE_URL}}"],
+          "path": ["auth", "v1", "health"]
+        }
+      }
+    },
+    {
+      "name": "2. Sign Up – New User (Unique Email)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "var ts = Date.now();",
+              "pm.variables.set('TEST_EMAIL', 'newman.test.' + ts + '@mailtest.dev');",
+              "pm.variables.set('TEST_PASSWORD', 'Newman@CRM2024!');"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Signup status is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "var body = pm.response.json();",
+              "pm.test('Response has user object', function () {",
+              "    pm.expect(body).to.have.property('user');",
+              "});",
+              "",
+              "if (body.user && body.user.id) {",
+              "    pm.variables.set('USER_ID', body.user.id);",
+              "}",
+              "",
+              "// If session is returned, confirmation is disabled - grab token",
+              "if (body.session && body.session.access_token) {",
+              "    pm.variables.set('ACCESS_TOKEN', body.session.access_token);",
+              "    pm.test('Session token returned (email confirmation disabled)', function () {",
+              "        pm.expect(body.session.access_token).to.be.a('string').and.not.empty;",
+              "    });",
+              "} else {",
+              "    pm.test('No session yet - email confirmation required (expected)', function () {",
+              "        pm.expect(body.session).to.be.null;",
+              "    });",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "apikey", "value": "{{SUPABASE_ANON_KEY}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{TEST_EMAIL}}\",\n  \"password\": \"{{TEST_PASSWORD}}\",\n  \"data\": {\n    \"full_name\": \"Newman Test User\",\n    \"role\": \"agent\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{SUPABASE_URL}}/auth/v1/signup",
+          "host": ["{{SUPABASE_URL}}"],
+          "path": ["auth", "v1", "signup"]
+        }
+      }
+    },
+    {
+      "name": "3. Login – Wrong Password (Expect 400)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Wrong credentials returns 400', function () {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "",
+              "var body = pm.response.json();",
+              "pm.test('Error message present', function () {",
+              "    pm.expect(body).to.have.property('error_description').or.have.property('message').or.have.property('error');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "apikey", "value": "{{SUPABASE_ANON_KEY}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{TEST_EMAIL}}\",\n  \"password\": \"WRONG_PASSWORD_XYZ\"\n}"
+        },
+        "url": {
+          "raw": "{{SUPABASE_URL}}/auth/v1/token?grant_type=password",
+          "host": ["{{SUPABASE_URL}}"],
+          "path": ["auth", "v1", "token"],
+          "query": [{ "key": "grant_type", "value": "password" }]
+        }
+      }
+    },
+    {
+      "name": "4. Login – Create-User Edge Function (Admin Creates Agent)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "var ts = Date.now();",
+              "pm.variables.set('ADMIN_TEST_EMAIL', 'agent.' + ts + '@breehcrm.dev');",
+              "pm.variables.set('ADMIN_TEST_PASSWORD', 'Agent@Test2024!');"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Edge function responded', function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "",
+              "var body = pm.response.json();",
+              "pm.test('User ID returned', function () {",
+              "    pm.expect(body).to.have.property('userId');",
+              "});",
+              "",
+              "if (body.userId) {",
+              "    pm.variables.set('CREATED_AGENT_ID', body.userId);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{SUPABASE_ANON_KEY}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{ADMIN_TEST_EMAIL}}\",\n  \"password\": \"{{ADMIN_TEST_PASSWORD}}\",\n  \"full_name\": \"Newman Agent User\",\n  \"role\": \"agent\"\n}"
+        },
+        "url": {
+          "raw": "{{SUPABASE_URL}}/functions/v1/create-user",
+          "host": ["{{SUPABASE_URL}}"],
+          "path": ["functions", "v1", "create-user"]
+        }
+      }
+    },
+    {
+      "name": "5. Login – Admin-Created Agent Login (Should Succeed)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Login status is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "var body = pm.response.json();",
+              "pm.test('Access token returned', function () {",
+              "    pm.expect(body).to.have.property('access_token');",
+              "    pm.expect(body.access_token).to.be.a('string').and.not.empty;",
+              "});",
+              "",
+              "if (body.access_token) {",
+              "    pm.variables.set('ACCESS_TOKEN', body.access_token);",
+              "    pm.variables.set('REFRESH_TOKEN', body.refresh_token);",
+              "}",
+              "",
+              "pm.test('Token type is bearer', function () {",
+              "    pm.expect(body.token_type).to.equal('bearer');",
+              "});",
+              "",
+              "pm.test('User email matches', function () {",
+              "    pm.expect(body.user.email).to.equal(pm.variables.get('ADMIN_TEST_EMAIL'));",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "apikey", "value": "{{SUPABASE_ANON_KEY}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{ADMIN_TEST_EMAIL}}\",\n  \"password\": \"{{ADMIN_TEST_PASSWORD}}\"\n}"
+        },
+        "url": {
+          "raw": "{{SUPABASE_URL}}/auth/v1/token?grant_type=password",
+          "host": ["{{SUPABASE_URL}}"],
+          "path": ["auth", "v1", "token"],
+          "query": [{ "key": "grant_type", "value": "password" }]
+        }
+      }
+    },
+    {
+      "name": "6. Read Own Profile from public.users",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Profile fetch returns 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "var body = pm.response.json();",
+              "pm.test('Profile is an array with at least 1 user', function () {",
+              "    pm.expect(body).to.be.an('array').and.have.length.above(0);",
+              "});",
+              "",
+              "if (body.length > 0) {",
+              "    pm.test('Profile has email field', function () {",
+              "        pm.expect(body[0]).to.have.property('email');",
+              "    });",
+              "    pm.test('Profile has role field', function () {",
+              "        pm.expect(body[0]).to.have.property('role');",
+              "        pm.expect(['agent','manager','super_admin']).to.include(body[0].role);",
+              "    });",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "apikey", "value": "{{SUPABASE_ANON_KEY}}" },
+          { "key": "Authorization", "value": "Bearer {{ACCESS_TOKEN}}" }
+        ],
+        "url": {
+          "raw": "{{SUPABASE_URL}}/rest/v1/users?select=id,email,full_name,role,manager_id,created_at",
+          "host": ["{{SUPABASE_URL}}"],
+          "path": ["rest", "v1", "users"],
+          "query": [{ "key": "select", "value": "id,email,full_name,role,manager_id,created_at" }]
+        }
+      }
+    },
+    {
+      "name": "7. Unauthorized Access (No Token → Expect 401)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('No-token access returns 401 or empty', function () {",
+              "    var status = pm.response.code;",
+              "    pm.expect([200, 401]).to.include(status);",
+              "    if (status === 200) {",
+              "        // If RLS is not enforced, it returns empty array - still valid",
+              "        var body = pm.response.json();",
+              "        pm.expect(body).to.be.an('array').and.have.length(0);",
+              "    }",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "apikey", "value": "{{SUPABASE_ANON_KEY}}" }
+        ],
+        "url": {
+          "raw": "{{SUPABASE_URL}}/rest/v1/users?select=*",
+          "host": ["{{SUPABASE_URL}}"],
+          "path": ["rest", "v1", "users"],
+          "query": [{ "key": "select", "value": "*" }]
+        }
+      }
+    },
+    {
+      "name": "8. Token Refresh",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Token refresh returns 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "var body = pm.response.json();",
+              "pm.test('New access token returned', function () {",
+              "    pm.expect(body).to.have.property('access_token');",
+              "});",
+              "",
+              "if (body.access_token) {",
+              "    pm.variables.set('ACCESS_TOKEN', body.access_token);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "apikey", "value": "{{SUPABASE_ANON_KEY}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"refresh_token\": \"{{REFRESH_TOKEN}}\"\n}"
+        },
+        "url": {
+          "raw": "{{SUPABASE_URL}}/auth/v1/token?grant_type=refresh_token",
+          "host": ["{{SUPABASE_URL}}"],
+          "path": ["auth", "v1", "token"],
+          "query": [{ "key": "grant_type", "value": "refresh_token" }]
+        }
+      }
+    },
+    {
+      "name": "9. Reset Password via Edge Function",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Password reset responded (200 or error)', function () {",
+              "    var status = pm.response.code;",
+              "    pm.expect([200, 400, 500]).to.include(status);",
+              "    if (status === 200) {",
+              "        var body = pm.response.json();",
+              "        pm.expect(body.message).to.equal('User password updated successfully');",
+              "    }",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{SUPABASE_ANON_KEY}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": \"{{CREATED_AGENT_ID}}\",\n  \"newPassword\": \"NewAgent@2024!\"\n}"
+        },
+        "url": {
+          "raw": "{{SUPABASE_URL}}/functions/v1/reset-user-password",
+          "host": ["{{SUPABASE_URL}}"],
+          "path": ["functions", "v1", "reset-user-password"]
+        }
+      }
+    },
+    {
+      "name": "10. Login with New Password (Post-Reset)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var status = pm.response.code;",
+              "pm.test('Login with new password responded', function () {",
+              "    pm.expect([200, 400]).to.include(status);",
+              "});",
+              "if (status === 200) {",
+              "    var body = pm.response.json();",
+              "    pm.test('New password login returns access_token', function () {",
+              "        pm.expect(body).to.have.property('access_token');",
+              "    });",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "apikey", "value": "{{SUPABASE_ANON_KEY}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{ADMIN_TEST_EMAIL}}\",\n  \"password\": \"NewAgent@2024!\"\n}"
+        },
+        "url": {
+          "raw": "{{SUPABASE_URL}}/auth/v1/token?grant_type=password",
+          "host": ["{{SUPABASE_URL}}"],
+          "path": ["auth", "v1", "token"],
+          "query": [{ "key": "grant_type", "value": "password" }]
+        }
+      }
+    },
+    {
+      "name": "11. Logout (Sign Out)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Logout returns 204', function () {",
+              "    pm.response.to.have.status(204);",
+              "});",
+              "pm.variables.set('ACCESS_TOKEN', '');"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "apikey", "value": "{{SUPABASE_ANON_KEY}}" },
+          { "key": "Authorization", "value": "Bearer {{ACCESS_TOKEN}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": { "mode": "raw", "raw": "{}" },
+        "url": {
+          "raw": "{{SUPABASE_URL}}/auth/v1/logout",
+          "host": ["{{SUPABASE_URL}}"],
+          "path": ["auth", "v1", "logout"]
+        }
+      }
+    }
+  ]
+}

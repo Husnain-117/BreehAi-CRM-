@@ -21,31 +21,37 @@ const SignupPage: React.FC = () => {
       setMessage(null);
       return;
     }
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      setMessage(null);
+      return;
+    }
     setError(null);
     setMessage(null);
     setLoading(true);
-    try {
-      const { data, error: signupError } = await signup(email, password, fullName);
 
-      if (signupError) {
-        setError(signupError.message || 'Signup failed. Please try again.');
-      } else if (data?.user?.identities?.length === 0) {
-         setError("This email may already be registered but unverified. Try logging in or resetting password if confirmed.");
-      } else if (data?.user) {
-        setMessage("Signup successful! Please check your email for a confirmation link to complete your registration, then login.");
-        // Clear form or redirect to a message page
+    const { data, error: signupError } = await signup(email, password, fullName);
+
+    if (signupError) {
+      setError(signupError.message || 'Signup failed. Please try again.');
+    } else if (data?.user?.identities?.length === 0) {
+      setError("This email is already registered. Please login or reset your password.");
+    } else if (data?.user) {
+      if (data.session) {
+        // Email confirmation disabled — user is directly logged in
+        navigate('/dashboard');
+      } else {
+        // Email confirmation required
+        setMessage("Account created! Please check your email for a confirmation link, then log in.");
         setEmail('');
         setPassword('');
         setConfirmPassword('');
         setFullName('');
-        // navigate('/login'); // Or navigate to a page that says "check your email"
-      } else {
-        setError("An unexpected error occurred during signup. Please try again.");
       }
-    } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred. Please try again.');
-      console.error(err);
+    } else {
+      setError("An unexpected error occurred during signup. Please try again.");
     }
+
     setLoading(false);
   };
 

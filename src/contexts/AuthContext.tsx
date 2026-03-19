@@ -106,33 +106,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [user, initialAuthCheckComplete]);
 
   const login = async (email: string, password: string) => {
-    // setLoading(true); // Let effects handle loading state based on user changes
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      // Consider setting loading to false here if login itself fails and no auth state change occurs
-      // setLoading(false);
+      if (error.message?.toLowerCase().includes('email not confirmed')) {
+        throw new Error('Your email has not been confirmed. Please check your inbox for a verification link, or contact your administrator.');
+      }
+      if (error.message?.toLowerCase().includes('invalid login credentials')) {
+        throw new Error('Invalid email or password. Please check your credentials and try again.');
+      }
       throw error;
     }
-    // onAuthStateChange will set user, triggering profile fetch effect
     return data;
   };
 
   const signup = async (email: string, password: string, fullName: string) => {
-    // setLoading(true);
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
           full_name: fullName,
+          role: 'agent', // Default role for self-registered users
         }
       }
     });
-    if (error) {
-      // setLoading(false);
-      throw error;
-    }
-    return data;
+    // Return instead of throwing so the UI can handle email-confirmation flow gracefully
+    return { data, error };
   };
 
   const logout = async () => {

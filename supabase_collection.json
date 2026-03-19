@@ -1,0 +1,86 @@
+{
+  "info": {
+    "name": "Supabase Edge Functions Collection",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create User",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 201\", function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "",
+              "var jsonData = pm.response.json();",
+              "pm.test(\"Response contains userId\", function () {",
+              "    pm.expect(jsonData).to.have.property('userId');",
+              "});",
+              "",
+              "if (jsonData.userId) {",
+              "    pm.environment.set(\"CREATED_USER_ID\", jsonData.userId);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{SUPABASE_ANON_KEY}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"test.newman.{{$timestamp}}@example.com\",\n  \"password\": \"P@ssw0rd123!\",\n  \"full_name\": \"Newman Test User\",\n  \"role\": \"agent\"\n}"
+        },
+        "url": {
+          "raw": "{{SUPABASE_URL}}/functions/v1/create-user",
+          "host": ["{{SUPABASE_URL}}"],
+          "path": ["functions", "v1", "create-user"]
+        }
+      }
+    },
+    {
+      "name": "Reset User Password",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "var jsonData = pm.response.json();",
+              "pm.test(\"Response has success message\", function () {",
+              "    pm.expect(jsonData.message).to.equal(\"User password updated successfully\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{SUPABASE_ANON_KEY}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": \"{{CREATED_USER_ID}}\",\n  \"newPassword\": \"NewP@ssw0rd321!\"\n}"
+        },
+        "url": {
+          "raw": "{{SUPABASE_URL}}/functions/v1/reset-user-password",
+          "host": ["{{SUPABASE_URL}}"],
+          "path": ["functions", "v1", "reset-user-password"]
+        }
+      }
+    }
+  ]
+}

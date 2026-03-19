@@ -8,7 +8,6 @@ import { notificationScheduler } from './services/notificationScheduler';
 
 // Import Page Components
 import LoginPage from './pages/LoginPage';
-import SignupPage from './pages/SignupPage';
 import DashboardPage from './pages/DashboardPage';
 import LeadsPage from './pages/LeadsPage';
 import FollowUpsPage from './pages/FollowUpsPage';
@@ -20,7 +19,6 @@ import DailyReportPage from './pages/DailyReportPage'; // Import the new Daily R
 import AttendancePage from './pages/AttendancePage'; // Added AttendancePage import
 import NotificationSettingsPage from './pages/NotificationSettingsPage'; // Import NotificationSettingsPage
 import TodosPage from './pages/TodosPage'; // Import TodosPage
-import NotFoundPage from './pages/NotFoundPage';
 
 function App() {
   useEffect(() => {
@@ -87,11 +85,11 @@ function App() {
         }}
       />
       <Routes>
-        {/* Public Routes - Corrected Layout Routing */}
         <Route element={<PublicLayout />}>
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<SignupPage />} />
-          <Route path="*" element={<NotFoundPage />} /> {/* Catch-all for 404 inside public layout */}
+          {/* Public signup disabled: redirecting to login */}
+          <Route path="/signup" element={<Navigate to="/login" replace />} />
+          <Route path="*" element={<Navigate to="/login" replace />} /> {/* Catch-all for 404 inside public layout */}
         </Route>
 
         {/* Protected Routes Main Application Structure */}

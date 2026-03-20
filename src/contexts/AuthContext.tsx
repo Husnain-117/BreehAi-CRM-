@@ -127,7 +127,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         data: {
           full_name: fullName,
           role: 'agent', // Default role for self-registered users
-        }
+        },
+        emailRedirectTo: `${window.location.origin}/dashboard`
       }
     });
     // Return instead of throwing so the UI can handle email-confirmation flow gracefully

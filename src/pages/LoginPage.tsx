@@ -1,7 +1,7 @@
 // src/pages/LoginPage.tsx
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 
 const LoginPage: React.FC = () => {
@@ -109,14 +109,12 @@ const LoginPage: React.FC = () => {
         </Button>
         </form>
 
-      {/* Signup link removed as per requirement to disable public signups
-      <p className="text-left text-sm text-muted-foreground mt-6">
+      <p className="text-center text-sm text-muted-foreground mt-6">
         Don't have an account?{' '}
         <Link to="/signup" className="font-semibold text-primary hover:text-primary/80 transition-colors">
           Sign up
         </Link>
       </p>
-      */}
     </div>
   );
 };

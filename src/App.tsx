@@ -8,6 +8,7 @@ import { notificationScheduler } from './services/notificationScheduler';
 
 // Import Page Components
 import LoginPage from './pages/LoginPage';
+import SignupPage from './pages/SignupPage';
 import DashboardPage from './pages/DashboardPage';
 import LeadsPage from './pages/LeadsPage';
 import FollowUpsPage from './pages/FollowUpsPage';
@@ -87,8 +88,7 @@ function App() {
       <Routes>
         <Route element={<PublicLayout />}>
           <Route path="/login" element={<LoginPage />} />
-          {/* Public signup disabled: redirecting to login */}
-          <Route path="/signup" element={<Navigate to="/login" replace />} />
+          <Route path="/signup" element={<SignupPage />} />
           <Route path="*" element={<Navigate to="/login" replace />} /> {/* Catch-all for 404 inside public layout */}
         </Route>
 

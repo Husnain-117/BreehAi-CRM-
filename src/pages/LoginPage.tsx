@@ -20,8 +20,24 @@ const LoginPage: React.FC = () => {
       await login(email, password);
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.message || 'Failed to login. Please check your credentials.');
-      console.error(err);
+      let errorMessage = 'Failed to login. Please check your credentials.';
+      if (err instanceof Error) {
+        if (err.message && err.message !== '{}' && err.message !== '[object Object]') {
+          errorMessage = err.message;
+        }
+      } else if (typeof err === 'string' && err.trim() !== '' && err !== '{}') {
+        errorMessage = err;
+      } else if (err?.message && typeof err.message === 'string' && err.message !== '{}') {
+        errorMessage = err.message;
+      }
+      
+      // Check for Supabase 5xx network timeout errors.
+      if (err?.name === 'AuthRetryableFetchError' || errorMessage.includes('Failed to fetch')) {
+        errorMessage = 'Network timeout: The Supabase server is currently unavailable or taking too long to respond. Please try again later.';
+      }
+      
+      setError(errorMessage);
+      console.error('Login error:', err);
     }
     setLoading(false);
   };

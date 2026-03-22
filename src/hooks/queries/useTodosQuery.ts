@@ -1,15 +1,15 @@
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
 import { supabase } from '../../api/supabaseClient';
-import { 
-  Todo, 
-  TodoComment, 
-  TodoAttachment, 
-  CreateTodoData, 
-  UpdateTodoData, 
+import {
+  Todo,
+  TodoComment,
+  TodoAttachment,
+  CreateTodoData,
+  UpdateTodoData,
   CreateTodoCommentData,
-  TodoFilters, 
-  TodoSortOptions, 
+  TodoFilters,
+  TodoSortOptions,
   TodoStats,
   TeamTodoStats,
   BulkTodoOperation
@@ -34,56 +34,56 @@ const buildTodoQuery = (filters: TodoFilters = {}, sort: TodoSortOptions = { fie
   if (filters.status && filters.status.length > 0) {
     query = query.in('status', filters.status);
   }
-  
+
   if (filters.priority && filters.priority.length > 0) {
     query = query.in('priority', filters.priority);
   }
-  
+
   if (filters.category && filters.category.length > 0) {
     query = query.in('category', filters.category);
   }
-  
+
   if (filters.user_id && filters.user_id.length > 0) {
     query = query.in('user_id', filters.user_id);
   }
-  
+
   if (filters.assigned_by && filters.assigned_by.length > 0) {
     query = query.in('assigned_by', filters.assigned_by);
   }
-  
+
   if (filters.due_date_from) {
     query = query.gte('due_date', filters.due_date_from);
   }
-  
+
   if (filters.due_date_to) {
     query = query.lte('due_date', filters.due_date_to);
   }
-  
+
   if (filters.search) {
     query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
   }
-  
+
   if (filters.is_overdue) {
     query = query.lt('due_date', new Date().toISOString()).neq('status', 'completed');
   }
-  
+
   if (filters.is_team_task !== undefined) {
     query = query.eq('is_team_task', filters.is_team_task);
   }
-  
+
   if (filters.tags && filters.tags.length > 0) {
     query = query.overlaps('tags', filters.tags);
   }
 
   // Apply sorting
   query = query.order(sort.field, { ascending: sort.direction === 'asc' });
-  
+
   return query;
 };
 
 // Hook for fetching todos
 export const useTodosQuery = (
-  filters: TodoFilters = {}, 
+  filters: TodoFilters = {},
   sort: TodoSortOptions = { field: 'order_position', direction: 'asc' },
   options: { enableRealtime?: boolean } = {}
 ) => {
@@ -103,16 +103,16 @@ export const useTodosQuery = (
     channel
       .on(
         'postgres_changes',
-        { 
-          event: '*', 
-          schema: 'public', 
+        {
+          event: '*',
+          schema: 'public',
           table: 'todos'
         },
         (payload) => {
           console.log('[useTodosQuery] Todo change received:', payload);
-          
+
           // Invalidate queries to refresh the todo list
-          queryClient.invalidateQueries({ 
+          queryClient.invalidateQueries({
             queryKey: ['todos'],
             refetchType: 'active',
           });
@@ -139,12 +139,12 @@ export const useTodosQuery = (
     queryKey,
     queryFn: async () => {
       const { data, error } = await buildTodoQuery(filters, sort);
-      
+
       if (error) {
         console.error('Error fetching todos:', error);
         throw new Error(`Failed to fetch todos: ${error.message}`);
       }
-      
+
       return data || [];
     },
     staleTime: 30000, // 30 seconds
@@ -174,11 +174,11 @@ export const useTodoQuery = (todoId: string) => {
         `)
         .eq('id', todoId)
         .single();
-      
+
       if (error) {
         throw new Error(`Failed to fetch todo: ${error.message}`);
       }
-      
+
       return data;
     },
     enabled: !!todoId,
@@ -188,7 +188,7 @@ export const useTodoQuery = (todoId: string) => {
 // Hook for fetching team todos (for managers)
 export const useTeamTodosQuery = (teamMemberIds: string[], filters: TodoFilters = {}) => {
   const { user, profile } = useAuth();
-  
+
   return useQuery({
     queryKey: ['team-todos', teamMemberIds, filters],
     queryFn: async () => {
@@ -196,11 +196,11 @@ export const useTeamTodosQuery = (teamMemberIds: string[], filters: TodoFilters 
         ...filters,
         user_id: teamMemberIds,
       });
-      
+
       if (error) {
         throw new Error(`Failed to fetch team todos: ${error.message}`);
       }
-      
+
       return data || [];
     },
     enabled: !!user && profile?.role === 'manager' && teamMemberIds.length > 0,
@@ -210,16 +210,16 @@ export const useTeamTodosQuery = (teamMemberIds: string[], filters: TodoFilters 
 // Hook for fetching all todos (for super admins)
 export const useAllTodosQuery = (filters: TodoFilters = {}) => {
   const { user, profile } = useAuth();
-  
+
   return useQuery({
     queryKey: ['all-todos', filters],
     queryFn: async () => {
       const { data, error } = await buildTodoQuery(filters);
-      
+
       if (error) {
         throw new Error(`Failed to fetch all todos: ${error.message}`);
       }
-      
+
       return data || [];
     },
     enabled: !!user && profile?.role === 'super_admin',
@@ -232,21 +232,21 @@ export const useTodoStatsQuery = (userId?: string) => {
     queryKey: ['todo-stats', userId],
     queryFn: async (): Promise<TodoStats> => {
       let query = supabase.from('todos').select('status, due_date');
-      
+
       if (userId) {
         query = query.eq('user_id', userId);
       }
-      
+
       const { data, error } = await query;
-      
+
       if (error) {
         throw new Error(`Failed to fetch todo stats: ${error.message}`);
       }
-      
+
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-      
+
       const stats: TodoStats = {
         total: data.length,
         pending: 0,
@@ -258,29 +258,29 @@ export const useTodoStatsQuery = (userId?: string) => {
         due_this_week: 0,
         completion_rate: 0,
       };
-      
+
       data.forEach(todo => {
         stats[todo.status as keyof TodoStats]++;
-        
+
         if (todo.due_date) {
           const dueDate = new Date(todo.due_date);
-          
+
           if (dueDate < now && todo.status !== 'completed') {
             stats.overdue++;
           }
-          
+
           if (dueDate >= today && dueDate < new Date(today.getTime() + 24 * 60 * 60 * 1000)) {
             stats.due_today++;
           }
-          
+
           if (dueDate >= now && dueDate <= weekFromNow) {
             stats.due_this_week++;
           }
         }
       });
-      
+
       stats.completion_rate = stats.total > 0 ? (stats.completed / stats.total) * 100 : 0;
-      
+
       return stats;
     },
   });
@@ -289,29 +289,49 @@ export const useTodoStatsQuery = (userId?: string) => {
 // Create todo mutation
 export const useCreateTodoMutation = () => {
   const queryClient = useQueryClient();
+  const { profile } = useAuth();
   
   return useMutation({
     mutationFn: async (todoData: CreateTodoData): Promise<Todo> => {
       const { data, error } = await supabase
         .from('todos')
-        .insert([todoData])
+        .insert([{ ...todoData, status: 'pending' }])
         .select(`
           *,
           users!todos_user_id_fkey(id, full_name, email),
           assigned_by_user:users!todos_assigned_by_fkey(id, full_name, email)
         `)
         .single();
-      
+
       if (error) {
         throw new Error(`Failed to create todo: ${error.message}`);
       }
-      
+
       return data;
     },
-    onSuccess: (newTodo) => {
+    onSuccess: async (newTodo) => {
       toast.success('Todo created successfully!');
       queryClient.invalidateQueries({ queryKey: ['todos'] });
       queryClient.invalidateQueries({ queryKey: ['todo-stats'] });
+
+      // Notify the assignee if it's not the creator
+      if (profile && newTodo.user_id !== profile.id) {
+        try {
+          await supabase.from('notifications').insert([{
+            user_id: newTodo.user_id,
+            type: 'task_assigned',
+            title: 'New Task Assigned',
+            message: `${profile.full_name || 'A team member'} assigned you a new task: "${newTodo.title}"`,
+            entity_type: 'task',
+            entity_id: newTodo.id,
+            is_read: false,
+            delivery_method: ['in_app'],
+            notification_date: new Date().toISOString()
+          }]);
+        } catch (e) {
+          console.error('Failed to notify assignee:', e);
+        }
+      }
     },
     onError: (error: Error) => {
       console.error('Error creating todo:', error);
@@ -323,6 +343,7 @@ export const useCreateTodoMutation = () => {
 // Update todo mutation
 export const useUpdateTodoMutation = () => {
   const queryClient = useQueryClient();
+  const { profile } = useAuth();
   
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: UpdateTodoData }): Promise<Todo> => {
@@ -336,18 +357,37 @@ export const useUpdateTodoMutation = () => {
           assigned_by_user:users!todos_assigned_by_fkey(id, full_name, email)
         `)
         .single();
-      
+
       if (error) {
         throw new Error(`Failed to update todo: ${error.message}`);
       }
-      
+
       return updatedTodo;
     },
-    onSuccess: (updatedTodo) => {
+    onSuccess: async (updatedTodo) => {
       toast.success('Todo updated successfully!');
       queryClient.invalidateQueries({ queryKey: ['todos'] });
       queryClient.invalidateQueries({ queryKey: ['todos', updatedTodo.id] });
       queryClient.invalidateQueries({ queryKey: ['todo-stats'] });
+
+      // If the assignee updates the progress of a team task, notify the assigner
+      if (profile && updatedTodo.assigned_by && updatedTodo.user_id === profile.id && updatedTodo.is_team_task) {
+        try {
+          await supabase.from('notifications').insert([{
+            user_id: updatedTodo.assigned_by,
+            type: 'task_updated',
+            title: 'Assigned Task Updated',
+            message: `${profile.full_name || 'A team member'} updated the status of their assigned task to "${updatedTodo.status.replace('_', ' ')}": "${updatedTodo.title}"`,
+            entity_type: 'task',
+            entity_id: updatedTodo.id,
+            is_read: false,
+            delivery_method: ['in_app'],
+            notification_date: new Date().toISOString()
+          }]);
+        } catch (e) {
+          console.error('Failed to notify assigner:', e);
+        }
+      }
     },
     onError: (error: Error) => {
       console.error('Error updating todo:', error);
@@ -359,14 +399,14 @@ export const useUpdateTodoMutation = () => {
 // Delete todo mutation
 export const useDeleteTodoMutation = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (todoId: string): Promise<void> => {
       const { error } = await supabase
         .from('todos')
         .delete()
         .eq('id', todoId);
-      
+
       if (error) {
         throw new Error(`Failed to delete todo: ${error.message}`);
       }
@@ -386,18 +426,18 @@ export const useDeleteTodoMutation = () => {
 // Reorder todos mutation (for drag and drop)
 export const useReorderTodosMutation = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (reorderData: { todoId: string; newPosition: number }[]): Promise<void> => {
-      const updates = reorderData.map(({ todoId, newPosition }) => 
+      const updates = reorderData.map(({ todoId, newPosition }) =>
         supabase
           .from('todos')
           .update({ order_position: newPosition })
           .eq('id', todoId)
       );
-      
+
       const results = await Promise.all(updates);
-      
+
       for (const result of results) {
         if (result.error) {
           throw new Error(`Failed to reorder todos: ${result.error.message}`);
@@ -417,7 +457,7 @@ export const useReorderTodosMutation = () => {
 // Add comment mutation
 export const useAddCommentMutation = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (commentData: CreateTodoCommentData): Promise<TodoComment> => {
       const { data, error } = await supabase
@@ -428,11 +468,11 @@ export const useAddCommentMutation = () => {
           users(id, full_name, email)
         `)
         .single();
-      
+
       if (error) {
         throw new Error(`Failed to add comment: ${error.message}`);
       }
-      
+
       return data;
     },
     onSuccess: (newComment) => {
@@ -449,59 +489,59 @@ export const useAddCommentMutation = () => {
 // Bulk operations mutation
 export const useBulkTodoOperationMutation = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (operation: BulkTodoOperation): Promise<void> => {
       const { action, todo_ids, data } = operation;
-      
+
       switch (action) {
         case 'update_status':
           const { error: statusError } = await supabase
             .from('todos')
             .update({ status: data?.status })
             .in('id', todo_ids);
-          
+
           if (statusError) {
             throw new Error(`Failed to update status: ${statusError.message}`);
           }
           break;
-          
+
         case 'update_priority':
           const { error: priorityError } = await supabase
             .from('todos')
             .update({ priority: data?.priority })
             .in('id', todo_ids);
-          
+
           if (priorityError) {
             throw new Error(`Failed to update priority: ${priorityError.message}`);
           }
           break;
-          
+
         case 'delete':
           const { error: deleteError } = await supabase
             .from('todos')
             .delete()
             .in('id', todo_ids);
-          
+
           if (deleteError) {
             throw new Error(`Failed to delete todos: ${deleteError.message}`);
           }
           break;
-          
+
         case 'assign':
           const { error: assignError } = await supabase
             .from('todos')
-            .update({ 
+            .update({
               assigned_by: data?.assigned_by,
-              is_team_task: true 
+              is_team_task: true
             })
             .in('id', todo_ids);
-          
+
           if (assignError) {
             throw new Error(`Failed to assign todos: ${assignError.message}`);
           }
           break;
-          
+
         default:
           throw new Error(`Unsupported bulk operation: ${action}`);
       }

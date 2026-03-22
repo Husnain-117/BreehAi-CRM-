@@ -4,24 +4,20 @@ import { CSS } from '@dnd-kit/utilities';
 import { Todo, TodoStatus, TodoPriority } from '../../types';
 import { useUpdateTodoMutation, useDeleteTodoMutation } from '../../hooks/queries/useTodosQuery';
 import { useAuth } from '../../contexts/AuthContext';
-import { format, formatDistanceToNow, isToday, isPast } from 'date-fns';
+import { format, isToday, isPast } from 'date-fns';
 import {
-  Bars3Icon,
-  CheckIcon,
-  XMarkIcon,
+  Bars4Icon,
   PencilIcon,
   TrashIcon,
   CalendarIcon,
   ChatBubbleLeftIcon,
   PaperClipIcon,
   ExclamationTriangleIcon,
-  ClockIcon,
-  UserIcon,
 } from '@heroicons/react/24/outline';
 import {
   CheckCircleIcon,
-  ExclamationCircleIcon,
-  ClockIcon as ClockSolidIcon,
+  XMarkIcon,
+  PlayCircleIcon,
 } from '@heroicons/react/24/solid';
 
 interface TodoItemProps {
@@ -38,7 +34,7 @@ const TodoItem: React.FC<TodoItemProps> = ({
   todo,
   onEdit,
   onView,
-  canEdit = true,
+  canEdit = true, // Left original props intact so it doesn't break parent expectations
   canDelete = true,
   showAssignee = false,
   isDragDisabled = false,
@@ -46,10 +42,20 @@ const TodoItem: React.FC<TodoItemProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(todo.title);
   const titleInputRef = useRef<HTMLInputElement>(null);
-  
+
   const { profile } = useAuth();
   const updateTodoMutation = useUpdateTodoMutation();
   const deleteTodoMutation = useDeleteTodoMutation();
+
+  // Role Based Permission Logic
+  const isCreator = profile ? (todo.is_team_task ? profile.id === todo.assigned_by : profile.id === todo.user_id) : false;
+  const isAssignee = profile ? profile.id === todo.user_id : false;
+  const isSuperAdmin = profile?.role === 'super_admin';
+
+  // Strict Permissions Override
+  const canEditTask = canEdit && (isCreator || isSuperAdmin);
+  const canUpdateProgress = canEdit && (isCreator || isAssignee || isSuperAdmin);
+  const canDeleteTask = canDelete && (isCreator || isSuperAdmin);
 
   const {
     attributes,
@@ -60,16 +66,16 @@ const TodoItem: React.FC<TodoItemProps> = ({
     isDragging,
   } = useSortable({
     id: todo.id,
-    disabled: isDragDisabled,
+    disabled: isDragDisabled || !canEditTask,
   });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0.4 : 1,
+    zIndex: isDragging ? 50 : 1,
   };
 
-  // Focus input when editing starts
   useEffect(() => {
     if (isEditing && titleInputRef.current) {
       titleInputRef.current.focus();
@@ -78,6 +84,7 @@ const TodoItem: React.FC<TodoItemProps> = ({
   }, [isEditing]);
 
   const handleStatusChange = async (newStatus: TodoStatus) => {
+    if (!canUpdateProgress) return;
     try {
       await updateTodoMutation.mutateAsync({
         id: todo.id,
@@ -85,17 +92,6 @@ const TodoItem: React.FC<TodoItemProps> = ({
       });
     } catch (error) {
       console.error('Failed to update todo status:', error);
-    }
-  };
-
-  const handlePriorityChange = async (newPriority: TodoPriority) => {
-    try {
-      await updateTodoMutation.mutateAsync({
-        id: todo.id,
-        data: { priority: newPriority },
-      });
-    } catch (error) {
-      console.error('Failed to update todo priority:', error);
     }
   };
 
@@ -107,11 +103,10 @@ const TodoItem: React.FC<TodoItemProps> = ({
           data: { title: editTitle.trim() },
         });
       } catch (error) {
-        console.error('Failed to update todo title:', error);
-        setEditTitle(todo.title); // Reset on error
+        setEditTitle(todo.title);
       }
     } else {
-      setEditTitle(todo.title); // Reset if no change
+      setEditTitle(todo.title);
     }
     setIsEditing(false);
   };
@@ -130,7 +125,8 @@ const TodoItem: React.FC<TodoItemProps> = ({
   };
 
   const handleDelete = async () => {
-    if (window.confirm('Are you sure you want to delete this todo?')) {
+    if (!canDeleteTask) return;
+    if (window.confirm(`Are you sure you want to delete "${todo.title}"?`)) {
       try {
         await deleteTodoMutation.mutateAsync(todo.id);
       } catch (error) {
@@ -141,221 +137,190 @@ const TodoItem: React.FC<TodoItemProps> = ({
 
   const getPriorityColor = (priority: TodoPriority) => {
     switch (priority) {
-      case 'urgent':
-        return 'bg-red-100 text-red-800 border-red-200';
-      case 'high':
-        return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'medium':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'low':
-        return 'bg-green-100 text-green-800 border-green-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'urgent': return 'bg-red-50 text-red-700 border-red-200';
+      case 'high': return 'bg-orange-50 text-orange-700 border-orange-200';
+      case 'medium': return 'bg-yellow-50 text-yellow-700 border-yellow-200';
+      case 'low': return 'bg-blue-50 text-blue-700 border-blue-200';
+      default: return 'bg-gray-50 text-gray-700 border-gray-200';
     }
   };
 
   const getStatusIcon = (status: TodoStatus) => {
     switch (status) {
-      case 'completed':
-        return <CheckCircleIcon className="h-5 w-5 text-green-600" />;
-      case 'in_progress':
-        return <ClockSolidIcon className="h-5 w-5 text-blue-600" />;
-      case 'cancelled':
-        return <XMarkIcon className="h-5 w-5 text-red-600" />;
-      default:
-        return <div className="h-5 w-5 border-2 border-gray-300 rounded-full" />;
+      case 'completed': return <CheckCircleIcon className="h-6 w-6 text-emerald-500" />;
+      case 'in_progress': return <PlayCircleIcon className="h-6 w-6 text-indigo-500" />;
+      case 'cancelled': return <XMarkIcon className="h-6 w-6 text-slate-400" />;
+      default: return <div className="h-5 w-5 border-2 border-slate-300 rounded-full m-0.5" />;
     }
   };
 
   const isOverdue = todo.due_date && isPast(new Date(todo.due_date)) && todo.status !== 'completed';
   const isDueToday = todo.due_date && isToday(new Date(todo.due_date));
 
+  // Determine border edge color for subtle status indication
+  const edgeColor = todo.status === 'completed' ? 'border-l-emerald-500'
+    : todo.status === 'in_progress' ? 'border-l-indigo-500'
+      : isOverdue ? 'border-l-red-500' : 'border-l-transparent';
+
   return (
     <div
       ref={setNodeRef}
       style={style}
       className={`
-        group relative bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-all duration-200
-        ${todo.status === 'completed' ? 'opacity-75' : ''}
-        ${isOverdue ? 'border-red-300 bg-red-50' : ''}
-        ${isDueToday ? 'border-yellow-300 bg-yellow-50' : ''}
-        ${isDragging ? 'shadow-lg z-10' : ''}
+        group relative flex items-start gap-3 bg-white border border-slate-200 border-l-4 ${edgeColor}
+        rounded-xl p-3 sm:p-4 shadow-sm hover:shadow-md hover:border-slate-300 transition-all duration-200
+        ${todo.status === 'completed' ? 'opacity-70 bg-slate-50' : ''}
+        ${isOverdue ? 'bg-red-50/30' : ''}
       `}
     >
       {/* Drag Handle */}
-      {!isDragDisabled && (
+      {(!isDragDisabled && canEditTask) && (
         <div
           {...attributes}
           {...listeners}
-          className="absolute left-2 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
+          className="absolute left-[-12px] top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-slate-600 cursor-grab active:cursor-grabbing transition-opacity"
         >
-          <Bars3Icon className="h-4 w-4 text-gray-400" />
+          <Bars4Icon className="h-4 w-4" />
         </div>
       )}
 
-      <div className={`${!isDragDisabled ? 'ml-6' : ''}`}>
-        {/* Header */}
-        <div className="flex items-start justify-between mb-2">
-          <div className="flex items-center space-x-3 flex-1">
-            {/* Status Checkbox */}
-            <button
-              onClick={() => handleStatusChange(todo.status === 'completed' ? 'pending' : 'completed')}
-              className="flex-shrink-0 hover:scale-110 transition-transform"
-              disabled={!canEdit}
-            >
-              {getStatusIcon(todo.status)}
-            </button>
+      {/* Checkbox / Status Toggle */}
+      <button
+        onClick={() => {
+          if (!canUpdateProgress) return;
+          const nextStatus = todo.status === 'completed' ? 'pending' : todo.status === 'pending' ? 'in_progress' : 'completed';
+          handleStatusChange(nextStatus);
+        }}
+        className={`flex-shrink-0 mt-0.5 rounded-full transition-transform ${canUpdateProgress ? 'cursor-pointer hover:scale-110 hover:shadow-sm' : 'cursor-not-allowed opacity-60'}`}
+        disabled={!canUpdateProgress}
+        title={canUpdateProgress ? "Click to cycle progress (Pending \u2192 In Progress \u2192 Completed)" : "You do not have permission to update task status"}
+      >
+        {getStatusIcon(todo.status)}
+      </button>
 
-            {/* Title */}
-            <div className="flex-1">
-              {isEditing ? (
-                <input
-                  ref={titleInputRef}
-                  type="text"
-                  value={editTitle}
-                  onChange={(e) => setEditTitle(e.target.value)}
-                  onBlur={handleTitleSave}
-                  onKeyDown={handleKeyPress}
-                  className="w-full text-sm font-medium bg-transparent border-none outline-none focus:ring-0 p-0"
-                  disabled={updateTodoMutation.isLoading}
-                />
-              ) : (
-                <h3
-                  className={`text-sm font-medium cursor-pointer hover:text-blue-600 transition-colors ${
-                    todo.status === 'completed' ? 'line-through text-gray-500' : 'text-gray-900'
-                  }`}
-                  onClick={() => {
-                    if (canEdit) {
-                      setIsEditing(true);
-                    } else if (onView) {
-                      onView(todo);
-                    }
-                  }}
-                >
-                  {todo.title}
-                </h3>
-              )}
-            </div>
+      {/* Main Content Area */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-start justify-between gap-4">
 
-            {/* Priority Badge */}
-            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getPriorityColor(todo.priority)}`}>
+          <div className="flex-1">
+            {isEditing && canEditTask ? (
+              <input
+                ref={titleInputRef}
+                type="text"
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                onBlur={handleTitleSave}
+                onKeyDown={handleKeyPress}
+                className="w-full text-base font-semibold text-slate-900 bg-white border border-indigo-300 rounded px-2 py-1 outline-none ring-2 ring-indigo-500/20"
+                disabled={updateTodoMutation.isLoading}
+              />
+            ) : (
+              <h3
+                className={`text-base font-semibold truncate leading-snippet transition-colors ${todo.status === 'completed' ? 'line-through text-slate-500' : 'text-slate-900'
+                  } ${canEditTask ? 'cursor-text hover:text-indigo-600' : ''}`}
+                onClick={() => {
+                  if (canEditTask) setIsEditing(true);
+                  else if (onView) onView(todo);
+                }}
+              >
+                {todo.title}
+              </h3>
+            )}
+
+            {todo.description && (
+              <p className="mt-1 text-sm text-slate-500 line-clamp-1 group-hover:line-clamp-none transition-all duration-300">
+                {todo.description}
+              </p>
+            )}
+          </div>
+
+          <div className="flex flex-col items-end gap-2 flex-shrink-0">
+            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold border ${getPriorityColor(todo.priority)} shadow-sm uppercase tracking-wider`}>
               {todo.priority}
             </span>
-          </div>
 
-          {/* Actions */}
-          <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            {canEdit && (
-              <button
-                onClick={() => onEdit?.(todo)}
-                className="p-1 text-gray-400 hover:text-gray-600 rounded"
-                title="Edit todo"
-              >
-                <PencilIcon className="h-4 w-4" />
-              </button>
-            )}
-            {canDelete && (
-              <button
-                onClick={handleDelete}
-                className="p-1 text-gray-400 hover:text-red-600 rounded"
-                title="Delete todo"
-                disabled={deleteTodoMutation.isLoading}
-              >
-                <TrashIcon className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Description */}
-        {todo.description && (
-          <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-            {todo.description}
-          </p>
-        )}
-
-        {/* Meta Information */}
-        <div className="flex items-center justify-between text-xs text-gray-500">
-          <div className="flex items-center space-x-4">
-            {/* Due Date */}
-            {todo.due_date && (
-              <div className={`flex items-center space-x-1 ${
-                isOverdue ? 'text-red-600' : isDueToday ? 'text-yellow-600' : ''
-              }`}>
-                <CalendarIcon className="h-3 w-3" />
-                <span>
-                  {isOverdue && <ExclamationTriangleIcon className="h-3 w-3 inline mr-1" />}
-                  {format(new Date(todo.due_date), 'MMM d')}
-                  {isDueToday && ' (Today)'}
-                </span>
-              </div>
-            )}
-
-            {/* Comments Count */}
-            {todo.comments_count && todo.comments_count > 0 && (
-              <div className="flex items-center space-x-1">
-                <ChatBubbleLeftIcon className="h-3 w-3" />
-                <span>{todo.comments_count}</span>
-              </div>
-            )}
-
-            {/* Attachments Count */}
-            {todo.attachments_count && todo.attachments_count > 0 && (
-              <div className="flex items-center space-x-1">
-                <PaperClipIcon className="h-3 w-3" />
-                <span>{todo.attachments_count}</span>
-              </div>
-            )}
-
-            {/* Category */}
-            {todo.category && (
-              <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full">
-                {todo.category}
-              </span>
-            )}
-          </div>
-
-          <div className="flex items-center space-x-2">
-            {/* Assignee */}
-            {showAssignee && todo.users && (
-              <div className="flex items-center space-x-1">
-                <UserIcon className="h-3 w-3" />
-                <span>{todo.users.full_name}</span>
-              </div>
-            )}
-
-            {/* Created Time */}
-            <div className="flex items-center space-x-1">
-              <ClockIcon className="h-3 w-3" />
-              <span>{formatDistanceToNow(new Date(todo.created_at), { addSuffix: true })}</span>
+            {/* Actions Menu */}
+            <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              {canEditTask && (
+                <button onClick={() => onEdit?.(todo)} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors" title="Edit details">
+                  <PencilIcon className="h-4 w-4" />
+                </button>
+              )}
+              {canDeleteTask && (
+                <button onClick={handleDelete} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors" title="Delete task" disabled={deleteTodoMutation.isLoading}>
+                  <TrashIcon className="h-4 w-4" />
+                </button>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Tags */}
-        {todo.tags && todo.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-2">
-            {todo.tags.map((tag, index) => (
-              <span
-                key={index}
-                className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-              >
-                #{tag}
-              </span>
-            ))}
-          </div>
-        )}
+        {/* Footer info (Metadata, Tags) */}
+        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-500">
 
-        {/* Team Task Indicator */}
-        {todo.is_team_task && todo.assigned_by_user && (
-          <div className="mt-2 text-xs text-gray-500 flex items-center space-x-1">
-            <UserIcon className="h-3 w-3" />
-            <span>Assigned by {todo.assigned_by_user.full_name}</span>
+          {/* Due Date */}
+          {todo.due_date && (
+            <div className={`flex items-center gap-1.5 font-medium ${isOverdue ? 'text-red-600' : isDueToday ? 'text-amber-600' : 'text-slate-600'}`}>
+              <CalendarIcon className="h-3.5 w-3.5" />
+              <span>
+                {isOverdue && <ExclamationTriangleIcon className="h-3 w-3 inline mr-1" />}
+                {format(new Date(todo.due_date), 'MMM d, yyyy')}
+                {isDueToday && ' (Today)'}
+              </span>
+            </div>
+          )}
+
+          {/* Creators/Assignees Avatars */}
+          <div className="flex items-center gap-1.5 pl-2 border-l border-slate-200">
+            <div className="flex flex-col text-[10px] leading-tight text-slate-400">
+              {todo.is_team_task && todo.assigned_by_user && (
+                <span><span className="font-semibold text-slate-500">From:</span> {todo.assigned_by_user.full_name?.split(' ')[0]}</span>
+              )}
+              {showAssignee && todo.users && (
+                <span><span className="font-semibold text-slate-500">To:</span> {todo.users.full_name?.split(' ')[0]}</span>
+              )}
+            </div>
           </div>
-        )}
+
+          {/* Counts */}
+          {(todo.comments_count! > 0 || todo.attachments_count! > 0) && (
+            <div className="flex items-center gap-3 pl-2 border-l border-slate-200">
+              {todo.comments_count! > 0 && (
+                <div className="flex items-center gap-1 hover:text-slate-700 transition-colors" title={`${todo.comments_count} comments`}>
+                  <ChatBubbleLeftIcon className="h-3.5 w-3.5" />
+                  <span>{todo.comments_count}</span>
+                </div>
+              )}
+              {todo.attachments_count! > 0 && (
+                <div className="flex items-center gap-1 hover:text-slate-700 transition-colors" title={`${todo.attachments_count} attachments`}>
+                  <PaperClipIcon className="h-3.5 w-3.5" />
+                  <span>{todo.attachments_count}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Category */}
+          {todo.category && (
+            <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md font-medium">
+              {todo.category}
+            </span>
+          )}
+
+          {/* Tags */}
+          {todo.tags && todo.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {todo.tags.map((tag, idx) => (
+                <span key={idx} className="px-1.5 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded text-[10px] font-semibold tracking-wide">
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 };
 
-export default TodoItem; 
+export default TodoItem;

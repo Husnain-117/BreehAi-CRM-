@@ -246,7 +246,9 @@ export type NotificationType =
   | 'overdue_follow_up' 
   | 'upcoming_meeting' 
   | 'lead_update' 
-  | 'system_alert';
+  | 'system_alert'
+  | 'task_assigned'
+  | 'task_updated';
 
 export type DeliveryMethod = 'in_app' | 'email' | 'browser_push' | 'sound';
 
@@ -258,7 +260,7 @@ export interface Notification {
   type: NotificationType;
   title: string;
   message: string;
-  entity_type?: 'follow_up' | 'meeting' | 'lead' | 'system';
+  entity_type?: 'follow_up' | 'meeting' | 'lead' | 'system' | 'task';
   entity_id?: string;
   is_read: boolean;
   notification_date: string;
@@ -387,6 +389,7 @@ export interface TodoFilters {
   tags?: string[];
   assigned_by?: string[];
   user_id?: string[];
+  involved_user_id?: string;
   due_date_from?: string;
   due_date_to?: string;
   search?: string;

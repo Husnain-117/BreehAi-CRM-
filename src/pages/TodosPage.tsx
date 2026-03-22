@@ -5,6 +5,7 @@ import {
   useCreateTodoMutation, 
   useUpdateTodoMutation 
 } from '../hooks/queries/useTodosQuery';
+import { useUsersQuery } from '../hooks/queries/useUsersQuery';
 import { useAuth } from '../contexts/AuthContext';
 import { Todo, TodoFilters, TodoSortOptions, CreateTodoData, UpdateTodoData } from '../types';
 import TodoList from '../components/todos/TodoList';
@@ -26,9 +27,15 @@ const TodosPage: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
+  const canAssign = profile?.role === 'manager' || profile?.role === 'super_admin';
+
+  const { data: teamMembers = [] } = useUsersQuery({
+    managerId: profile?.role === 'manager' ? profile.id : undefined
+  });
+
   // Queries
   const { data: todos = [], isLoading, error } = useTodosQuery(
-    { ...filters, search: searchQuery },
+    { ...filters, search: searchQuery, user_id: profile ? [profile.id] : undefined },
     sort,
     { enableRealtime: true }
   );
@@ -351,6 +358,8 @@ const TodosPage: React.FC = () => {
           onSubmit={handleCreateTodo}
           onCancel={() => setShowCreateForm(false)}
           isLoading={createTodoMutation.isLoading}
+          teamMembers={teamMembers}
+          canAssign={canAssign}
         />
       )}
 
@@ -361,6 +370,8 @@ const TodosPage: React.FC = () => {
           onSubmit={handleUpdateTodo}
           onCancel={() => setEditingTodo(null)}
           isLoading={updateTodoMutation.isLoading}
+          teamMembers={teamMembers}
+          canAssign={canAssign}
         />
       )}
     </div>

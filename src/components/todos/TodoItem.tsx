@@ -34,8 +34,8 @@ const TodoItem: React.FC<TodoItemProps> = ({
   todo,
   onEdit,
   onView,
-  canEdit = true, // Left original props intact so it doesn't break parent expectations
-  canDelete = true,
+  canEdit: _canEdit,        // kept in interface for backwards compat, logic is now internal
+  canDelete: _canDelete,    // kept in interface for backwards compat, logic is now internal
   showAssignee = false,
   isDragDisabled = false,
 }) => {
@@ -48,14 +48,35 @@ const TodoItem: React.FC<TodoItemProps> = ({
   const deleteTodoMutation = useDeleteTodoMutation();
 
   // Role Based Permission Logic
-  const isCreator = profile ? (todo.is_team_task ? profile.id === todo.assigned_by : profile.id === todo.user_id) : false;
-  const isAssignee = profile ? profile.id === todo.user_id : false;
+  //
+  // Task ownership rules:
+  //   - Personal task:  assigned_by is null, user_id = creator
+  //   - Delegated task: assigned_by = creator, user_id = assignee
+  //
+  const myId = profile?.id;
+  const taskHasAssigner = !!todo.assigned_by; // someone explicitly assigned it
+  
+  // They assigned it to someone else (or to themselves explicitly)
+  const iAmTheAssigner = taskHasAssigner && todo.assigned_by === myId;
+  
+  // They are the recipient. True if it has assigned_by and it's someone else, 
+  // OR if it's a legacy team task where user_id is set but assigned_by is missing.
+  const iAmTheAssignee = (todo.user_id === myId && taskHasAssigner && todo.assigned_by !== myId) || 
+                         (todo.user_id === myId && !taskHasAssigner && todo.is_team_task);
+                         
+  // It's a personal task (not a team task)
+  const iAmPersonalOwner = todo.user_id === myId && !todo.is_team_task;
   const isSuperAdmin = profile?.role === 'super_admin';
 
-  // Strict Permissions Override
-  const canEditTask = canEdit && (isCreator || isSuperAdmin);
-  const canUpdateProgress = canEdit && (isCreator || isAssignee || isSuperAdmin);
-  const canDeleteTask = canDelete && (isCreator || isSuperAdmin);
+  // Creator = person who assigned it (or owner of personal task)
+  const isCreator = iAmTheAssigner || iAmPersonalOwner;
+  // Assignee-only = I'm the recipient, NOT the person who created it
+  const isAssigneeOnly = iAmTheAssignee && !isSuperAdmin;
+
+  // Final permission flags
+  const canEditTask   = !isAssigneeOnly && (isCreator || isSuperAdmin);
+  const canUpdateProgress = isCreator || iAmTheAssignee || isSuperAdmin;
+  const canDeleteTask = !isAssigneeOnly && (isCreator || isSuperAdmin);
 
   const {
     attributes,

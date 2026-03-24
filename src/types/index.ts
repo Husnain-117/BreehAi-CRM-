@@ -362,7 +362,8 @@ export interface CreateTodoData {
   due_date?: string;
   category?: string;
   tags?: string[];
-  user_id?: string; // For managers/admins assigning to others
+  user_id?: string; // The person who the task is assigned to
+  assigned_by?: string; // The person who created/assigned the task
   is_team_task?: boolean;
 }
 

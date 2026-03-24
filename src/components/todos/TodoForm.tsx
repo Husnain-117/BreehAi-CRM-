@@ -138,7 +138,12 @@ const TodoForm: React.FC<TodoFormProps> = ({
     // Handle assignment (only for create or if user can assign)
     if (!todo || canAssign) {
       (submitData as CreateTodoData).user_id = formData.user_id;
-      (submitData as CreateTodoData).is_team_task = formData.is_team_task;
+      // If assigning to someone else, record who created/assigned it
+      const isAssigningToOther = formData.user_id && formData.user_id !== profile?.id;
+      (submitData as CreateTodoData).is_team_task = isAssigningToOther ? true : formData.is_team_task;
+      if (isAssigningToOther) {
+        (submitData as CreateTodoData).assigned_by = profile?.id;
+      }
     }
 
     onSubmit(submitData);

@@ -35,12 +35,20 @@ const TodosPage: React.FC = () => {
 
   // Queries
   const { data: todos = [], isLoading, error } = useTodosQuery(
-    { ...filters, search: searchQuery, user_id: profile ? [profile.id] : undefined },
+    { ...filters, search: searchQuery, involved_user_id: profile?.id },
     sort,
     { enableRealtime: true }
   );
   
   const { data: stats } = useTodoStatsQuery(profile?.id);
+
+  // Split todos into categories
+  const { myTasks, delegatedTasks } = useMemo(() => {
+    return {
+      myTasks: todos.filter(t => t.user_id === profile?.id),
+      delegatedTasks: todos.filter(t => t.assigned_by === profile?.id && t.user_id !== profile?.id)
+    };
+  }, [todos, profile?.id]);
 
   // Mutations
   const createTodoMutation = useCreateTodoMutation();
@@ -103,7 +111,7 @@ const TodosPage: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">My Todos</h1>
+          <h1 className="text-2xl font-bold text-foreground">Todos</h1>
           <p className="text-muted-foreground mt-1">
             Manage your tasks and stay organized
           </p>
@@ -338,19 +346,54 @@ const TodosPage: React.FC = () => {
         )}
       </div>
 
-      {/* Todo List */}
-      <TodoList
-        todos={todos}
-        filters={filters}
-        onFiltersChange={setFilters}
-        sort={sort}
-        onSortChange={setSort}
-        onTodoEdit={setEditingTodo}
-        isLoading={isLoading}
-        canEdit={true}
-        canDelete={true}
-        canReorder={true}
-      />
+      <div className="space-y-8">
+        {/* Assigned to Me */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-foreground flex items-center">
+              <span className="w-2 h-6 bg-primary rounded-full mr-2"></span>
+              Assigned to Me
+            </h2>
+          </div>
+          <TodoList
+            todos={myTasks}
+            filters={filters}
+            onFiltersChange={setFilters}
+            sort={sort}
+            onSortChange={setSort}
+            onTodoEdit={setEditingTodo}
+            isLoading={isLoading}
+            canEdit={true}
+            canDelete={true}
+            canReorder={true}
+          />
+        </div>
+
+        {/* Assigned to Others */}
+        {delegatedTasks.length > 0 && (
+          <div className="space-y-4 pt-6 border-t border-border">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-foreground flex items-center">
+                <span className="w-2 h-6 bg-secondary rounded-full mr-2"></span>
+                Assigned to Others
+              </h2>
+            </div>
+            <TodoList
+              todos={delegatedTasks}
+              filters={filters}
+              onFiltersChange={setFilters}
+              sort={sort}
+              onSortChange={setSort}
+              onTodoEdit={setEditingTodo}
+              isLoading={isLoading}
+              canEdit={true}
+              canDelete={true}
+              canReorder={false}
+              showAssignee={true}
+            />
+          </div>
+        )}
+      </div>
 
       {/* Create Todo Form */}
       {showCreateForm && (

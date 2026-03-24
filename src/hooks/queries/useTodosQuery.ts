@@ -47,6 +47,10 @@ const buildTodoQuery = (filters: TodoFilters = {}, sort: TodoSortOptions = { fie
     query = query.in('user_id', filters.user_id);
   }
 
+  if (filters.involved_user_id) {
+    query = query.or(`user_id.eq.${filters.involved_user_id},assigned_by.eq.${filters.involved_user_id}`);
+  }
+
   if (filters.assigned_by && filters.assigned_by.length > 0) {
     query = query.in('assigned_by', filters.assigned_by);
   }
